@@ -1,14 +1,18 @@
 // Air Base Chess Tour — Service Worker
 // Handles push notifications and offline caching
 
-const CACHE_NAME = 'abct-v1';
-const VAPID_PUBLIC_KEY = 'BEQmMXuj4tL4J7bfodS6wycUnY5QDuS6iy-6AAEjDNF8kfRFN2hx8Dc3bh_eTtnZVlEeFjVMjIV7MmTOjcklp-8';
+const CACHE_NAME = 'abct-v2';
 
 // Install: cache the app
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(['/', '/index.html']);
+      return cache.addAll([
+        '/airbase-chess-tour/',
+        '/airbase-chess-tour/index.html'
+      ]).catch(() => {
+        // Ignore cache errors
+      });
     })
   );
   self.skipWaiting();
@@ -37,9 +41,9 @@ self.addEventListener('push', event => {
   const title = data.title || 'Air Base Chess Tour';
   const options = {
     body: data.body || 'Nouveau message du tournoi',
-    icon: data.icon || '/icon-192.jpg',
-    badge: data.badge || '/icon-192.jpg',
-    data: data.url || '/',
+    icon: data.icon || '/airbase-chess-tour/icon-192.jpg',
+    badge: data.badge || '/airbase-chess-tour/icon-192.jpg',
+    data: data.url || '/airbase-chess-tour/',
     vibrate: [200, 100, 200],
     requireInteraction: false,
     tag: 'abct-notification'
@@ -50,11 +54,11 @@ self.addEventListener('push', event => {
 // Notification clicked
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  const url = event.notification.data || '/';
+  const url = event.notification.data || '/airbase-chess-tour/';
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
       for (const client of clientList) {
-        if (client.url === url && 'focus' in client) return client.focus();
+        if ('focus' in client) return client.focus();
       }
       if (clients.openWindow) return clients.openWindow(url);
     })

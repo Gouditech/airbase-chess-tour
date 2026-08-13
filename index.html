@@ -354,13 +354,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 
 // Register Service Worker
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js', {scope: './'}).then(reg => {
+  navigator.serviceWorker.register('./sw.js').then(reg => {
     console.log('SW registered:', reg.scope);
-    // Store registration for later use
-    window._swReg = reg;
   }).catch(err => {
     console.log('SW error:', err);
-    showMsg('notif-msg', 'SW: ' + err.message, false);
   });
 }
 import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
@@ -398,10 +395,18 @@ async function subscribeToNotifications() {
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') { showMsg('notif-msg', t('notif_denied'), false); return; }
     // Wait for SW with timeout
-    const reg = await Promise.race([
-      navigator.serviceWorker.ready,
-      new Promise((_, reject) => setTimeout(() => reject(new Error('SW timeout')), 5000))
-    ]);
+    // Wait for SW registration
+    let reg;
+    try {
+      reg = await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 10000))
+      ]);
+    } catch(swErr) {
+      // SW not available - try without push (in-app only)
+      showMsg('notif-msg', t('notif_unsupported'), false);
+      return;
+    }
     const sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(VAPID_KEY)

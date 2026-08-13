@@ -2,7 +2,7 @@
   "name": "Air Base Chess Tour",
   "short_name": "Chess Tour",
   "description": "Gestion de tournoi d'échecs Air Base Chess Tour",
-  "start_url": "/airbase-chess-tour/",
+  "start_url": "/airbase-chess-tour/index.html",
   "scope": "/airbase-chess-tour/",
   "display": "standalone",
   "background_color": "#1B1B1B",

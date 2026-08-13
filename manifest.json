@@ -1,0 +1,19 @@
+{
+  "name": "Air Base Chess Tour",
+  "short_name": "Chess Tour",
+  "description": "Gestion de tournoi d'échecs Air Base Chess Tour",
+  "start_url": "/airbase-chess-tour/",
+  "scope": "/airbase-chess-tour/",
+  "display": "standalone",
+  "background_color": "#1B1B1B",
+  "theme_color": "#1B1B1B",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-192.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}

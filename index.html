@@ -212,6 +212,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
       <button class="subtab inactive" onclick="showAdminTab('settings')" id="subtab-settings">Réglages</button>
       <button class="subtab inactive" onclick="showAdminTab('players')" id="subtab-players">Joueurs</button>
       <button class="subtab inactive" onclick="showAdminTab('seeding')" id="subtab-seeding">Groupes</button>
+      <button class="subtab inactive" onclick="showAdminTab('ranking')" id="subtab-ranking">Classement</button>
     </div>
     <div id="admin-settings" class="card">
       <h2 id="settings-title">Paramètres</h2>
@@ -290,7 +291,11 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
         <button class="btn btn-green" style="margin-top:8px" onclick="copyWhatsApp()" id="copy-whatsapp-btn">📋 Copier le message</button>
         <div id="whatsapp-msg-result"></div>
       </div>
-      <div style="text-align:center;margin-top:8px">
+      <div id="admin-ranking" class="card" style="display:none">
+      <h2 id="ranking-title">Classement global</h2>
+      <div id="ranking-content"></div>
+    </div>
+    <div style="text-align:center;margin-top:8px">
         <button class="btn btn-gray btn-sm" style="display:inline-block;width:auto" onclick="adminLogout()" id="logout-btn">Déconnexion</button>
       </div>
     </div>
@@ -525,7 +530,7 @@ const T = {
     rules:`<p>🚀 Consultez l'onglet Matchs pour voir vos parties dès que la phase de poules est lancée. Envoyez une invitation à votre adversaire sur Chess.com (pseudo visible dans l'onglet Tournoi) ou jouez sur échiquier physique. Vous pouvez jouer plusieurs parties en même temps. Inscrivez le résultat dès la fin de chaque partie directement dans l'app.</p><br>
 <p>Format : Poules round-robin, puis phases finales à élimination directe.</p><br>
 <p>Scores : 1 (victoire) · 0.5 (nul) · 0 (défaite)</p><br>
-<p>Départage : Points → Victoires → Victoires avec les Noirs → Buchholz → Confrontation directe</p><br>
+<p>Départage dans les groupes : ① Points ② Victoires ③ Victoires avec les Noirs ④ Confrontation directe ⑤ Tête de série</p><p>Départage global (finalistes) : ① Points/match ② Victoires/match ③ Victoires Noirs/match ④ Buchholz/match ⑤ Tête de série</p><br>
 <p>Finales : Le mieux classé choisit sa couleur. Nul = match rejoué couleurs inversées.</p><br>
 <p>⛔ Interdit : Analyse, coups conditionnels sur Chess.com. Max 24h/coup, min 10min/coup, pas de mode vacances.</p><br>
 <p>🏆 Demi-finales &amp; Finale en présentiel sur échiquier physique. Absent à la date convenue = disqualifié.</p><br>
@@ -580,6 +585,10 @@ const T = {
     admin_pin_hint:"Première utilisation ? Créez votre PIN maintenant.",admin_pin_err:"PIN incorrect.",
     admin_logout:"Déconnexion",
     subtab_settings:"Réglages",subtab_players:"Joueurs",subtab_seeding:"Groupes",subtab_actions:"Actions",
+    subtab_ranking:"Ranking",
+    ranking_title:"Global Ranking",
+    subtab_ranking:"Classement",
+    ranking_title:"Classement global",
     settings_title:"Paramètres du tournoi",set_name:"Nom du tournoi",set_ppg:"Joueurs par groupe",set_fin:"Nombre de finalistes",set_status:"Statut",
     status_opt_reg:"Inscriptions ouvertes",status_opt_play:"Phase de poules",status_opt_fin:"Phases finales",status_opt_done:"Terminé",
     save_settings:"Enregistrer",settings_saved:"Enregistré !",
@@ -617,7 +626,7 @@ const T = {
     rules:`<p>🚀 Sieh dir deine Partien im Tab <strong>Partien</strong> an, sobald die Gruppenphase gestartet ist. Sende deinem Gegner eine Einladung auf Chess.com (Benutzername im Tab <strong>Turnier</strong>) oder spiele auf dem Brett. Du kannst mehrere Partien gleichzeitig spielen. Trage das Ergebnis direkt im Tab <strong>Partien</strong> ein.</p><br>
 <p>Format: Round-Robin-Gruppen, dann K.o.-Finalrunden.</p><br>
 <p>Punkte: 1 (Sieg) · 0.5 (Remis) · 0 (Niederlage)</p><br>
-<p>Tiebreak: Punkte → Siege → Siege mit Schwarz → Buchholz → Direkter Vergleich</p><br>
+<p>Tiebreak Gruppen: ① Punkte ② Siege ③ Siege mit Schwarz ④ Direkter Vergleich ⑤ Setzrang</p><p>Globaler Tiebreak (Finalisten): ① Punkte/Partie ② Siege/Partie ③ Siege Schwarz/Partie ④ Buchholz/Partie ⑤ Setzrang</p><br>
 <p>Finals: Der Besser­platzierte wählt die Farbe. Remis = Wiederholung mit getauschten Farben.</p><br>
 <p>⛔ Verboten: Analyse, bedingte Züge auf Chess.com. Max. 24h/Zug, kein Urlaubsmodus.</p><br>
 <p>Schiedsrichter: Bei Streitigkeiten entscheidet der Organisator. Fair Play wird erwartet.</p>`,
@@ -631,6 +640,8 @@ const T = {
     admin_pin_hint:"Erste Verwendung? Erstellen Sie jetzt Ihren PIN.",admin_pin_err:"Falscher PIN.",
     admin_logout:"Abmelden",
     subtab_settings:"Einstellungen",subtab_players:"Spieler",subtab_seeding:"Gruppen",subtab_actions:"Aktionen",
+    subtab_ranking:"Rangliste",
+    ranking_title:"Globale Rangliste",
     settings_title:"Turniereinstellungen",set_name:"Turniername",set_ppg:"Spieler pro Gruppe",set_fin:"Anzahl Finalisten",set_status:"Status",
     status_opt_reg:"Anmeldung offen",status_opt_play:"Gruppenphase",status_opt_fin:"Finalphase",status_opt_done:"Beendet",
     save_settings:"Speichern",settings_saved:"Gespeichert!",
@@ -707,7 +718,7 @@ const T = {
     rules:`<p>🚀 Check the <strong>Matches</strong> tab to see your games when the group stage starts. Send an invitation to your opponent on Chess.com (username in the <strong>Tournament</strong> tab) or play on a physical board. You can play multiple games at once. Enter the result directly in the <strong>Matches</strong> tab.</p><br>
 <p>Format: Round-robin groups, then knockout finals.</p><br>
 <p>Scores: 1 (win) · 0.5 (draw) · 0 (loss)</p><br>
-<p>Tiebreak: Points → Wins → Wins with Black → Buchholz → Head-to-head</p><br>
+<p>Group tiebreak: ① Points ② Wins ③ Wins with Black ④ Head-to-head ⑤ Seed</p><p>Global tiebreak (finalists): ① Points/game ② Wins/game ③ Black wins/game ④ Buchholz/game ⑤ Seed</p><br>
 <p>Finals: Higher-ranked player chooses color. Draw = replay with swapped colors.</p><br>
 <p>⛔ Forbidden: Analysis board, conditional moves on Chess.com. Max 24h/move, no vacation mode.</p><br>
 <p>Arbiter: In case of dispute, the organizer decides. Fair play expected from all.</p>`,
@@ -798,7 +809,7 @@ const T = {
     rules:`<p>🚀 Consulta la scheda <strong>Partite</strong> per vedere le tue partite non appena inizia la fase a gironi. Invia un invito al tuo avversario su Chess.com (nome utente nella scheda <strong>Torneo</strong>) o gioca su una scacchiera. Puoi giocare più partite contemporaneamente. Inserisci il risultato nella scheda <strong>Partite</strong>.</p><br>
 <p>Formato: Gironi round-robin, poi fasi finali ad eliminazione diretta.</p><br>
 <p>Punteggi: 1 (vittoria) · 0.5 (patta) · 0 (sconfitta)</p><br>
-<p>Spareggio: Punti → Vittorie → Vittorie con il Nero → Buchholz → Scontro diretto</p><br>
+<p>Spareggio gironi: ① Punti ② Vittorie ③ Vittorie con il Nero ④ Scontro diretto ⑤ Testa di serie</p><p>Spareggio globale (finalisti): ① Punti/partita ② Vittorie/partita ③ Vittorie Nero/partita ④ Buchholz/partita ⑤ Testa di serie</p><br>
 <p>Finali: Il meglio classificato sceglie il colore. Patta = rivincita con colori invertiti.</p><br>
 <p>⛔ Vietato: Analisi, mosse condizionali su Chess.com. Max 24h/mossa, nessuna modalità vacanze.</p><br>
 <p>Arbitraggio: In caso di controversia, decide l'organizzatore. Fair play atteso da tutti.</p>`,
@@ -852,6 +863,8 @@ const T = {
     admin_pin_hint:"Prima utilizzo? Crea il tuo PIN adesso.",admin_pin_err:"PIN errato.",
     admin_logout:"Disconnettersi",
     subtab_settings:"Impostazioni",subtab_players:"Giocatori",subtab_seeding:"Gruppi",subtab_actions:"Azioni",
+    subtab_ranking:"Classifica",
+    ranking_title:"Classifica globale",
     settings_title:"Impostazioni torneo",set_name:"Nome del torneo",set_ppg:"Giocatori per gruppo",set_fin:"Numero di finalisti",set_status:"Stato",
     status_opt_reg:"Iscrizioni aperte",status_opt_play:"Fase a gironi",status_opt_fin:"Fase finale",status_opt_done:"Terminato",
     save_settings:"Salvare",settings_saved:"Salvato!",
@@ -928,6 +941,8 @@ function applyTranslations() {
   document.getElementById('set-label-fin').textContent = t('set_fin');
 
   document.getElementById('save-settings-btn').textContent = t('save_settings');
+  const sR=document.getElementById('subtab-ranking'); if(sR) sR.textContent=t('subtab_ranking');
+  const rT=document.getElementById('ranking-title'); if(rT) rT.textContent=t('ranking_title');
   document.getElementById('seeding-title').textContent = t('seeding_title');
   document.getElementById('seeding-desc').textContent = t('seeding_desc');
   document.getElementById('assign-btn').textContent = t('assign_btn');
@@ -1082,9 +1097,59 @@ window.changePin = async function() {
   showMsg('pin-msg',t('pin_changed'));
 };
 
+function renderRanking() {
+  const standings = computeStandings();
+  const players = getPlayers();
+  const seedMap = {};
+  players.forEach(p => { seedMap[p.nickname] = p.seed || 999; });
+  const total = state?.settings?.finalistsCount || 8;
+  const fin = discoverFinalists(standings, 999); // get all players ranked
+
+  const el = document.getElementById('ranking-content');
+  if (!el) return;
+
+  if (!fin.length) {
+    el.innerHTML = `<div style="color:var(--gray);text-align:center;padding:16px">${t('groups_empty')}</div>`;
+    return;
+  }
+
+  const qualifiedSet = new Set(discoverFinalists(standings, total).map(f => f.player));
+
+  el.innerHTML = `<div class="scroll-x"><table class="rank-table">
+    <thead><tr>
+      <th>#</th>
+      <th>${t('rank_player')}</th>
+      <th>Grp</th>
+      <th>${t('rank_pts')}</th>
+      <th>${t('rank_mj')}</th>
+      <th>${t('rank_v')}</th>
+      <th>${t('rank_vn')}</th>
+      <th>TB</th>
+      <th>★</th>
+    </tr></thead>
+    <tbody>${fin.map((f, i) => {
+      const s = f.stats;
+      const qualified = qualifiedSet.has(f.player);
+      const norm = (field) => s.matches > 0 ? (s[field]/s.matches).toFixed(2) : '0.00';
+      return `<tr class="${qualified ? 'qualified' : ''}">
+        <td><strong style="color:${qualified ? 'var(--gold)' : 'var(--gray)'}">${i+1}</strong></td>
+        <td>${esc(f.player)}</td>
+        <td style="color:var(--gray);font-size:11px">${f.group}</td>
+        <td>${s.points}</td>
+        <td>${s.matches}</td>
+        <td>${s.totalWins}</td>
+        <td>${s.blackWins}</td>
+        <td>${s.tieBreak.toFixed(1)}</td>
+        <td style="color:var(--gold)">${seedMap[f.player] !== 999 ? seedMap[f.player] : ''}</td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div>
+  <div style="font-size:11px;color:var(--gray);margin-top:8px">★ = Tête de série · TB = Buchholz · ${t('rank_legend')}</div>`;
+}
+
 window.showAdminTab = function(tab) {
   currentAdminTab=tab;
-  ['actions','settings','players','seeding'].forEach(t2=>{
+  ['actions','settings','players','seeding','ranking'].forEach(t2=>{
     const el=document.getElementById('admin-'+t2); if(el) el.style.display=t2===tab?'block':'none';
     const btn=document.getElementById('subtab-'+t2); if(btn) btn.className='subtab '+(t2===tab?'active':'inactive');
   });
@@ -1832,9 +1897,18 @@ function computeStandings(){
 }
 
 function sortGroup(g){
+  // Get seed lookup from players
+  const players = getPlayers();
+  const seedMap = {};
+  players.forEach(p => { seedMap[p.nickname] = p.seed || 999; });
   return Object.keys(g).sort((a,b)=>{
     const pa=g[a],pb=g[b];
-    return(pb.points-pa.points)||(pb.totalWins-pa.totalWins)||(pb.blackWins-pa.blackWins)||(pb.tieBreak-pa.tieBreak)||((pb.headToHead[a]||0)-(pa.headToHead[b]||0));
+    // 1. Points 2. Victoires 3. Victoires Noirs 4. H2H 5. Seed
+    return(pb.points-pa.points)
+      ||(pb.totalWins-pa.totalWins)
+      ||(pb.blackWins-pa.blackWins)
+      ||((pb.headToHead[a]||0)-(pa.headToHead[b]||0))
+      ||((seedMap[a]||999)-(seedMap[b]||999));
   });
 }
 
@@ -1854,14 +1928,31 @@ function discoverFinalists(standings,total){
     });
     if(!cands.length) break;
     const norm=(s,f)=>s.matches>0?s[f]/s.matches:0;
-    cands.sort((a,b)=>(norm(b.stats,'points')-norm(a.stats,'points'))||(norm(b.stats,'tieBreak')-norm(a.stats,'tieBreak'))||(norm(b.stats,'totalWins')-norm(a.stats,'totalWins'))||(norm(b.stats,'blackWins')-norm(a.stats,'blackWins')));
+    // Global: Points/M → Wins/M → BlackWins/M → Buchholz/M → Seed
+    const players2 = getPlayers();
+    const seedMap2 = {};
+    players2.forEach(p => { seedMap2[p.nickname] = p.seed || 999; });
+    cands.sort((a,b)=>
+      (norm(b.stats,'points')-norm(a.stats,'points'))
+      ||(norm(b.stats,'totalWins')-norm(a.stats,'totalWins'))
+      ||(norm(b.stats,'blackWins')-norm(a.stats,'blackWins'))
+      ||(norm(b.stats,'tieBreak')-norm(a.stats,'tieBreak'))
+      ||((seedMap2[a.player]||999)-(seedMap2[b.player]||999))
+    );
     finalists.push(...cands.slice(0,total-finalists.length));
     layer++;
   }
   finalists.sort((a,b)=>{
     if(a.groupRank!==b.groupRank) return a.groupRank-b.groupRank;
     const norm=(s,f)=>s.matches>0?s[f]/s.matches:0;
-    return(norm(b.stats,'points')-norm(a.stats,'points'))||(norm(b.stats,'tieBreak')-norm(a.stats,'tieBreak'))||(norm(b.stats,'totalWins')-norm(a.stats,'totalWins'))||(norm(b.stats,'blackWins')-norm(a.stats,'blackWins'));
+    const players3 = getPlayers();
+    const seedMap3 = {};
+    players3.forEach(p => { seedMap3[p.nickname] = p.seed || 999; });
+    return(norm(b.stats,'points')-norm(a.stats,'points'))
+      ||(norm(b.stats,'totalWins')-norm(a.stats,'totalWins'))
+      ||(norm(b.stats,'blackWins')-norm(a.stats,'blackWins'))
+      ||(norm(b.stats,'tieBreak')-norm(a.stats,'tieBreak'))
+      ||((seedMap3[a.player]||999)-(seedMap3[b.player]||999));
   });
   return finalists;
 }
@@ -1938,13 +2029,23 @@ function renderGroups(){
   const qualifiedPlayers = new Set(finalists.map(f => f.player));
   container.innerHTML=groupNames.map(grp=>{
     const g=standings[grp],sorted=sortGroup(g);
+    // Sort players for display: seed first (tête de série en haut), then by current ranking
+    const players4 = getPlayers();
+    const seedMap4 = {};
+    players4.forEach(p => { seedMap4[p.nickname] = p.seed || 999; });
+    // Display order: seed ascending (best seeds first), but keep ranking numbers from sortGroup
+    const displayOrder = [...sorted].sort((a,b) => (seedMap4[a]||999)-(seedMap4[b]||999));
     return `<div class="card"><h3>${grp.toUpperCase()}</h3><div class="scroll-x"><table class="rank-table">
-      <thead><tr><th>#</th><th>${t('rank_player')}</th><th>${t('rank_pts')}</th><th>${t('rank_mj')}</th><th>${t('rank_v')}</th><th>${t('rank_vn')}</th><th>${t('rank_tb')}</th></tr></thead>
-      <tbody>${sorted.map((p,i)=>`<tr class="${qualifiedPlayers.has(p)?'qualified':''}">
-        <td><strong style="color:${qualifiedPlayers.has(p)?'var(--gold)':'var(--gray)'}">${i+1}</td>
-        <td>${esc(p)}</td><td>${g[p].points}</td>
-        <td>${g[p].matches}</td><td>${g[p].totalWins}</td><td>${g[p].blackWins}</td><td>${g[p].tieBreak}</td>
-      </tr>`).join('')}</tbody></table></div></div>`;
+      <thead><tr><th>#</th><th>${t('rank_player')}</th><th>${t('rank_pts')}</th><th>${t('rank_mj')}</th><th>${t('rank_v')}</th><th>${t('rank_vn')}</th><th>TB</th></tr></thead>
+      <tbody>${displayOrder.map((p)=>{
+        const rank = sorted.indexOf(p)+1;
+        const isSeed = (seedMap4[p]||999) <= Object.keys(g).length;
+        return `<tr class="${qualifiedPlayers.has(p)?'qualified':''}">
+        <td><strong style="color:${qualifiedPlayers.has(p)?'var(--gold)':'var(--gray)'}">${rank}</td>
+        <td>${esc(p)}${isSeed?` <span style="font-size:10px;color:var(--gold);font-weight:700">★</span>`:''}</td>
+        <td>${g[p].points}</td>
+        <td>${g[p].matches}</td><td>${g[p].totalWins}</td><td>${g[p].blackWins}</td><td>${g[p].tieBreak.toFixed(1)}</td>
+      </tr>`;}).join('')}</tbody></table></div></div>`;
   }).join('')+`<div style="font-size:11px;color:#aaa;text-align:center;padding:8px 0 4px">${t('rank_legend')}</div>`;
 }
 
@@ -2070,6 +2171,7 @@ function renderAdmin(){
   seedOrder=[...players].sort((a,b)=>(a.seed||0)-(b.seed||0));
   renderSeedList();
   document.getElementById('seed-info').textContent=`${players.length} → ${numGroups} groupe${numGroups>1?'s':''} ~${ppg}`;
+  if(currentAdminTab==='ranking') renderRanking();
   if(currentAdminTab==='actions'){
     // Show subscriber count
     const subsCount = Object.keys(state?.subscriptions || {}).length;

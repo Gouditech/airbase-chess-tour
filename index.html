@@ -1100,20 +1100,52 @@ window.changePin = async function() {
 function renderRanking() {
   const standings = computeStandings();
   const players = getPlayers();
-  const seedMap = {};
-  players.forEach(p => { seedMap[p.nickname] = p.seed || 999; });
-  const total = state?.settings?.finalistsCount || 8;
-  const fin = discoverFinalists(standings, 999); // get all players ranked
-
   const el = document.getElementById('ranking-content');
   if (!el) return;
 
-  if (!fin.length) {
+  if (!players.length) {
     el.innerHTML = `<div style="color:var(--gray);text-align:center;padding:16px">${t('groups_empty')}</div>`;
     return;
   }
 
-  const qualifiedSet = new Set(discoverFinalists(standings, total).map(f => f.player));
+  const seedMap = {};
+  players.forEach(p => { seedMap[p.nickname] = typeof p.seed === 'number' ? p.seed + 1 : '—'; });
+
+  const hasGroups = Object.keys(standings).length > 0;
+  const total = state?.settings?.finalistsCount || 8;
+
+  let rows = [];
+
+  if (hasGroups) {
+    // Full ranking from discoverFinalists
+    const fin = discoverFinalists(standings, 9999);
+    const qualifiedSet = new Set(discoverFinalists(standings, total).map(f => f.player));
+    rows = fin.map((f, i) => {
+      const s = f.stats;
+      const qualified = qualifiedSet.has(f.player);
+      return `<tr class="${qualified ? 'qualified' : ''}">
+        <td><strong style="color:${qualified ? 'var(--gold)' : 'var(--gray)'}">${i+1}</strong></td>
+        <td>${esc(f.player)}</td>
+        <td style="color:var(--gray);font-size:11px">${f.group}</td>
+        <td>${s.points}</td>
+        <td>${s.matches}</td>
+        <td>${s.totalWins}</td>
+        <td>${s.blackWins}</td>
+        <td>${s.tieBreak.toFixed(1)}</td>
+        <td style="color:var(--gray)">${seedMap[f.player]||'—'}</td>
+      </tr>`;
+    });
+  } else {
+    // No groups yet — show players sorted by seed
+    const sorted = [...players].sort((a,b) => (a.seed||999)-(b.seed||999));
+    rows = sorted.map((p, i) => `<tr>
+      <td><strong style="color:var(--gray)">${i+1}</strong></td>
+      <td>${esc(p.nickname)}</td>
+      <td style="color:var(--gray);font-size:11px">—</td>
+      <td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>
+      <td style="color:var(--gray)">${i+1}</td>
+    </tr>`);
+  }
 
   el.innerHTML = `<div class="scroll-x"><table class="rank-table">
     <thead><tr>
@@ -1125,26 +1157,11 @@ function renderRanking() {
       <th>${t('rank_v')}</th>
       <th>${t('rank_vn')}</th>
       <th>TB</th>
-      <th>★</th>
+      <th>Seed</th>
     </tr></thead>
-    <tbody>${fin.map((f, i) => {
-      const s = f.stats;
-      const qualified = qualifiedSet.has(f.player);
-      const norm = (field) => s.matches > 0 ? (s[field]/s.matches).toFixed(2) : '0.00';
-      return `<tr class="${qualified ? 'qualified' : ''}">
-        <td><strong style="color:${qualified ? 'var(--gold)' : 'var(--gray)'}">${i+1}</strong></td>
-        <td>${esc(f.player)}</td>
-        <td style="color:var(--gray);font-size:11px">${f.group}</td>
-        <td>${s.points}</td>
-        <td>${s.matches}</td>
-        <td>${s.totalWins}</td>
-        <td>${s.blackWins}</td>
-        <td>${s.tieBreak.toFixed(1)}</td>
-        <td style="color:var(--gold)">${seedMap[f.player] !== 999 ? seedMap[f.player] : ''}</td>
-      </tr>`;
-    }).join('')}</tbody>
+    <tbody>${rows.join('')}</tbody>
   </table></div>
-  <div style="font-size:11px;color:var(--gray);margin-top:8px">★ = Tête de série · TB = Buchholz · ${t('rank_legend')}</div>`;
+  <div style="font-size:11px;color:var(--gray);margin-top:8px">TB = Buchholz · ${t('rank_legend')}</div>`;
 }
 
 window.showAdminTab = function(tab) {
@@ -2039,10 +2056,9 @@ function renderGroups(){
       <thead><tr><th>#</th><th>${t('rank_player')}</th><th>${t('rank_pts')}</th><th>${t('rank_mj')}</th><th>${t('rank_v')}</th><th>${t('rank_vn')}</th><th>TB</th></tr></thead>
       <tbody>${displayOrder.map((p)=>{
         const rank = sorted.indexOf(p)+1;
-        const isSeed = (seedMap4[p]||999) <= Object.keys(g).length;
         return `<tr class="${qualifiedPlayers.has(p)?'qualified':''}">
         <td><strong style="color:${qualifiedPlayers.has(p)?'var(--gold)':'var(--gray)'}">${rank}</td>
-        <td>${esc(p)}${isSeed?` <span style="font-size:10px;color:var(--gold);font-weight:700">★</span>`:''}</td>
+        <td>${esc(p)}</td>
         <td>${g[p].points}</td>
         <td>${g[p].matches}</td><td>${g[p].totalWins}</td><td>${g[p].blackWins}</td><td>${g[p].tieBreak.toFixed(1)}</td>
       </tr>`;}).join('')}</tbody></table></div></div>`;

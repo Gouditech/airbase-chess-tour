@@ -2259,7 +2259,7 @@ function renderAdmin(){
           <td>${(s.blackWins/m).toFixed(2)}</td>
           <td>${(s.tieBreak/m).toFixed(2)}</td>
           <td style="font-size:10px;color:var(--gray)">${h2hStr}</td>
-          <td style="color:var(--gray)">${seedMapF[f.player] !== undefined ? seedMapF[f.player]+1 : '—'}</td>
+          <td style="color:var(--gray)">${seedMapF[f.player] !== null && seedMapF[f.player] !== undefined ? seedMapF[f.player] : '—'}</td>
         </tr>`;
       }).join('')}</tbody>
     </table></div>`;}

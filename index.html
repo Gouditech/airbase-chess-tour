@@ -1052,6 +1052,7 @@ window.adminLogin = async function() {
   else { showMsg('login-msg', t('admin_pin_err'), false); return; }
   document.getElementById('admin-login').style.display='none';
   document.getElementById('admin-dashboard').style.display='block';
+  sessionStorage.setItem('abct-session-pin', document.getElementById('admin-pin-input').value);
   applyMaintenanceOverlay();
   showAdminTab('actions');
   renderAdmin();
@@ -1738,20 +1739,36 @@ window.sendPushToAll = async function() {
   const msgEl = document.getElementById('notif-admin-msg');
   const msg = msgEl?.value?.trim();
   if (!msg) { showMsg('notif-admin-msg-result', t('notif_enter_msg'), false); return; }
-  // Store notification in Firebase — subscribers will receive it via their own polling
-  // or via a backend push service. For now, store in Firebase for clients to display.
-  const notifId = genId();
-  await set(ref(db, 'notifications/' + notifId), {
-    title: state?.settings?.name || 'Air Base Chess Tour',
-    body: msg,
-    timestamp: Date.now(),
-    sent: true
-  });
-  // Count subscribers
+
   const subs = state?.subscriptions || {};
-  const count = Object.keys(subs).length;
-  showMsg('notif-admin-msg-result', `${t('notif_sent')} ${count}${count > 1 ? t('notif_subscribers') : t('notif_subscriber')}.`);
-  msgEl.value = '';
+  const tokens = Object.values(subs).map(s => s.endpoint).filter(Boolean);
+  const count = tokens.length;
+
+  if (!count) { showMsg('notif-admin-msg-result', '0 abonné.', false); return; }
+
+  const title = state?.settings?.name || 'Air Base Chess Tour';
+  const adminSecret = sessionStorage.getItem('abct-session-pin') || '';
+
+  try {
+    showMsg('notif-admin-msg-result', '📤 Envoi en cours...');
+    const res = await fetch('/.netlify/functions/send-notification', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secret: adminSecret, tokens, title, body: msg })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      // Also store in Firebase for in-app display
+      const notifId = genId();
+      await set(ref(db, 'notifications/' + notifId), { title, body: msg, timestamp: Date.now(), sent: true });
+      showMsg('notif-admin-msg-result', `${t('notif_sent')} ${data.success}/${count}.`);
+      msgEl.value = '';
+    } else {
+      showMsg('notif-admin-msg-result', 'Erreur: ' + (data.error || 'Unknown'), false);
+    }
+  } catch(e) {
+    showMsg('notif-admin-msg-result', 'Erreur: ' + e.message, false);
+  }
 };
 
 window.copyWhatsApp = async function() {
@@ -1859,6 +1876,7 @@ function playerEditForm(p) {
     <div style="display:flex;gap:8px">
       <button onclick="saveEditPlayer('${p.id}')" style="flex:1;padding:8px;border:none;border-radius:8px;background:var(--green);color:#fff;font-weight:700;cursor:pointer;font-size:13px">✓ Enregistrer</button>
       <button onclick="cancelEditPlayer()" style="padding:8px 14px;border:none;border-radius:8px;background:#eee;color:#666;font-weight:600;cursor:pointer;font-size:13px">✕</button>
+      <button onclick="confirmUnregister('${p.id}','${esc(p.nickname)}')" style="padding:8px 14px;border:none;border-radius:8px;background:var(--red);color:#fff;font-weight:700;cursor:pointer;font-size:13px">🗑️</button>
     </div>
   </div>`;
 }
@@ -1902,10 +1920,7 @@ function renderHome(){
           <div style="font-size:12px;color:#555;margin-top:2px">${esc(p.name)}${p.sector?' · <span style="color:var(--gray)">'+esc(p.sector)+'</span>':''}</div>
           ${p.group?`<div style="font-size:11px;color:var(--gold);margin-top:2px;font-weight:600">${esc(p.group)}</div>`:''}
         </div>
-        ${isReg?`<div style="display:flex;gap:6px;align-items:center">
-          <button onclick="startEditPlayer('${p.id}')" style="border:none;background:none;color:var(--gold);cursor:pointer;font-size:15px;padding:2px 4px" title="Modifier">✏️</button>
-          <button onclick="confirmUnregister('${p.id}','${esc(p.nickname)}')" style="border:none;background:none;color:var(--red);cursor:pointer;font-size:15px;padding:2px 4px" title="Se désinscrire">🗑️</button>
-        </div>`:''}
+        ${isReg?`<button onclick="startEditPlayer('${p.id}')" style="border:none;background:none;color:var(--gold);cursor:pointer;font-size:15px;padding:2px 4px" title="Modifier">✏️</button>`:''}
       </div>
       ${isEditing ? playerEditForm(p) : ''}
     </div>`;

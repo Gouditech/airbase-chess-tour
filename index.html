@@ -1136,7 +1136,7 @@ function renderRanking() {
     });
   } else {
     // No groups yet — show players sorted by seed
-    const sorted = [...players].sort((a,b) => (a.seed||999)-(b.seed||999));
+    const sorted = [...players].sort((a,b) => (typeof a.seed==='number'?a.seed:999)-(typeof b.seed==='number'?b.seed:999));
     rows = sorted.map((p, i) => `<tr>
       <td><strong style="color:var(--gray)">${i+1}</strong></td>
       <td>${esc(p.nickname)}</td>
@@ -1924,7 +1924,7 @@ function sortGroup(g){
       ||(pb.totalWins-pa.totalWins)
       ||(pb.blackWins-pa.blackWins)
       ||((pb.headToHead[a]||0)-(pa.headToHead[b]||0))
-      ||((seedMap[a]||999)-(seedMap[b]||999));
+      ||((seedMap[a] !== undefined ? seedMap[a] : 999)-(seedMap[b] !== undefined ? seedMap[b] : 999));
   });
 }
 
@@ -1953,7 +1953,7 @@ function discoverFinalists(standings,total){
       ||(norm(b.stats,'totalWins')-norm(a.stats,'totalWins'))
       ||(norm(b.stats,'blackWins')-norm(a.stats,'blackWins'))
       ||(norm(b.stats,'tieBreak')-norm(a.stats,'tieBreak'))
-      ||((seedMap2[a.player]||999)-(seedMap2[b.player]||999))
+      ||((seedMap2[a.player] !== undefined ? seedMap2[a.player] : 999)-(seedMap2[b.player] !== undefined ? seedMap2[b.player] : 999))
     );
     finalists.push(...cands.slice(0,total-finalists.length));
     layer++;
@@ -1968,7 +1968,7 @@ function discoverFinalists(standings,total){
       ||(norm(b.stats,'totalWins')-norm(a.stats,'totalWins'))
       ||(norm(b.stats,'blackWins')-norm(a.stats,'blackWins'))
       ||(norm(b.stats,'tieBreak')-norm(a.stats,'tieBreak'))
-      ||((seedMap3[a.player]||999)-(seedMap3[b.player]||999));
+      ||((seedMap3[a.player] !== undefined ? seedMap3[a.player] : 999)-(seedMap3[b.player] !== undefined ? seedMap3[b.player] : 999));
   });
   return finalists;
 }
@@ -2161,7 +2161,7 @@ function renderAdmin(){
   const numGroups=Math.ceil(players.length/ppg);
   document.getElementById('set-ppg-hint').textContent=`${players.length} → ${numGroups} groupe${numGroups>1?'s':''} ~${ppg}`;
   document.getElementById('admin-player-count').textContent=players.length;
-  document.getElementById('admin-player-list').innerHTML=players.sort((a,b)=>(a.seed||0)-(b.seed||0)).map(p=>{
+  document.getElementById('admin-player-list').innerHTML=players.sort((a,b)=>(typeof a.seed==='number'?a.seed:999)-(typeof b.seed==='number'?b.seed:999)).map(p=>{
     const isEditing = editingPlayerId===p.id;
     return `<div class="seed-item" style="flex-direction:column;align-items:stretch">
       <div style="display:flex;align-items:center;gap:8px;width:100%">
@@ -2176,7 +2176,7 @@ function renderAdmin(){
     </div>`;
   }).join('')||`<div style="color:var(--gray);font-size:13px">${t('no_matches')}</div>`;
   // Always sync seedOrder from Firebase to reflect saved order
-  seedOrder=[...players].sort((a,b)=>(a.seed||0)-(b.seed||0));
+  seedOrder=[...players].sort((a,b)=>(typeof a.seed==='number'?a.seed:999)-(typeof b.seed==='number'?b.seed:999));
   renderSeedList();
   document.getElementById('seed-info').textContent=`${players.length} → ${numGroups} groupe${numGroups>1?'s':''} ~${ppg}`;
   if(currentAdminTab==='ranking') renderRanking();
@@ -2245,6 +2245,7 @@ function renderAdmin(){
       </tr></thead>
       <tbody>${fin.map((f,i)=>{
         const s=f.stats;
+        const m=s.matches||1;
         const h2h=s.headToHead||{};
         const h2hStr=Object.keys(h2h).length?Object.keys(h2h).map(o=>esc(o)+':'+h2h[o]).join(', '):'—';
         return `<tr>
@@ -2252,13 +2253,13 @@ function renderAdmin(){
           <td>${esc(f.player)}</td>
           <td style="color:var(--gray)">${f.groupRank}</td>
           <td style="color:var(--gray);font-size:11px">${esc(f.group.replace('Groupe ','G'))}</td>
-          <td>${s.points}</td>
+          <td>${(s.points/m).toFixed(2)}</td>
           <td>${s.matches}</td>
-          <td>${s.totalWins}</td>
-          <td>${s.blackWins}</td>
-          <td>${s.tieBreak.toFixed(1)}</td>
+          <td>${(s.totalWins/m).toFixed(2)}</td>
+          <td>${(s.blackWins/m).toFixed(2)}</td>
+          <td>${(s.tieBreak/m).toFixed(2)}</td>
           <td style="font-size:10px;color:var(--gray)">${h2hStr}</td>
-          <td style="color:var(--gray)">${seedMapF[f.player]||'—'}</td>
+          <td style="color:var(--gray)">${seedMapF[f.player] !== undefined ? seedMapF[f.player]+1 : '—'}</td>
         </tr>`;
       }).join('')}</tbody>
     </table></div>`;}
@@ -2295,12 +2296,12 @@ onValue(ref(db),(snapshot)=>{
   // Only reset seedOrder from Firebase if not actively editing seeding
   // (prevents Firebase sync from undoing user's unsaved reordering)
   if (currentPage !== 'admin' || currentAdminTab !== 'seeding') {
-    seedOrder=[...getPlayers()].sort((a,b)=>(a.seed||0)-(b.seed||0));
+    seedOrder=[...getPlayers()].sort((a,b)=>(typeof a.seed==='number'?a.seed:999)-(typeof b.seed==='number'?b.seed:999));
   } else {
     // Seeding tab open: only sync if player list changed (additions/removals)
     const freshPlayers = getPlayers();
     if (freshPlayers.length !== seedOrder.length) {
-      seedOrder=[...freshPlayers].sort((a,b)=>(a.seed||0)-(b.seed||0));
+      seedOrder=[...freshPlayers].sort((a,b)=>(typeof a.seed==='number'?a.seed:999)-(typeof b.seed==='number'?b.seed:999));
     }
   }
   applyMaintenanceOverlay();

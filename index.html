@@ -212,7 +212,6 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
       <button class="subtab inactive" onclick="showAdminTab('settings')" id="subtab-settings">Réglages</button>
       <button class="subtab inactive" onclick="showAdminTab('players')" id="subtab-players">Joueurs</button>
       <button class="subtab inactive" onclick="showAdminTab('seeding')" id="subtab-seeding">Groupes</button>
-      <button class="subtab inactive" onclick="showAdminTab('ranking')" id="subtab-ranking">Classement</button>
     </div>
     <div id="admin-settings" class="card">
       <h2 id="settings-title">Paramètres</h2>
@@ -291,7 +290,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
         <button class="btn btn-green" style="margin-top:8px" onclick="copyWhatsApp()" id="copy-whatsapp-btn">📋 Copier le message</button>
         <div id="whatsapp-msg-result"></div>
       </div>
-      <div id="admin-ranking" class="card" style="display:none">
+      <div id="admin-ranking" class="card" style="display:none;visibility:hidden;height:0;overflow:hidden">
       <h2 id="ranking-title">Classement global</h2>
       <div id="ranking-content"></div>
     </div>
@@ -1166,7 +1165,7 @@ function renderRanking() {
 
 window.showAdminTab = function(tab) {
   currentAdminTab=tab;
-  ['actions','settings','players','seeding','ranking'].forEach(t2=>{
+  ['actions','settings','players','seeding'].forEach(t2=>{
     const el=document.getElementById('admin-'+t2); if(el) el.style.display=t2===tab?'block':'none';
     const btn=document.getElementById('subtab-'+t2); if(btn) btn.className='subtab '+(t2===tab?'active':'inactive');
   });
@@ -1266,7 +1265,7 @@ window.moveDown = function(idx) {
 window.assignGroups = async function() {
   const ppg=state.settings.playersPerGroup||5;
   // Re-read seedOrder from current state to get latest saved order
-  const freshPlayers = getPlayers().sort((a,b)=>(a.seed||0)-(b.seed||0));
+  const freshPlayers = getPlayers().sort((a,b)=>(typeof a.seed==='number'?a.seed:999)-(typeof b.seed==='number'?b.seed:999));
   // Merge with in-memory seedOrder: if lengths match, use in-memory (has unsaved changes)
   // If seeds in Firebase match seedOrder, use seedOrder; otherwise use Firebase order
   const workingOrder = seedOrder.length === freshPlayers.length ? seedOrder : freshPlayers;
@@ -1917,7 +1916,7 @@ function sortGroup(g){
   // Get seed lookup from players
   const players = getPlayers();
   const seedMap = {};
-  players.forEach(p => { seedMap[p.nickname] = p.seed || 999; });
+  players.forEach(p => { seedMap[p.nickname] = typeof p.seed === 'number' ? p.seed : 999; });
   return Object.keys(g).sort((a,b)=>{
     const pa=g[a],pb=g[b];
     // 1. Points 2. Victoires 3. Victoires Noirs 4. H2H 5. Seed
@@ -1948,7 +1947,7 @@ function discoverFinalists(standings,total){
     // Global: Points/M → Wins/M → BlackWins/M → Buchholz/M → Seed
     const players2 = getPlayers();
     const seedMap2 = {};
-    players2.forEach(p => { seedMap2[p.nickname] = p.seed || 999; });
+    players2.forEach(p => { seedMap2[p.nickname] = typeof p.seed === 'number' ? p.seed : 999; });
     cands.sort((a,b)=>
       (norm(b.stats,'points')-norm(a.stats,'points'))
       ||(norm(b.stats,'totalWins')-norm(a.stats,'totalWins'))
@@ -1964,7 +1963,7 @@ function discoverFinalists(standings,total){
     const norm=(s,f)=>s.matches>0?s[f]/s.matches:0;
     const players3 = getPlayers();
     const seedMap3 = {};
-    players3.forEach(p => { seedMap3[p.nickname] = p.seed || 999; });
+    players3.forEach(p => { seedMap3[p.nickname] = typeof p.seed === 'number' ? p.seed : 999; });
     return(norm(b.stats,'points')-norm(a.stats,'points'))
       ||(norm(b.stats,'totalWins')-norm(a.stats,'totalWins'))
       ||(norm(b.stats,'blackWins')-norm(a.stats,'blackWins'))
@@ -2046,18 +2045,11 @@ function renderGroups(){
   const qualifiedPlayers = new Set(finalists.map(f => f.player));
   container.innerHTML=groupNames.map(grp=>{
     const g=standings[grp],sorted=sortGroup(g);
-    // Sort players for display: seed first (tête de série en haut), then by current ranking
-    const players4 = getPlayers();
-    const seedMap4 = {};
-    players4.forEach(p => { seedMap4[p.nickname] = p.seed || 999; });
-    // Display order: seed ascending (best seeds first), but keep ranking numbers from sortGroup
-    const displayOrder = [...sorted].sort((a,b) => (seedMap4[a]||999)-(seedMap4[b]||999));
     return `<div class="card"><h3>${grp.toUpperCase()}</h3><div class="scroll-x"><table class="rank-table">
       <thead><tr><th>#</th><th>${t('rank_player')}</th><th>${t('rank_pts')}</th><th>${t('rank_mj')}</th><th>${t('rank_v')}</th><th>${t('rank_vn')}</th><th>TB</th></tr></thead>
-      <tbody>${displayOrder.map((p)=>{
-        const rank = sorted.indexOf(p)+1;
+      <tbody>${sorted.map((p, i)=>{
         return `<tr class="${qualifiedPlayers.has(p)?'qualified':''}">
-        <td><strong style="color:${qualifiedPlayers.has(p)?'var(--gold)':'var(--gray)'}">${rank}</td>
+        <td><strong style="color:${qualifiedPlayers.has(p)?'var(--gold)':'var(--gray)'}">${i+1}</strong></td>
         <td>${esc(p)}</td>
         <td>${g[p].points}</td>
         <td>${g[p].matches}</td><td>${g[p].totalWins}</td><td>${g[p].blackWins}</td><td>${g[p].tieBreak.toFixed(1)}</td>
@@ -2235,9 +2227,40 @@ function renderAdmin(){
     const fin=discoverFinalists(standings,s.finalistsCount||8);
     const fp=document.getElementById('finalists-preview');
     if(!fin.length){fp.innerHTML=`<div style="color:var(--gray);font-size:13px">${t('no_matches')}</div>`;}
-    else{fp.innerHTML=`<div class="scroll-x"><table class="rank-table">
-      <thead><tr><th>#</th><th>${t('rank_player')}</th><th>${t('group_rank')}</th><th>${t('group_grp')}</th><th>${t('pts_per_match')}</th></tr></thead>
-      <tbody>${fin.map((f,i)=>`<tr><td><strong style="color:var(--gold)">${i+1}</td><td>${esc(f.player)}</td><td>${f.groupRank}</td><td>${esc(f.group.replace('Groupe ','G'))}</td><td>${f.stats.matches>0?(f.stats.points/f.stats.matches).toFixed(2):'—'}</td></tr>`).join('')}</tbody>
+    else{const seedMapF = {};
+      getPlayers().forEach(p => { seedMapF[p.nickname] = typeof p.seed === 'number' ? p.seed + 1 : '—'; });
+      fp.innerHTML=`<div class="scroll-x"><table class="rank-table">
+      <thead><tr>
+        <th>#</th>
+        <th>${t('rank_player')}</th>
+        <th>Rg</th>
+        <th>Grp</th>
+        <th>Pts</th>
+        <th>MJ</th>
+        <th>V</th>
+        <th>VN</th>
+        <th>TB</th>
+        <th>H2H</th>
+        <th>Seed</th>
+      </tr></thead>
+      <tbody>${fin.map((f,i)=>{
+        const s=f.stats;
+        const h2h=s.headToHead||{};
+        const h2hStr=Object.keys(h2h).length?Object.keys(h2h).map(o=>esc(o)+':'+h2h[o]).join(', '):'—';
+        return `<tr>
+          <td><strong style="color:var(--gold)">${i+1}</strong></td>
+          <td>${esc(f.player)}</td>
+          <td style="color:var(--gray)">${f.groupRank}</td>
+          <td style="color:var(--gray);font-size:11px">${esc(f.group.replace('Groupe ','G'))}</td>
+          <td>${s.points}</td>
+          <td>${s.matches}</td>
+          <td>${s.totalWins}</td>
+          <td>${s.blackWins}</td>
+          <td>${s.tieBreak.toFixed(1)}</td>
+          <td style="font-size:10px;color:var(--gray)">${h2hStr}</td>
+          <td style="color:var(--gray)">${seedMapF[f.player]||'—'}</td>
+        </tr>`;
+      }).join('')}</tbody>
     </table></div>`;}
   }
 }

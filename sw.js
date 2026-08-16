@@ -1,5 +1,5 @@
 // Air Base Chess Tour — Service Worker
-const CACHE_NAME = 'abct-v3';
+const CACHE_NAME = 'abct-v4';
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -32,16 +32,18 @@ self.addEventListener('push', event => {
     body: data.body || 'Nouveau message du tournoi',
     icon: data.icon || '/icon-192.jpg',
     badge: '/icon-192.jpg',
-    data: data.url || 'https://airbasechess.netlify.app/',
+    data: data.url || 'https://airbasechesstour.netlify.app/',
     vibrate: [200, 100, 200],
-    tag: 'abct-notification'
+    tag: 'abct-notification',
+    requireInteraction: true,
+    renotify: true
   };
   event.waitUntil(self.registration.showNotification(title, options));
 });
 
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  const url = event.notification.data || 'https://airbasechess.netlify.app/';
+  const url = event.notification.data || 'https://airbasechesstour.netlify.app/';
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
       for (const client of clientList) {

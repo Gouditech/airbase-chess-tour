@@ -201,7 +201,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
   <div id="admin-login" class="card">
     <h2 id="admin-login-title">Accès administrateur</h2>
     <div class="gap">
-      <div class="form-group"><label id="admin-pin-label">Code PIN</label><input id="admin-pin-input" type="password" inputmode="numeric" autocomplete="off"></div>
+      <div class="form-group"><label id="admin-pin-label">Code PIN</label><input id="admin-pin-input" type="text" inputmode="numeric" autocomplete="off" style="-webkit-text-security:disc;text-security:disc"></div>
       <button class="btn btn-gold" onclick="adminLogin()" id="admin-login-btn">Connexion</button>
       <div id="login-msg"></div>
       <p id="admin-pin-hint" style="font-size:11px;color:#aaa;text-align:center"></p>
@@ -229,9 +229,9 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
         <div id="settings-msg"></div>
         <div style="border-top:1px solid #eee;margin-top:8px;padding-top:12px">
           <div style="font-size:13px;font-weight:700;margin-bottom:10px" id="pin-change-title">Modifier le PIN</div>
-          <div class="form-group"><label id="pin-current-label">PIN actuel</label><input id="pin-current" type="password" inputmode="numeric" autocomplete="off"></div>
-          <div class="form-group"><label id="pin-new-label">Nouveau PIN</label><input id="pin-new" type="password" inputmode="numeric" autocomplete="off"></div>
-          <div class="form-group"><label id="pin-confirm-label">Confirmer</label><input id="pin-confirm" type="password" inputmode="numeric" autocomplete="off"></div>
+          <div class="form-group"><label id="pin-current-label">PIN actuel</label><input id="pin-current" type="text" inputmode="numeric" autocomplete="off" style="-webkit-text-security:disc;text-security:disc"></div>
+          <div class="form-group"><label id="pin-new-label">Nouveau PIN</label><input id="pin-new" type="text" inputmode="numeric" autocomplete="off" style="-webkit-text-security:disc;text-security:disc"></div>
+          <div class="form-group"><label id="pin-confirm-label">Confirmer</label><input id="pin-confirm" type="text" inputmode="numeric" autocomplete="off" style="-webkit-text-security:disc;text-security:disc"></div>
           <button class="btn btn-gray" onclick="changePin()" id="change-pin-btn">Modifier le PIN</button>
           <div id="pin-msg"></div>
         </div>
@@ -310,7 +310,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
   <div id="maint-text" style="color:#aaa;font-size:14px;text-align:center;line-height:1.6">Le site est temporairement indisponible.<br>Revenez dans quelques instants.</div>
   <div style="margin-top:40px;border-top:1px solid #333;padding-top:20px;width:100%;max-width:280px">
     <div style="font-size:11px;color:#555;text-align:center;margin-bottom:10px">Accès administrateur</div>
-    <input id="maint-pin" type="password" inputmode="numeric" autocomplete="off" placeholder="Code PIN" style="width:100%;padding:10px 12px;border:1px solid #333;border-radius:8px;background:#222;color:#fff;font-size:14px;text-align:center;margin-bottom:8px">
+    <input id="maint-pin" type="text" inputmode="numeric" autocomplete="off" placeholder="Code PIN" style="width:100%;padding:10px 12px;border:1px solid #333;border-radius:8px;background:#222;color:#fff;font-size:14px;text-align:center;margin-bottom:8px;-webkit-text-security:disc;text-security:disc">
     <button onclick="maintAdminLogin()" style="width:100%;padding:10px;border:none;border-radius:8px;background:var(--gold);color:var(--dark);font-weight:700;font-size:13px;cursor:pointer">Connexion admin</button>
     <div id="maint-pin-msg" style="font-size:12px;color:var(--red);text-align:center;margin-top:6px"></div>
   </div>
@@ -443,7 +443,13 @@ async function unsubscribeFromNotifications() {
 function updateNotifBtn() {
   const btn = document.getElementById('notif-toggle-btn');
   const testBtn = document.getElementById('notif-test-btn');
-  const on = localStorage.getItem('abct-notif') === 'on';
+  let on = localStorage.getItem('abct-notif') === 'on';
+  // Sync: if browser revoked permission, reset local state
+  if (on && 'Notification' in window && Notification.permission !== 'granted') {
+    localStorage.removeItem('abct-notif');
+    on = false;
+    showMsg('notif-msg', t('notif_denied'), false);
+  }
   if (btn) {
     btn.textContent = on ? t('notif_on') : t('notif_off');
     btn.style.background = on ? 'var(--green)' : '#EBEBEB';
@@ -553,7 +559,7 @@ const T = {
     late_msg:"Certains matchs sont en retard, jouez rapidement !",
     pending_msg:"Certains matchs sont encore en attente, pensez à organiser vos parties rapidement !",
     notif_unsupported:"Notifications non supportées sur ce navigateur.",
-    notif_denied:"Permission refusée.",
+    notif_denied:"Permission refusée. Ouvre les réglages du site (🔒 dans la barre d'adresse) → Autorisations → Notifications → Autoriser, puis recharge la page.",
     notif_on:"🔔 Désactiver les notifications",
     notif_off:"🔕 Activer les notifications",
     notif_enabled:"✓ Notifications activées !",
@@ -683,7 +689,7 @@ const T = {
     late_msg:"Einige Partien sind verspätet, spielen Sie schnell!",
     pending_msg:"Einige Partien sind noch ausstehend, bitte spielen Sie schnell!",
     notif_unsupported:"Benachrichtigungen nicht unterstützt.",
-    notif_denied:"Berechtigung verweigert.",
+    notif_denied:"Berechtigung verweigert. Öffne die Website-Einstellungen (🔒 in der Adressleiste) → Berechtigungen → Benachrichtigungen → Zulassen, dann lade die Seite neu.",
     notif_on:"🔔 Benachrichtigungen deaktivieren",
     notif_off:"🔕 Benachrichtigungen aktivieren",
     notif_enabled:"✓ Benachrichtigungen aktiviert!",
@@ -746,7 +752,7 @@ const T = {
     late_msg:"Some matches are overdue, please play quickly!",
     pending_msg:"Some matches are still pending, please organize your games quickly!",
     notif_unsupported:"Notifications not supported on this browser.",
-    notif_denied:"Permission denied.",
+    notif_denied:"Permission denied. Open site settings (🔒 in address bar) → Permissions → Notifications → Allow, then reload the page.",
     notif_on:"🔔 Disable notifications",
     notif_off:"🔕 Enable notifications",
     notif_enabled:"✓ Notifications enabled!",
@@ -840,7 +846,7 @@ const T = {
     late_msg:"Alcune partite sono in ritardo, giocare rapidamente!",
     pending_msg:"Alcune partite sono ancora in attesa, organizzate le vostre partite rapidamente!",
     notif_unsupported:"Notifiche non supportate su questo browser.",
-    notif_denied:"Autorizzazione negata.",
+    notif_denied:"Autorizzazione negata. Apri le impostazioni del sito (🔒 nella barra degli indirizzi) → Autorizzazioni → Notifiche → Consenti, poi ricarica la pagina.",
     notif_on:"🔔 Disattivare le notifiche",
     notif_off:"🔕 Attivare le notifiche",
     notif_enabled:"✓ Notifiche attivate!",

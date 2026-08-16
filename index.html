@@ -401,7 +401,7 @@ async function subscribeToNotifications() {
     }
     if (!('Notification' in window)) { showMsg('notif-msg', t('notif_unsupported'), false, true); return; }
     const permission = await Notification.requestPermission();
-    if (permission !== 'granted') { showMsg('notif-msg', t('notif_denied'), false, true); return; }
+    if (permission !== 'granted') { const isPWA = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone; showMsg('notif-msg', t(isPWA ? 'notif_denied_pwa' : 'notif_denied'), false, true); return; }
     const reg = await navigator.serviceWorker.ready;
     const sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
@@ -448,7 +448,8 @@ function updateNotifBtn() {
   if (on && 'Notification' in window && Notification.permission !== 'granted') {
     localStorage.removeItem('abct-notif');
     on = false;
-    showMsg('notif-msg', t('notif_denied'), false, true);
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+    showMsg('notif-msg', t(isPWA ? 'notif_denied_pwa' : 'notif_denied'), false, true);
   }
   if (btn) {
     btn.textContent = on ? t('notif_on') : t('notif_off');
@@ -560,6 +561,7 @@ const T = {
     pending_msg:"Certains matchs sont encore en attente, pensez à organiser vos parties rapidement !",
     notif_unsupported:"Notifications non supportées sur ce navigateur.",
     notif_denied:"Permission refusée. Ouvre les réglages du site (🔒 dans la barre d'adresse) → Autorisations → Notifications → Autoriser, puis recharge la page.",
+    notif_denied_pwa:"Permission refusée. Va dans Paramètres de ton téléphone → Applications → ton navigateur → Notifications, et autorise ce site. Puis réouvre l'app.",
     notif_on:"🔔 Désactiver les notifications",
     notif_off:"🔕 Activer les notifications",
     notif_enabled:"✓ Notifications activées !",
@@ -690,6 +692,7 @@ const T = {
     pending_msg:"Einige Partien sind noch ausstehend, bitte spielen Sie schnell!",
     notif_unsupported:"Benachrichtigungen nicht unterstützt.",
     notif_denied:"Berechtigung verweigert. Öffne die Website-Einstellungen (🔒 in der Adressleiste) → Berechtigungen → Benachrichtigungen → Zulassen, dann lade die Seite neu.",
+    notif_denied_pwa:"Berechtigung verweigert. Gehe zu Einstellungen → Apps → dein Browser → Benachrichtigungen, und erlaube diese Seite. Dann öffne die App erneut.",
     notif_on:"🔔 Benachrichtigungen deaktivieren",
     notif_off:"🔕 Benachrichtigungen aktivieren",
     notif_enabled:"✓ Benachrichtigungen aktiviert!",
@@ -753,6 +756,7 @@ const T = {
     pending_msg:"Some matches are still pending, please organize your games quickly!",
     notif_unsupported:"Notifications not supported on this browser.",
     notif_denied:"Permission denied. Open site settings (🔒 in address bar) → Permissions → Notifications → Allow, then reload the page.",
+    notif_denied_pwa:"Permission denied. Go to your phone's Settings → Apps → your browser → Notifications, and allow this site. Then reopen the app.",
     notif_on:"🔔 Disable notifications",
     notif_off:"🔕 Enable notifications",
     notif_enabled:"✓ Notifications enabled!",
@@ -847,6 +851,7 @@ const T = {
     pending_msg:"Alcune partite sono ancora in attesa, organizzate le vostre partite rapidamente!",
     notif_unsupported:"Notifiche non supportate su questo browser.",
     notif_denied:"Autorizzazione negata. Apri le impostazioni del sito (🔒 nella barra degli indirizzi) → Autorizzazioni → Notifiche → Consenti, poi ricarica la pagina.",
+    notif_denied_pwa:"Autorizzazione negata. Vai nelle Impostazioni del telefono → App → il tuo browser → Notifiche, e consenti questo sito. Poi riapri l'app.",
     notif_on:"🔔 Disattivare le notifiche",
     notif_off:"🔕 Attivare le notifiche",
     notif_enabled:"✓ Notifiche attivate!",

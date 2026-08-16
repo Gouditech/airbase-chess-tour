@@ -397,11 +397,11 @@ function urlBase64ToUint8Array(base64String) {
 async function subscribeToNotifications() {
   try {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      showMsg('notif-msg', t('notif_install_hint'), false); return;
+      showMsg('notif-msg', t('notif_install_hint'), false, true); return;
     }
-    if (!('Notification' in window)) { showMsg('notif-msg', t('notif_unsupported'), false); return; }
+    if (!('Notification' in window)) { showMsg('notif-msg', t('notif_unsupported'), false, true); return; }
     const permission = await Notification.requestPermission();
-    if (permission !== 'granted') { showMsg('notif-msg', t('notif_denied'), false); return; }
+    if (permission !== 'granted') { showMsg('notif-msg', t('notif_denied'), false, true); return; }
     const reg = await navigator.serviceWorker.ready;
     const sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
@@ -448,7 +448,7 @@ function updateNotifBtn() {
   if (on && 'Notification' in window && Notification.permission !== 'granted') {
     localStorage.removeItem('abct-notif');
     on = false;
-    showMsg('notif-msg', t('notif_denied'), false);
+    showMsg('notif-msg', t('notif_denied'), false, true);
   }
   if (btn) {
     btn.textContent = on ? t('notif_on') : t('notif_off');
@@ -463,7 +463,7 @@ window.testNotification = async function() {
   try {
     const reg = await navigator.serviceWorker.ready;
     const sub = await reg.pushManager.getSubscription();
-    if (!sub) { showMsg('notif-msg', '❌ ' + t('notif_test_nosub'), false); return; }
+    if (!sub) { showMsg('notif-msg', '❌ ' + t('notif_test_nosub'), false, true); return; }
     await reg.showNotification(state?.settings?.name || 'Air Base Chess Tour', {
       body: t('notif_test_body'),
       icon: '/icon-192.jpg',
@@ -1057,10 +1057,18 @@ function defaultData() {
 
 function genId() { return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function objToArr(obj) { return obj ? Object.entries(obj).map(([id,v])=>({...v,id})) : []; }
-function showMsg(id, text, ok=true) {
+function showMsg(id, text, ok=true, persist=false) {
   const el = document.getElementById(id); if(!el) return;
-  el.className='msg '+(ok?'ok':'err'); el.textContent=text;
-  setTimeout(()=>{ el.textContent=''; el.className='msg'; }, 3500);
+  el.className='msg '+(ok?'ok':'err');
+  if (persist) {
+    el.innerHTML = '<span style="flex:1">' + esc(text) + '</span><span class="msg-close" onclick="this.parentElement.textContent=\'\';this.parentElement.className=\'msg\';" style="cursor:pointer;margin-left:8px;font-size:16px;font-weight:700;opacity:0.7">✕</span>';
+    el.style.display = 'flex';
+    el.style.alignItems = 'flex-start';
+  } else {
+    el.textContent = text;
+    el.style.display = '';
+    setTimeout(()=>{ el.textContent=''; el.className='msg'; }, 3500);
+  }
 }
 function esc(s) { if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 

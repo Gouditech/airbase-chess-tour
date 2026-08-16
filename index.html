@@ -1680,6 +1680,7 @@ window.maintAdminLogin = async function() {
   const stored = await get(ref(db,'adminPin')).then(s=>s.exists()?s.val():null);
   if (stored === pin) {
     isAdmin = true;
+    sessionStorage.setItem('abct-session-pin', pin);
     // Disable maintenance
     maintenanceMode = false;
     await set(ref(db,'maintenance'), false);
@@ -2296,65 +2297,35 @@ window.addEventListener('offline',()=>document.getElementById('offline-bar').sty
 // Init notification button state
 setTimeout(async () => {
   updateNotifBtn();
-  // Silent migration: if user had notifications on, resubscribe with new VAPID key
+  // Migration silencieuse : réabonne avec la clé VAPID courante sans rien demander
   if (localStorage.getItem('abct-notif') === 'on' && 'serviceWorker' in navigator && 'PushManager' in window) {
     try {
       if (Notification.permission === 'granted') {
         const reg = await navigator.serviceWorker.ready;
-        let sub = await reg.pushManager.getSubscription();
-        // Check if subscription uses old key or doesn't exist
-        if (!sub || !sub.endpoint) {
-          sub = await reg.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(VAPID_KEY)
-          });
+        const old = await reg.pushManager.getSubscription();
+        // Un abonnement existant porte peut-être l'ANCIENNE clé VAPID -> il faut le révoquer
+        if (old) {
+          const oldId = btoa(old.endpoint).slice(-20);
+          await old.unsubscribe();
+          await set(ref(db, 'subscriptions/' + oldId), null);
         }
-        const subObj = sub.toJSON();
-        const subId = btoa(subObj.endpoint).slice(-20);
-        const oldSubId = localStorage.getItem('abct-notif-subid');
-        if (oldSubId && oldSubId !== subId) {
-          await set(ref(db, 'subscriptions/' + oldSubId), null);
-        }
-        await set(ref(db, 'subscriptions/' + subId), {
-          endpoint: subObj.endpoint,
-          keys: subObj.keys,
-          timestamp: Date.now()
+        const sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_KEY)
         });
+        const o = sub.toJSON();
+        const subId = btoa(o.endpoint).slice(-20);
+        await set(ref(db, 'subscriptions/' + subId), { endpoint: o.endpoint, keys: o.keys, timestamp: Date.now() });
         localStorage.setItem('abct-notif-subid', subId);
-        console.log('Push subscription migrated silently');
+        localStorage.removeItem('abct-notif-token');
+        console.log('Abonnement push migré silencieusement');
       }
     } catch(e) {
-      console.log('Silent migration (non-critical):', e.message);
+      console.log('Migration silencieuse (non bloquant) :', e.message);
     }
   }
 }, 500);
 
-// Silent FCM migration: if user had notifications on, re-subscribe silently
-setTimeout(async () => {
-  const wasOn = localStorage.getItem('abct-notif') === 'on';
-  const hasNewToken = localStorage.getItem('abct-notif-token');
-  if (wasOn && !hasNewToken && 'serviceWorker' in navigator && 'PushManager' in window) {
-    try {
-      const permission = Notification.permission;
-      if (permission === 'granted') {
-        // Re-subscribe silently with new FCM system
-        const { messaging, getToken, swReg } = await getFCMMessagingInstance();
-        const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: swReg });
-        if (token) {
-          const tokenId = token.slice(-20);
-          await set(ref(db, 'subscriptions/' + tokenId), { token, endpoint: token, timestamp: Date.now() });
-          localStorage.setItem('abct-notif-subid', tokenId);
-          localStorage.setItem('abct-notif-token', token);
-          // Keep abct-notif = 'on' unchanged
-          console.log('FCM migration: token updated silently');
-        }
-      }
-    } catch(e) {
-      console.log('FCM migration failed:', e.message);
-      // Don't change user preferences on failure
-    }
-  }
-}, 2000);
 window.addEventListener('online',()=>document.getElementById('offline-bar').style.display='none');
 
 // Init lang buttons

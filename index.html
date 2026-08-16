@@ -1851,7 +1851,7 @@ window.sendPushToAll = async function() {
     const res = await fetch('/.netlify/functions/send-notification', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ secret: adminSecret, tokens, title, body: msg })
+      body: JSON.stringify({ pin: sessionStorage.getItem('abct-session-pin') || '', tokens, title, body: msg })
     });
     const data = await res.json();
     if (res.ok) {

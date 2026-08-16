@@ -380,18 +380,9 @@ const fbApp = initializeApp(firebaseConfig);
 const db = getDatabase(fbApp);
 
 // ── PUSH NOTIFICATIONS (FCM) ──
-const VAPID_KEY = 'BEQmMXuj4tL4J7bfodS6wycUnY5QDuS6iy-6AAEjDNF8kfRFN2hx8Dc3bh_eTtnZVlEeFjVMjIV7MmTOjcklp-8';
+const VAPID_KEY = 'BDy7Ykx_56HPF9np6HhyQcwnvEFjkRpC3_P_Y3I9NE5gNrXpH3jPufff_c_qcTperoPyXnynH-lAG0XS6sTh6kA';
 
-let fcmMessagingInstance = null;
-async function getFCMMessagingInstance() {
-  if (fcmMessagingInstance) return fcmMessagingInstance;
-  const { getMessaging, getToken, deleteToken } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js');
-  const swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-  await navigator.serviceWorker.ready;
-  const messaging = getMessaging(fbApp);
-  fcmMessagingInstance = { messaging, getToken, deleteToken, swReg };
-  return fcmMessagingInstance;
-}
+
 
 function urlBase64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -405,41 +396,27 @@ function urlBase64ToUint8Array(base64String) {
 async function subscribeToNotifications() {
   try {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      showMsg('notif-msg', t('notif_install_hint'), false);
-      return;
+      showMsg('notif-msg', t('notif_install_hint'), false); return;
     }
     if (!('Notification' in window)) { showMsg('notif-msg', t('notif_unsupported'), false); return; }
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') { showMsg('notif-msg', t('notif_denied'), false); return; }
-    // Wait for SW with timeout
-    // Wait for SW registration
-    let reg;
-    try {
-      reg = await Promise.race([
-        navigator.serviceWorker.ready,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 10000))
-      ]);
-    } catch(swErr) {
-      // SW not available - show install hint
-      showMsg('notif-msg', t('notif_install_hint'), false);
-      return;
-    }
+    const reg = await navigator.serviceWorker.ready;
     const sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(VAPID_KEY)
     });
-    // Store subscription in Firebase
-    const subId = btoa(sub.endpoint).slice(-20);
+    const subObj = sub.toJSON();
+    const subId = btoa(subObj.endpoint).slice(-20);
     await set(ref(db, 'subscriptions/' + subId), {
-      endpoint: sub.endpoint,
-      keys: { p256dh: btoa(String.fromCharCode(...new Uint8Array(sub.getKey('p256dh')))), auth: btoa(String.fromCharCode(...new Uint8Array(sub.getKey('auth')))) },
+      endpoint: subObj.endpoint,
+      keys: subObj.keys,
       timestamp: Date.now()
     });
     localStorage.setItem('abct-notif-subid', subId);
     localStorage.setItem('abct-notif', 'on');
     updateNotifBtn();
     showMsg('notif-msg', t('notif_enabled'));
-    setTimeout(updateNotifBtn, 500);
   } catch(e) {
     console.error('Subscription error:', e);
     showMsg('notif-msg', 'Erreur: ' + e.message, false);
@@ -448,13 +425,13 @@ async function subscribeToNotifications() {
 
 async function unsubscribeFromNotifications() {
   try {
-    const { messaging, deleteToken } = await getFCMMessagingInstance();
-    await deleteToken(messaging);
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (sub) await sub.unsubscribe();
     const subId = localStorage.getItem('abct-notif-subid');
     if (subId) await set(ref(db, 'subscriptions/' + subId), null);
     localStorage.removeItem('abct-notif');
     localStorage.removeItem('abct-notif-subid');
-    localStorage.removeItem('abct-notif-token');
     updateNotifBtn();
     showMsg('notif-msg', t('notif_disabled'));
   } catch(e) {
@@ -1838,27 +1815,26 @@ window.sendPushToAll = async function() {
   if (!msg) { showMsg('notif-admin-msg-result', t('notif_enter_msg'), false); return; }
 
   const subs = state?.subscriptions || {};
-  const tokens = Object.values(subs).map(s => s.token || s.endpoint).filter(Boolean);
-  const count = tokens.length;
+  const subList = Object.values(subs).filter(s => s.endpoint && s.keys);
+  const count = subList.length;
 
   if (!count) { showMsg('notif-admin-msg-result', '0 abonné.', false); return; }
 
   const title = state?.settings?.name || 'Air Base Chess Tour';
-  const adminSecret = sessionStorage.getItem('abct-session-pin') || '';
 
   try {
     showMsg('notif-admin-msg-result', '📤 Envoi en cours...');
     const res = await fetch('/.netlify/functions/send-notification', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pin: sessionStorage.getItem('abct-session-pin') || '', tokens, title, body: msg })
+      body: JSON.stringify({ pin: sessionStorage.getItem('abct-session-pin') || '', subscriptions: subList, title, body: msg })
     });
     const data = await res.json();
     if (res.ok) {
-      // Also store in Firebase for in-app display
       const notifId = genId();
       await set(ref(db, 'notifications/' + notifId), { title, body: msg, timestamp: Date.now(), sent: true });
-      showMsg('notif-admin-msg-result', `${t('notif_sent')} ${data.success}/${count}.`);
+      const errMsg = data.errors && data.errors.length ? ' ' + data.errors[0] : '';
+      showMsg('notif-admin-msg-result', `${t('notif_sent')} ${data.success}/${count}.${errMsg}`);
       msgEl.value = '';
     } else {
       showMsg('notif-admin-msg-result', 'Erreur: ' + (data.error || 'Unknown'), false);
@@ -2320,32 +2296,35 @@ window.addEventListener('offline',()=>document.getElementById('offline-bar').sty
 // Init notification button state
 setTimeout(async () => {
   updateNotifBtn();
-  // Silent migration: if user had notifications on, renew FCM token in background
+  // Silent migration: if user had notifications on, resubscribe with new VAPID key
   if (localStorage.getItem('abct-notif') === 'on' && 'serviceWorker' in navigator && 'PushManager' in window) {
     try {
-      const existingToken = localStorage.getItem('abct-notif-token');
-      if (!existingToken) {
-        // Old Web Push token - silently migrate to FCM
-        const permission = Notification.permission;
-        if (permission === 'granted') {
-          const { messaging, getToken, swReg } = await getFCMMessagingInstance();
-          const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: swReg });
-          if (token) {
-            const tokenId = token.slice(-20);
-            // Remove old subscription if exists
-            const oldSubId = localStorage.getItem('abct-notif-subid');
-            if (oldSubId && oldSubId !== tokenId) {
-              await set(ref(db, 'subscriptions/' + oldSubId), null);
-            }
-            await set(ref(db, 'subscriptions/' + tokenId), { token, endpoint: token, timestamp: Date.now() });
-            localStorage.setItem('abct-notif-subid', tokenId);
-            localStorage.setItem('abct-notif-token', token);
-            console.log('FCM token migrated silently');
-          }
+      if (Notification.permission === 'granted') {
+        const reg = await navigator.serviceWorker.ready;
+        let sub = await reg.pushManager.getSubscription();
+        // Check if subscription uses old key or doesn't exist
+        if (!sub || !sub.endpoint) {
+          sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(VAPID_KEY)
+          });
         }
+        const subObj = sub.toJSON();
+        const subId = btoa(subObj.endpoint).slice(-20);
+        const oldSubId = localStorage.getItem('abct-notif-subid');
+        if (oldSubId && oldSubId !== subId) {
+          await set(ref(db, 'subscriptions/' + oldSubId), null);
+        }
+        await set(ref(db, 'subscriptions/' + subId), {
+          endpoint: subObj.endpoint,
+          keys: subObj.keys,
+          timestamp: Date.now()
+        });
+        localStorage.setItem('abct-notif-subid', subId);
+        console.log('Push subscription migrated silently');
       }
     } catch(e) {
-      console.log('Silent migration failed (non-critical):', e.message);
+      console.log('Silent migration (non-critical):', e.message);
     }
   }
 }, 500);

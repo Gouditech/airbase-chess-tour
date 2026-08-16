@@ -140,6 +140,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
     <div id="home-badge" style="margin-top:8px"></div>
     <button class="btn btn-gray btn-sm" style="display:inline-block;width:auto;margin-top:12px" onclick="openInstallModal()" id="install-btn-home">📲 Installer l'app</button>
     <button class="btn btn-gray btn-sm" style="display:inline-block;width:auto;margin-top:8px" onclick="toggleNotifications()" id="notif-toggle-btn">🔕 Activer les notifications</button>
+    <button class="btn btn-gray btn-sm" style="display:none;width:auto;margin-top:8px;margin-left:6px;font-size:11px" onclick="testNotification()" id="notif-test-btn">🔔 Test</button>
     <div id="notif-msg" style="font-size:12px;margin-top:4px"></div>
   </div>
   <div id="pool-reminder" style="display:none;background:var(--gold-light);border-left:4px solid var(--gold);border-radius:10px;padding:14px 16px;margin-bottom:12px;font-size:13px;color:var(--dark);line-height:1.6">
@@ -200,7 +201,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
   <div id="admin-login" class="card">
     <h2 id="admin-login-title">Accès administrateur</h2>
     <div class="gap">
-      <div class="form-group"><label id="admin-pin-label">Code PIN</label><input id="admin-pin-input" type="password" inputmode="numeric"></div>
+      <div class="form-group"><label id="admin-pin-label">Code PIN</label><input id="admin-pin-input" type="password" inputmode="numeric" autocomplete="off"></div>
       <button class="btn btn-gold" onclick="adminLogin()" id="admin-login-btn">Connexion</button>
       <div id="login-msg"></div>
       <p id="admin-pin-hint" style="font-size:11px;color:#aaa;text-align:center"></p>
@@ -228,9 +229,9 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
         <div id="settings-msg"></div>
         <div style="border-top:1px solid #eee;margin-top:8px;padding-top:12px">
           <div style="font-size:13px;font-weight:700;margin-bottom:10px" id="pin-change-title">Modifier le PIN</div>
-          <div class="form-group"><label id="pin-current-label">PIN actuel</label><input id="pin-current" type="password" inputmode="numeric"></div>
-          <div class="form-group"><label id="pin-new-label">Nouveau PIN</label><input id="pin-new" type="password" inputmode="numeric"></div>
-          <div class="form-group"><label id="pin-confirm-label">Confirmer</label><input id="pin-confirm" type="password" inputmode="numeric"></div>
+          <div class="form-group"><label id="pin-current-label">PIN actuel</label><input id="pin-current" type="password" inputmode="numeric" autocomplete="off"></div>
+          <div class="form-group"><label id="pin-new-label">Nouveau PIN</label><input id="pin-new" type="password" inputmode="numeric" autocomplete="off"></div>
+          <div class="form-group"><label id="pin-confirm-label">Confirmer</label><input id="pin-confirm" type="password" inputmode="numeric" autocomplete="off"></div>
           <button class="btn btn-gray" onclick="changePin()" id="change-pin-btn">Modifier le PIN</button>
           <div id="pin-msg"></div>
         </div>
@@ -309,7 +310,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
   <div id="maint-text" style="color:#aaa;font-size:14px;text-align:center;line-height:1.6">Le site est temporairement indisponible.<br>Revenez dans quelques instants.</div>
   <div style="margin-top:40px;border-top:1px solid #333;padding-top:20px;width:100%;max-width:280px">
     <div style="font-size:11px;color:#555;text-align:center;margin-bottom:10px">Accès administrateur</div>
-    <input id="maint-pin" type="password" inputmode="numeric" placeholder="Code PIN" style="width:100%;padding:10px 12px;border:1px solid #333;border-radius:8px;background:#222;color:#fff;font-size:14px;text-align:center;margin-bottom:8px">
+    <input id="maint-pin" type="password" inputmode="numeric" autocomplete="off" placeholder="Code PIN" style="width:100%;padding:10px 12px;border:1px solid #333;border-radius:8px;background:#222;color:#fff;font-size:14px;text-align:center;margin-bottom:8px">
     <button onclick="maintAdminLogin()" style="width:100%;padding:10px;border:none;border-radius:8px;background:var(--gold);color:var(--dark);font-weight:700;font-size:13px;cursor:pointer">Connexion admin</button>
     <div id="maint-pin-msg" style="font-size:12px;color:var(--red);text-align:center;margin-top:6px"></div>
   </div>
@@ -441,6 +442,7 @@ async function unsubscribeFromNotifications() {
 
 function updateNotifBtn() {
   const btn = document.getElementById('notif-toggle-btn');
+  const testBtn = document.getElementById('notif-test-btn');
   const on = localStorage.getItem('abct-notif') === 'on';
   if (btn) {
     btn.textContent = on ? t('notif_on') : t('notif_off');
@@ -448,7 +450,27 @@ function updateNotifBtn() {
     btn.style.color = on ? '#fff' : '#555';
     btn.style.fontWeight = on ? '700' : '600';
   }
+  if (testBtn) testBtn.style.display = on ? 'inline-block' : 'none';
 }
+
+window.testNotification = async function() {
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (!sub) { showMsg('notif-msg', '❌ ' + t('notif_test_nosub'), false); return; }
+    await reg.showNotification(state?.settings?.name || 'Air Base Chess Tour', {
+      body: t('notif_test_body'),
+      icon: '/icon-192.jpg',
+      badge: '/icon-192.jpg',
+      vibrate: [200, 100, 200],
+      tag: 'abct-test',
+      requireInteraction: true
+    });
+    showMsg('notif-msg', t('notif_test_sent'));
+  } catch(e) {
+    showMsg('notif-msg', '❌ Erreur: ' + e.message, false);
+  }
+};
 
 let lastNotifTimestamp = 0;
 
@@ -536,6 +558,9 @@ const T = {
     notif_off:"🔕 Activer les notifications",
     notif_enabled:"✓ Notifications activées !",
     notif_disabled:"Notifications désactivées.",
+    notif_test_body:"🔔 Ceci est un test de notification.",
+    notif_test_sent:"✓ Notification test envoyée !",
+    notif_test_nosub:"Pas d'abonnement actif. Désactive puis réactive les notifications.",
     notif_enter_msg:"Entrez un message.",
     notif_sent:"✓ Notification enregistrée !",
     notif_subscriber:" abonné",
@@ -663,6 +688,9 @@ const T = {
     notif_off:"🔕 Benachrichtigungen aktivieren",
     notif_enabled:"✓ Benachrichtigungen aktiviert!",
     notif_disabled:"Benachrichtigungen deaktiviert.",
+    notif_test_body:"🔔 Dies ist eine Testbenachrichtigung.",
+    notif_test_sent:"✓ Testbenachrichtigung gesendet!",
+    notif_test_nosub:"Kein aktives Abonnement. Deaktiviere und reaktiviere die Benachrichtigungen.",
     notif_enter_msg:"Bitte eine Nachricht eingeben.",
     notif_sent:"✓ Benachrichtigung gespeichert!",
     notif_subscriber:" Abonnent",
@@ -723,6 +751,9 @@ const T = {
     notif_off:"🔕 Enable notifications",
     notif_enabled:"✓ Notifications enabled!",
     notif_disabled:"Notifications disabled.",
+    notif_test_body:"🔔 This is a test notification.",
+    notif_test_sent:"✓ Test notification sent!",
+    notif_test_nosub:"No active subscription. Disable then re-enable notifications.",
     notif_enter_msg:"Please enter a message.",
     notif_sent:"✓ Notification saved!",
     notif_subscriber:" subscriber",
@@ -814,6 +845,9 @@ const T = {
     notif_off:"🔕 Attivare le notifiche",
     notif_enabled:"✓ Notifiche attivate!",
     notif_disabled:"Notifiche disattivate.",
+    notif_test_body:"🔔 Questa è una notifica di prova.",
+    notif_test_sent:"✓ Notifica di prova inviata!",
+    notif_test_nosub:"Nessun abbonamento attivo. Disattiva e riattiva le notifiche.",
     notif_enter_msg:"Inserire un messaggio.",
     notif_sent:"✓ Notifica salvata!",
     notif_subscriber:" abbonato",

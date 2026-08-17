@@ -2325,7 +2325,7 @@ function renderAdmin(){
   if(currentAdminTab==='ranking') renderRanking();
   if(currentAdminTab==='actions'){
     // Show subscriber count
-    const subsCount = Object.keys(state?.[SUB_PATH] || {}).length;
+    const subsCount = Object.values(state?.[SUB_PATH] || {}).filter(s => s?.endpoint && s?.keys).length;
     const subsEl = document.getElementById('notif-subscribers-count');
     if (subsEl) subsEl.textContent = subsCount + (subsCount > 1 ? t('notif_subscribers') : t('notif_subscriber')) + ' aux notifications';
     // Generate default notification message — reste synchronisé (retards inclus) tant que l'admin n'a pas personnalisé le texte

@@ -382,6 +382,8 @@ const db = getDatabase(fbApp);
 
 // ── PUSH NOTIFICATIONS (FCM) ──
 const VAPID_KEY = 'BDy7Ykx_56HPF9np6HhyQcwnvEFjkRpC3_P_Y3I9NE5gNrXpH3jPufff_c_qcTperoPyXnynH-lAG0XS6sTh6kA';
+const IS_DEV = location.hostname.startsWith('dev--');
+const SUB_PATH = IS_DEV ? 'subscriptions-dev' : 'subscriptions';
 
 
 
@@ -409,7 +411,7 @@ async function subscribeToNotifications() {
     });
     const subObj = sub.toJSON();
     const subId = btoa(subObj.endpoint).slice(-20);
-    await set(ref(db, 'subscriptions/' + subId), {
+    await set(ref(db, SUB_PATH + '/' + subId), {
       endpoint: subObj.endpoint,
       keys: subObj.keys,
       timestamp: Date.now()
@@ -430,7 +432,7 @@ async function unsubscribeFromNotifications() {
     const sub = await reg.pushManager.getSubscription();
     if (sub) await sub.unsubscribe();
     const subId = localStorage.getItem('abct-notif-subid');
-    if (subId) await set(ref(db, 'subscriptions/' + subId), null);
+    if (subId) await set(ref(db, SUB_PATH + '/' + subId), null);
     localStorage.removeItem('abct-notif');
     localStorage.removeItem('abct-notif-subid');
     updateNotifBtn();
@@ -1868,7 +1870,7 @@ window.sendPushToAll = async function() {
   const msg = msgEl?.value?.trim();
   if (!msg) { showMsg('notif-admin-msg-result', t('notif_enter_msg'), false); return; }
 
-  const subs = state?.subscriptions || {};
+  const subs = state?.[SUB_PATH] || {};
   const subList = Object.values(subs).filter(s => s.endpoint && s.keys);
   const count = subList.length;
 
@@ -2228,7 +2230,7 @@ function renderAdmin(){
   if(currentAdminTab==='ranking') renderRanking();
   if(currentAdminTab==='actions'){
     // Show subscriber count
-    const subsCount = Object.keys(state?.subscriptions || {}).length;
+    const subsCount = Object.keys(state?.[SUB_PATH] || {}).length;
     const subsEl = document.getElementById('notif-subscribers-count');
     if (subsEl) subsEl.textContent = subsCount + (subsCount > 1 ? t('notif_subscribers') : t('notif_subscriber')) + ' aux notifications';
     // Generate default notification message
@@ -2349,6 +2351,22 @@ onValue(ref(db),(snapshot)=>{
 window.addEventListener('offline',()=>document.getElementById('offline-bar').style.display='block');
 // Init notification button state
 setTimeout(async () => {
+  // Recovery: si localStorage effacé mais abonnement push encore actif, restaurer l'état
+  if (localStorage.getItem('abct-notif') !== 'on' && 'serviceWorker' in navigator && 'PushManager' in window) {
+    try {
+      if (Notification.permission === 'granted') {
+        const reg = await navigator.serviceWorker.ready;
+        const existing = await reg.pushManager.getSubscription();
+        if (existing) {
+          const o = existing.toJSON();
+          const subId = btoa(o.endpoint).slice(-20);
+          localStorage.setItem('abct-notif', 'on');
+          localStorage.setItem('abct-notif-subid', subId);
+          console.log('État notifications restauré depuis le service worker');
+        }
+      }
+    } catch(e) { console.log('Recovery notif (non bloquant) :', e.message); }
+  }
   updateNotifBtn();
   // Migration silencieuse : réabonne avec la clé VAPID courante sans rien demander
   if (localStorage.getItem('abct-notif') === 'on' && 'serviceWorker' in navigator && 'PushManager' in window) {
@@ -2360,7 +2378,7 @@ setTimeout(async () => {
         if (old) {
           const oldId = btoa(old.endpoint).slice(-20);
           await old.unsubscribe();
-          await set(ref(db, 'subscriptions/' + oldId), null);
+          await set(ref(db, SUB_PATH + '/' + oldId), null);
         }
         const sub = await reg.pushManager.subscribe({
           userVisibleOnly: true,
@@ -2368,7 +2386,7 @@ setTimeout(async () => {
         });
         const o = sub.toJSON();
         const subId = btoa(o.endpoint).slice(-20);
-        await set(ref(db, 'subscriptions/' + subId), { endpoint: o.endpoint, keys: o.keys, timestamp: Date.now() });
+        await set(ref(db, SUB_PATH + '/' + subId), { endpoint: o.endpoint, keys: o.keys, timestamp: Date.now() });
         localStorage.setItem('abct-notif-subid', subId);
         localStorage.removeItem('abct-notif-token');
         console.log('Abonnement push migré silencieusement');

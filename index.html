@@ -220,8 +220,10 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
         <div class="form-group"><label id="set-label-name">Nom du tournoi</label><input id="set-name" type="text"></div>
         <div class="form-group"><label id="set-label-ppg">Joueurs par groupe</label><input id="set-ppg" type="number" min="3" max="10"><div id="set-ppg-hint" style="font-size:11px;color:var(--gray);margin-top:3px"></div></div>
         <div class="form-group"><label id="set-label-fin">Nombre de finalistes</label><input id="set-fin" type="number" min="2" max="32"></div>
-        <div class="form-group"><label id="set-label-start">Date de début du tournoi</label><input id="set-start" type="date"></div>
-        <div class="form-group"><label id="set-label-delay">Délai avant badge retard (jours)</label><input id="set-delay" type="number" min="1" max="30" value="7"></div>
+        <div class="form-group"><label id="set-label-pool-start">Date de début des poules</label><input id="set-pool-start" type="date"></div>
+        <div class="form-group"><label id="set-label-pool-interval">Intervalle entre rondes de poules (jours)</label><input id="set-pool-interval" type="number" min="1" max="30" value="4"></div>
+        <div class="form-group"><label id="set-label-finals-start">Date de début des finales</label><input id="set-finals-start" type="date"></div>
+        <div class="form-group"><label id="set-label-finals-interval">Intervalle entre tours de finales (jours)</label><input id="set-finals-interval" type="number" min="1" max="30" value="4"></div>
         <div class="form-group"><label id="set-label-semis">Format demi-finales</label><input id="set-semis" type="text" placeholder="20min + 10s/coup"></div>
         <div class="form-group"><label id="set-label-final">Format finale</label><input id="set-final-format" type="text" placeholder="30min + 10s/coup"></div>
 
@@ -281,7 +283,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
         <h2 id="notif-admin-title">🔔 Envoyer une notification</h2>
         <div style="margin-bottom:12px">
           <textarea id="notif-admin-msg" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;min-height:80px;resize:vertical" placeholder="Message de notification..."></textarea>
-          <button class="btn btn-gray" style="margin-top:6px" onclick="sendPushToAll()" id="send-notif-btn">📤 Envoyer à tous les abonnés</button>
+          <button class="btn btn-gray" style="margin-top:6px" onclick="confirmAction('sendPushToAll')" id="send-notif-btn">📤 Envoyer à tous les abonnés</button>
           <div id="notif-admin-msg-result" style="font-size:12px;margin-top:4px"></div>
           <div id="notif-subscribers-count" style="font-size:11px;color:var(--gray);margin-top:4px"></div>
         </div>
@@ -382,6 +384,8 @@ const db = getDatabase(fbApp);
 
 // ── PUSH NOTIFICATIONS (FCM) ──
 const VAPID_KEY = 'BDy7Ykx_56HPF9np6HhyQcwnvEFjkRpC3_P_Y3I9NE5gNrXpH3jPufff_c_qcTperoPyXnynH-lAG0XS6sTh6kA';
+const IS_DEV = location.hostname.startsWith('dev--');
+const SUB_PATH = IS_DEV ? 'subscriptions-dev' : 'subscriptions';
 
 
 
@@ -409,7 +413,7 @@ async function subscribeToNotifications() {
     });
     const subObj = sub.toJSON();
     const subId = btoa(subObj.endpoint).slice(-20);
-    await set(ref(db, 'subscriptions/' + subId), {
+    await set(ref(db, SUB_PATH + '/' + subId), {
       endpoint: subObj.endpoint,
       keys: subObj.keys,
       timestamp: Date.now()
@@ -430,7 +434,7 @@ async function unsubscribeFromNotifications() {
     const sub = await reg.pushManager.getSubscription();
     if (sub) await sub.unsubscribe();
     const subId = localStorage.getItem('abct-notif-subid');
-    if (subId) await set(ref(db, 'subscriptions/' + subId), null);
+    if (subId) await set(ref(db, SUB_PATH + '/' + subId), null);
     localStorage.removeItem('abct-notif');
     localStorage.removeItem('abct-notif-subid');
     updateNotifBtn();
@@ -553,6 +557,7 @@ const T = {
 <p>Arbitrage : En cas de litige, l'organisateur tranche. Fair-play attendu de tous.</p>`,
     modify:"modifier",
     late_badge:"⏰ Retard",
+    due_by:"📅 Prévu avant le",
     late_match:"⏰ Match en retard",
     color_choice:"choisit sa couleur",
     presential:"Présentiel",
@@ -610,6 +615,8 @@ const T = {
     subtab_ranking:"Classement",
     ranking_title:"Classement global",
     settings_title:"Paramètres du tournoi",set_name:"Nom du tournoi",set_ppg:"Joueurs par groupe",set_fin:"Nombre de finalistes",set_status:"Statut",
+    set_pool_start:"Date de début des poules",set_pool_interval:"Intervalle entre rondes de poules (jours)",
+    set_finals_start:"Date de début des finales",set_finals_interval:"Intervalle entre tours de finales (jours)",
     status_opt_reg:"Inscriptions ouvertes",status_opt_play:"Phase de poules",status_opt_fin:"Phases finales",status_opt_done:"Terminé",
     save_settings:"Enregistrer",settings_saved:"Enregistré !",
     seeding_title:"Têtes de série & groupes",seeding_desc:"Réorganisez les joueurs par niveau. Distribution serpentine pour des groupes équilibrés.",
@@ -618,6 +625,7 @@ const T = {
     launch_finals:"🏆 Lancer les phases finales",reset_scores:"↺ Réinitialiser les scores",reset_all:"⚠️ Réinitialiser le tournoi",
     confirm_reset_scores_title:"Réinitialiser les scores ?",confirm_reset_scores_text:"Tous les résultats des matchs de poule seront effacés.",
     confirm_reset_all_title:"Réinitialiser le tournoi ?",confirm_reset_all_text:"Tous les joueurs, matchs et résultats seront définitivement effacés.",
+    confirm_send_notif_title:"Envoyer la notification ?",confirm_send_notif_text:"Ce message sera envoyé à tous les abonnés aux notifications.",
     confirm_ok:"Confirmer",confirm_cancel:"Annuler",
     finals_launched:["Phases finales lancées avec "," finalistes !"],not_enough_finalists:"Pas assez de finalistes qualifiés.",
     scores_reset:"Scores réinitialisés.",tournament_reset:"Tournoi réinitialisé.",
@@ -663,6 +671,8 @@ const T = {
     subtab_ranking:"Rangliste",
     ranking_title:"Globale Rangliste",
     settings_title:"Turniereinstellungen",set_name:"Turniername",set_ppg:"Spieler pro Gruppe",set_fin:"Anzahl Finalisten",set_status:"Status",
+    set_pool_start:"Startdatum Gruppenphase",set_pool_interval:"Intervall zwischen Gruppenrunden (Tage)",
+    set_finals_start:"Startdatum Finalrunden",set_finals_interval:"Intervall zwischen Finalrunden (Tage)",
     status_opt_reg:"Anmeldung offen",status_opt_play:"Gruppenphase",status_opt_fin:"Finalphase",status_opt_done:"Beendet",
     save_settings:"Speichern",settings_saved:"Gespeichert!",
     seeding_title:"Setzliste & Gruppen",seeding_desc:"Spieler nach Stärke sortieren. Schlangenverteilung für ausgeglichene Gruppen.",
@@ -671,6 +681,7 @@ const T = {
     launch_finals:"🏆 Finalrunden starten",reset_scores:"↺ Ergebnisse zurücksetzen",reset_all:"⚠️ Turnier zurücksetzen",
     confirm_reset_scores_title:"Ergebnisse zurücksetzen?",confirm_reset_scores_text:"Alle Gruppenpartie-Ergebnisse werden gelöscht.",
     confirm_reset_all_title:"Turnier zurücksetzen?",confirm_reset_all_text:"Alle Spieler, Partien und Ergebnisse werden dauerhaft gelöscht.",
+    confirm_send_notif_title:"Benachrichtigung senden?",confirm_send_notif_text:"Diese Nachricht wird an alle Abonnenten gesendet.",
     confirm_ok:"Bestätigen",confirm_cancel:"Abbrechen",
     finals_launched:["Finalrunden gestartet mit "," Finalisten!"],not_enough_finalists:"Nicht genug qualifizierte Finalisten.",
     scores_reset:"Ergebnisse zurückgesetzt.",tournament_reset:"Turnier zurückgesetzt.",
@@ -684,6 +695,7 @@ const T = {
     rules_full:"<h3 style=\"color:var(--gold);margin:16px 0 6px\">1. Format</h3>\n<p>Alle Spieler werden in Gruppen eingeteilt. Jeder Spieler trifft einmal auf jeden anderen Spieler seiner Gruppe (Round-Robin). Anzahl der Gruppen und Qualifizierter wird vom Organisator festgelegt.</p>\n<h3 style=\"color:var(--gold);margin:16px 0 6px\">2. Punkte</h3>\n<p>1 Punkt f\u00fcr einen Sieg \u00b7 0.5 f\u00fcr ein Remis \u00b7 0 f\u00fcr eine Niederlage.</p>\n<p>Jeder Spieler ist f\u00fcr die Eingabe seines Ergebnisses unmittelbar nach der Partie verantwortlich.</p>\n<h3 style=\"color:var(--gold);margin:16px 0 6px\">3. Tiebreak</h3>\n<p>Bei Punktgleichheit: \u2460 Punkte \u00b7 \u2461 Siege \u00b7 \u2462 Siege mit Schwarz \u00b7 \u2463 Buchholz \u00b7 \u2464 Direkter Vergleich</p>\n<h3 style=\"color:var(--gold);margin:16px 0 6px\">4. Finalrunden</h3>\n<p>Gruppensieger qualifizieren sich direkt f\u00fcr die fortgeschrittene Runde. Zweite und beste Dritte spielen eine Vorrunde.</p>\n<p>Der besser platzierte Finalist w\u00e4hlt seine Farbe. Bei Remis wird mit getauschten Farben wiederholt.</p>\n<h3 style=\"color:var(--gold);margin:16px 0 6px\">5. Spielmodus</h3>\n<p>Partien auf physischem Brett oder Chess.com. Der Chess.com-Benutzername muss dem bei der Anmeldung angegebenen entsprechen.</p>\n<p>Freie Bedenkzeit, maximal <strong>24h pro Zug</strong>. Kein Urlaubsmodus ohne gegenseitige Einigung.</p>\n<p>\u26d4 Verboten: Analysebrett, bedingte Z\u00fcge auf Chess.com.</p>\n<p>Bei unbeabsichtigtem Zeitverlust ist eine Fortsetzung nur mit Zustimmung des Gegners m\u00f6glich. Bei Wiederholung gilt die Partie als verloren.</p>\n<h3 style=\"color:var(--gold);margin:16px 0 6px\">6. Fair Play & Schiedsrichter</h3>\n<p>Fair Play wird von allen Teilnehmern erwartet. Bei Streitigkeiten entscheidet der Organisator. Bei schwerwiegenden Verst\u00f6ssen kann eine Disqualifikation ausgesprochen werden.</p>",
     modify:"ändern",
     late_badge:"⏰ Verspätet",
+    due_by:"📅 Fällig bis",
     late_match:"⏰ Partie verspätet",
     color_choice:"wählt die Farbe",
     presential:"Präsenz",
@@ -748,6 +760,7 @@ const T = {
 <p>Arbiter: In case of dispute, the organizer decides. Fair play expected from all.</p>`,
     modify:"edit",
     late_badge:"⏰ Late",
+    due_by:"📅 Due by",
     late_match:"⏰ Match overdue",
     color_choice:"chooses color",
     presential:"In-person",
@@ -801,6 +814,8 @@ const T = {
     admin_logout:"Logout",
     subtab_settings:"Settings",subtab_players:"Players",subtab_seeding:"Groups",subtab_actions:"Actions",
     settings_title:"Tournament settings",set_name:"Tournament name",set_ppg:"Players per group",set_fin:"Number of finalists",set_status:"Status",
+    set_pool_start:"Pool stage start date",set_pool_interval:"Interval between pool rounds (days)",
+    set_finals_start:"Finals start date",set_finals_interval:"Interval between final rounds (days)",
     status_opt_reg:"Registration open",status_opt_play:"Group stage",status_opt_fin:"Final stage",status_opt_done:"Finished",
     save_settings:"Save",settings_saved:"Saved!",
     seeding_title:"Seeding & groups",seeding_desc:"Sort players by strength. Snake distribution for balanced groups.",
@@ -809,6 +824,7 @@ const T = {
     launch_finals:"🏆 Launch final stage",reset_scores:"↺ Reset scores",reset_all:"⚠️ Reset tournament",
     confirm_reset_scores_title:"Reset scores?",confirm_reset_scores_text:"All group stage results will be erased.",
     confirm_reset_all_title:"Reset tournament?",confirm_reset_all_text:"All players, matches and results will be permanently deleted.",
+    confirm_send_notif_title:"Send notification?",confirm_send_notif_text:"This message will be sent to all notification subscribers.",
     confirm_ok:"Confirm",confirm_cancel:"Cancel",
     finals_launched:["Final stage launched with "," finalists!"],not_enough_finalists:"Not enough qualified finalists.",
     scores_reset:"Scores reset.",tournament_reset:"Tournament reset.",
@@ -843,6 +859,7 @@ const T = {
 <p>Arbitraggio: In caso di controversia, decide l'organizzatore. Fair play atteso da tutti.</p>`,
     modify:"modificare",
     late_badge:"⏰ Ritardo",
+    due_by:"📅 Previsto entro il",
     late_match:"⏰ Partita in ritardo",
     color_choice:"sceglie il colore",
     presential:"Presenza",
@@ -898,6 +915,8 @@ const T = {
     subtab_ranking:"Classifica",
     ranking_title:"Classifica globale",
     settings_title:"Impostazioni torneo",set_name:"Nome del torneo",set_ppg:"Giocatori per gruppo",set_fin:"Numero di finalisti",set_status:"Stato",
+    set_pool_start:"Data di inizio dei gironi",set_pool_interval:"Intervallo tra i turni dei gironi (giorni)",
+    set_finals_start:"Data di inizio delle finali",set_finals_interval:"Intervallo tra i turni finali (giorni)",
     status_opt_reg:"Iscrizioni aperte",status_opt_play:"Fase a gironi",status_opt_fin:"Fase finale",status_opt_done:"Terminato",
     save_settings:"Salvare",settings_saved:"Salvato!",
     seeding_title:"Teste di serie & gruppi",seeding_desc:"Ordina i giocatori per livello. Distribuzione serpentina per gruppi equilibrati.",
@@ -906,6 +925,7 @@ const T = {
     launch_finals:"🏆 Avviare le fasi finali",reset_scores:"↺ Azzerare i risultati",reset_all:"⚠️ Azzerare il torneo",
     confirm_reset_scores_title:"Azzerare i risultati?",confirm_reset_scores_text:"Tutti i risultati delle partite di gruppo saranno cancellati.",
     confirm_reset_all_title:"Azzerare il torneo?",confirm_reset_all_text:"Tutti i giocatori, le partite e i risultati saranno eliminati definitivamente.",
+    confirm_send_notif_title:"Inviare la notifica?",confirm_send_notif_text:"Questo messaggio sarà inviato a tutti gli iscritti alle notifiche.",
     confirm_ok:"Confermare",confirm_cancel:"Annullare",
     finals_launched:["Fasi finali avviate con "," finalisti!"],not_enough_finalists:"Finalisti qualificati insufficienti.",
     scores_reset:"Risultati azzerati.",tournament_reset:"Torneo azzerato.",
@@ -971,6 +991,10 @@ function applyTranslations() {
   document.getElementById('set-label-name').textContent = t('set_name');
   document.getElementById('set-label-ppg').textContent = t('set_ppg');
   document.getElementById('set-label-fin').textContent = t('set_fin');
+  document.getElementById('set-label-pool-start').textContent = t('set_pool_start');
+  document.getElementById('set-label-pool-interval').textContent = t('set_pool_interval');
+  document.getElementById('set-label-finals-start').textContent = t('set_finals_start');
+  document.getElementById('set-label-finals-interval').textContent = t('set_finals_interval');
 
   document.getElementById('save-settings-btn').textContent = t('save_settings');
   const sR=document.getElementById('subtab-ranking'); if(sR) sR.textContent=t('subtab_ranking');
@@ -1219,15 +1243,19 @@ window.saveSettings = async function() {
   const name=document.getElementById('set-name').value.trim();
   const ppg=parseInt(document.getElementById('set-ppg').value)||5;
   const fin=parseInt(document.getElementById('set-fin').value)||8;
-  const startDate=document.getElementById('set-start').value||'';
-  const delay=parseInt(document.getElementById('set-delay').value)||7;
+  const poolStart=document.getElementById('set-pool-start').value||'';
+  const poolInterval=parseInt(document.getElementById('set-pool-interval').value)||4;
+  const finalsStart=document.getElementById('set-finals-start').value||'';
+  const finalsInterval=parseInt(document.getElementById('set-finals-interval').value)||4;
   const semisFormat=document.getElementById('set-semis').value.trim()||'20min + 10s/coup';
   const finalFormat=document.getElementById('set-final-format').value.trim()||'30min + 10s/coup';
   await set(ref(db,'settings/name'),name);
   await set(ref(db,'settings/playersPerGroup'),ppg);
   await set(ref(db,'settings/finalistsCount'),fin);
-  await set(ref(db,'settings/startDate'),startDate);
-  await set(ref(db,'settings/lateDelay'),delay);
+  await set(ref(db,'settings/poolStartDate'),poolStart);
+  await set(ref(db,'settings/poolInterval'),poolInterval);
+  await set(ref(db,'settings/finalsStartDate'),finalsStart);
+  await set(ref(db,'settings/finalsInterval'),finalsInterval);
   await set(ref(db,'settings/semisFormat'),semisFormat);
   await set(ref(db,'settings/finalFormat'),finalFormat);
   showMsg('settings-msg', t('saved_ok'));
@@ -1305,6 +1333,29 @@ window.moveDown = function(idx) {
   renderSeedList();
 };
 
+// Génère un calendrier round-robin (méthode du cercle) : chaque ronde,
+// un joueur a au maximum 1 match. Groupe impair -> 1 bye par joueur, jamais 2 matchs même ronde.
+function generateRoundRobinSchedule(players) {
+  const list = [...players];
+  if (list.length % 2 !== 0) list.push(null); // bye fictif
+  const n = list.length;
+  if (n < 2) return [];
+  const rounds = [];
+  const fixed = list[0];
+  let rest = list.slice(1);
+  for (let r = 0; r < n - 1; r++) {
+    const arranged = [fixed, ...rest];
+    const roundPairs = [];
+    for (let i = 0; i < n / 2; i++) {
+      const a = arranged[i], b = arranged[n - 1 - i];
+      if (a !== null && b !== null) roundPairs.push([a, b]);
+    }
+    rounds.push(roundPairs);
+    rest.unshift(rest.pop());
+  }
+  return rounds;
+}
+
 window.assignGroups = async function() {
   const ppg=state.settings.playersPerGroup||5;
   // Re-read seedOrder from current state to get latest saved order
@@ -1339,25 +1390,26 @@ window.assignGroups = async function() {
     // Track white/black counts per player for balanced color distribution
     const whiteCounts = {};
     pls.forEach(p => { whiteCounts[p] = 0; });
-    pls.forEach((a,i)=>{
-      for(let j=i+1;j<pls.length;j++){
+    const schedule = generateRoundRobinSchedule(pls);
+    schedule.forEach((roundPairs, roundIdx) => {
+      roundPairs.forEach(([a, b]) => {
         // Give white to player with fewer whites so far
         // Tiebreak: lower seed (better player) gets white
-        let w, b;
-        const wA = whiteCounts[a], wB = whiteCounts[pls[j]];
-        if (wA < wB) { w=a; b=pls[j]; }
-        else if (wB < wA) { w=pls[j]; b=a; }
+        let w, bl;
+        const wA = whiteCounts[a], wB = whiteCounts[b];
+        if (wA < wB) { w=a; bl=b; }
+        else if (wB < wA) { w=b; bl=a; }
         else {
           // Equal whites: better seed gets white
           const seedA = seedLookup[a] ?? 999;
-          const seedB = seedLookup[pls[j]] ?? 999;
-          if (seedA <= seedB) { w=a; b=pls[j]; }
-          else { w=pls[j]; b=a; }
+          const seedB = seedLookup[b] ?? 999;
+          if (seedA <= seedB) { w=a; bl=b; }
+          else { w=b; bl=a; }
         }
         whiteCounts[w]++;
         const id=genId();
-        games[id]={group:grp,playerWhite:w,playerBlack:b,scoreWhite:null,scoreBlack:null};
-      }
+        games[id]={group:grp,playerWhite:w,playerBlack:bl,scoreWhite:null,scoreBlack:null,round:roundIdx+1};
+      });
     });
   });
   await set(ref(db,'games'),games);
@@ -1708,18 +1760,21 @@ window.confirmAction = function(action,t1,t2,isScores) {
     resetGroups: t('confirm_reset_groups_title'),
     resetScores: t('confirm_reset_scores_title'),
     resetFinals: t('confirm_reset_finals_title'),
-    resetAll: t('confirm_reset_all_title')
+    resetAll: t('confirm_reset_all_title'),
+    sendPushToAll: t('confirm_send_notif_title')
   };
   const texts = {
     resetGroups: t('confirm_reset_groups_text'),
     resetScores: t('confirm_reset_scores_text'),
     resetFinals: t('confirm_reset_finals_text'),
-    resetAll: t('confirm_reset_all_text')
+    resetAll: t('confirm_reset_all_text'),
+    sendPushToAll: t('confirm_send_notif_text')
   };
   document.getElementById('confirm-title').textContent = titles[action] || t('confirm_reset_all_title');
   document.getElementById('confirm-text').textContent = texts[action] || t('confirm_reset_all_text');
   document.getElementById('confirm-ok-btn').textContent = t('confirm_ok');
   document.getElementById('confirm-cancel-btn').textContent = t('confirm_cancel');
+  document.getElementById('confirm-ok-btn').className = action === 'sendPushToAll' ? 'btn btn-gold' : 'btn btn-red';
   document.getElementById('confirm-overlay').style.display='flex';
   document.getElementById('confirm-ok-btn').onclick=()=>{closeConfirm();window[action]();};
 };
@@ -1799,15 +1854,43 @@ window.resetFinals = async function() {
   showMsg('actions-msg', t('finals_reset'));
 };
 
+const FINALS_ROUND_SEQUENCE = ['32èmes','16èmes','8èmes','Quarts','Demis','Finale'];
+
+// Date d'échéance d'un match : poule -> startDate + (round-1)*interval ; finale -> ancrée sur
+// la première ronde réellement jouée dans CE bracket (peut commencer à Quarts, 8èmes, etc.)
+function matchDueDate(game, isFinal) {
+  const s = state?.settings || {};
+  if (isFinal) {
+    const startDate = s.finalsStartDate;
+    const interval = s.finalsInterval || 4;
+    if (!startDate || !game.round) return null;
+    const presentRounds = [...new Set(getFinals().map(f => f.round))].filter(r => FINALS_ROUND_SEQUENCE.includes(r));
+    if (!presentRounds.length) return null;
+    const firstIdx = Math.min(...presentRounds.map(r => FINALS_ROUND_SEQUENCE.indexOf(r)));
+    const thisIdx = FINALS_ROUND_SEQUENCE.indexOf(game.round);
+    if (thisIdx < 0) return null; // ex. '3ème place', pas de date propre
+    const position = thisIdx - firstIdx;
+    if (position < 0) return null;
+    const d = new Date(startDate);
+    d.setDate(d.getDate() + position * interval);
+    return d;
+  } else {
+    const startDate = s.poolStartDate;
+    const interval = s.poolInterval || 4;
+    if (!startDate || !game.round) return null;
+    const d = new Date(startDate);
+    d.setDate(d.getDate() + (game.round - 1) * interval);
+    return d;
+  }
+}
+
 function isMatchLate(game, isFinal) {
   const s = state?.settings || {};
-  const startDate = s.startDate;
-  const delay = s.lateDelay || 7;
-  if (!startDate) return false;
-  const start = new Date(startDate).getTime();
-  const now = Date.now();
-  const daysPassed = (now - start) / (1000 * 60 * 60 * 24);
-  return daysPassed > delay;
+  const interval = (isFinal ? s.finalsInterval : s.poolInterval) || 4;
+  const due = matchDueDate(game, isFinal);
+  if (!due) return false;
+  const daysPassed = (Date.now() - due.getTime()) / (1000 * 60 * 60 * 24);
+  return daysPassed > interval;
 }
 
 function generateWhatsAppMsg() {
@@ -1868,7 +1951,7 @@ window.sendPushToAll = async function() {
   const msg = msgEl?.value?.trim();
   if (!msg) { showMsg('notif-admin-msg-result', t('notif_enter_msg'), false); return; }
 
-  const subs = state?.subscriptions || {};
+  const subs = state?.[SUB_PATH] || {};
   const subList = Object.values(subs).filter(s => s.endpoint && s.keys);
   const count = subList.length;
 
@@ -2124,8 +2207,11 @@ function matchCardHTML(g){
   const played=g.scoreWhite!==null&&g.scoreWhite!==undefined;
   const opts=(val)=>['1','0.5','0'].map(s=>`<option value="${s}" ${played&&parseFloat(val)===parseFloat(s)?'selected':''}>${s}</option>`).join('');
   const late = !played && isMatchLate(g, false);
+  const due = matchDueDate(g, false);
+  const dueStr = due ? due.toLocaleDateString(lang==='fr'?'fr-CH':lang==='de'?'de-CH':lang==='it'?'it-CH':'en-GB',{day:'numeric',month:'short'}) : null;
   return `<div class="match-card" style="${late?'border-left:3px solid #E67E22;':''}">
     <div class="match-grp">${esc(g.group)}${late?` <span style="font-size:13px;font-weight:700;color:#E67E22;background:#FFF3E0;padding:2px 6px;border-radius:5px;margin-left:4px">${t("late_badge")}</span>`:''}</div>
+    ${!played&&dueStr?`<div style="font-size:11px;color:#999;margin-top:-4px;margin-bottom:6px">${t('due_by')} ${dueStr}</div>`:''}
     <div class="match-players">
       <div class="match-player"><div class="match-player-name">${esc(g.playerWhite)}</div><div class="match-player-color">${t('whites')}</div></div>
       ${played&&!isEditing?`<div style="text-align:center;cursor:pointer" onclick="openScoreEdit('${g.id}')">
@@ -2168,10 +2254,13 @@ function finalCardHTML(f){
   const played=f.score1!==null&&f.score1!==undefined;
   const isPresential = f.round==='Demis'||f.round==='Finale';
   const lateFinal = !played && !isPresential && f.player1 && f.player2 && isMatchLate(f, true);
+  const dueF = !played && f.player1 && f.player2 ? matchDueDate(f, true) : null;
+  const dueStrF = dueF ? dueF.toLocaleDateString(lang==='fr'?'fr-CH':lang==='de'?'de-CH':lang==='it'?'it-CH':'en-GB',{day:'numeric',month:'short'}) : null;
   const opts=(val)=>['1','0'].map(s=>`<option value="${s}" ${played&&parseFloat(val)===parseFloat(s)?'selected':''}>${s}</option>`).join('');
   const canPlay=f.player1&&f.player2&&!f.winner;
   return `<div class="final-card ${f.winner?'winner':''}" style="${lateFinal?'border-left:3px solid #E67E22;':''}">
     ${isPresential?`<div style="font-size:12px;color:#888;text-align:center;margin-bottom:6px;font-weight:500">${t("presential")} · ${f.round==='Demis'?(state?.settings?.semisFormat||'20min + 10s/coup'):(state?.settings?.finalFormat||'30min + 10s/coup')}</div>`:''}
+    ${dueStrF?`<div style="font-size:11px;color:#999;text-align:center;margin-bottom:6px">${t('due_by')} ${dueStrF}</div>`:''}
     ${lateFinal?`<div style="font-size:13px;color:#E67E22;font-weight:700;margin-bottom:6px;padding:4px 8px;background:#FFF3E0;border-radius:6px;text-align:center">${t("late_match")}</div>`:''}
     ${(f.player1&&f.player2&&!f.winner&&(f.rank1||f.rank2))?`<div style="font-size:11px;color:#888;text-align:center;margin-bottom:5px">⚪ ${(f.rank1!==null&&f.rank1!==undefined&&(f.rank2===null||f.rank2===undefined||f.rank1<=f.rank2))?esc(f.player1):esc(f.player2)} ${t("color_choice")}</div>`:''}
     <div class="match-players">
@@ -2197,8 +2286,10 @@ function renderAdmin(){
   document.getElementById('set-name').value=s.name||'';
   document.getElementById('set-ppg').value=s.playersPerGroup||5;
   document.getElementById('set-fin').value=s.finalistsCount||8;
-  document.getElementById('set-start').value=s.startDate||'';
-  document.getElementById('set-delay').value=s.lateDelay||7;
+  document.getElementById('set-pool-start').value=s.poolStartDate||'';
+  document.getElementById('set-pool-interval').value=s.poolInterval||4;
+  document.getElementById('set-finals-start').value=s.finalsStartDate||'';
+  document.getElementById('set-finals-interval').value=s.finalsInterval||4;
   document.getElementById('set-semis').value=s.semisFormat||'20min + 10s/coup';
   document.getElementById('set-final-format').value=s.finalFormat||'30min + 10s/coup';
 
@@ -2228,7 +2319,7 @@ function renderAdmin(){
   if(currentAdminTab==='ranking') renderRanking();
   if(currentAdminTab==='actions'){
     // Show subscriber count
-    const subsCount = Object.keys(state?.subscriptions || {}).length;
+    const subsCount = Object.keys(state?.[SUB_PATH] || {}).length;
     const subsEl = document.getElementById('notif-subscribers-count');
     if (subsEl) subsEl.textContent = subsCount + (subsCount > 1 ? t('notif_subscribers') : t('notif_subscriber')) + ' aux notifications';
     // Generate default notification message
@@ -2349,6 +2440,22 @@ onValue(ref(db),(snapshot)=>{
 window.addEventListener('offline',()=>document.getElementById('offline-bar').style.display='block');
 // Init notification button state
 setTimeout(async () => {
+  // Recovery: si localStorage effacé mais abonnement push encore actif, restaurer l'état
+  if (localStorage.getItem('abct-notif') !== 'on' && 'serviceWorker' in navigator && 'PushManager' in window) {
+    try {
+      if (Notification.permission === 'granted') {
+        const reg = await navigator.serviceWorker.ready;
+        const existing = await reg.pushManager.getSubscription();
+        if (existing) {
+          const o = existing.toJSON();
+          const subId = btoa(o.endpoint).slice(-20);
+          localStorage.setItem('abct-notif', 'on');
+          localStorage.setItem('abct-notif-subid', subId);
+          console.log('État notifications restauré depuis le service worker');
+        }
+      }
+    } catch(e) { console.log('Recovery notif (non bloquant) :', e.message); }
+  }
   updateNotifBtn();
   // Migration silencieuse : réabonne avec la clé VAPID courante sans rien demander
   if (localStorage.getItem('abct-notif') === 'on' && 'serviceWorker' in navigator && 'PushManager' in window) {
@@ -2360,7 +2467,7 @@ setTimeout(async () => {
         if (old) {
           const oldId = btoa(old.endpoint).slice(-20);
           await old.unsubscribe();
-          await set(ref(db, 'subscriptions/' + oldId), null);
+          await set(ref(db, SUB_PATH + '/' + oldId), null);
         }
         const sub = await reg.pushManager.subscribe({
           userVisibleOnly: true,
@@ -2368,7 +2475,7 @@ setTimeout(async () => {
         });
         const o = sub.toJSON();
         const subId = btoa(o.endpoint).slice(-20);
-        await set(ref(db, 'subscriptions/' + subId), { endpoint: o.endpoint, keys: o.keys, timestamp: Date.now() });
+        await set(ref(db, SUB_PATH + '/' + subId), { endpoint: o.endpoint, keys: o.keys, timestamp: Date.now() });
         localStorage.setItem('abct-notif-subid', subId);
         localStorage.removeItem('abct-notif-token');
         console.log('Abonnement push migré silencieusement');

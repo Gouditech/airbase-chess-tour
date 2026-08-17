@@ -140,6 +140,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
     <div id="home-badge" style="margin-top:8px"></div>
     <button class="btn btn-gray btn-sm" style="display:inline-block;width:auto;margin-top:12px" onclick="openInstallModal()" id="install-btn-home">📲 Installer l'app</button>
     <button class="btn btn-gray btn-sm" style="display:inline-block;width:auto;margin-top:8px" onclick="toggleNotifications()" id="notif-toggle-btn">🔕 Activer les notifications</button>
+    <button class="btn btn-gray btn-sm" style="display:none;width:auto;margin-top:8px;margin-left:6px;font-size:11px" onclick="testNotification()" id="notif-test-btn">🔔 Test</button>
     <div id="notif-msg" style="font-size:12px;margin-top:4px"></div>
   </div>
   <div id="pool-reminder" style="display:none;background:var(--gold-light);border-left:4px solid var(--gold);border-radius:10px;padding:14px 16px;margin-bottom:12px;font-size:13px;color:var(--dark);line-height:1.6">
@@ -200,7 +201,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
   <div id="admin-login" class="card">
     <h2 id="admin-login-title">Accès administrateur</h2>
     <div class="gap">
-      <div class="form-group"><label id="admin-pin-label">Code PIN</label><input id="admin-pin-input" type="password" inputmode="numeric"></div>
+      <div class="form-group"><label id="admin-pin-label">Code PIN</label><input id="admin-pin-input" type="text" inputmode="numeric" autocomplete="off" style="-webkit-text-security:disc;text-security:disc"></div>
       <button class="btn btn-gold" onclick="adminLogin()" id="admin-login-btn">Connexion</button>
       <div id="login-msg"></div>
       <p id="admin-pin-hint" style="font-size:11px;color:#aaa;text-align:center"></p>
@@ -228,9 +229,9 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
         <div id="settings-msg"></div>
         <div style="border-top:1px solid #eee;margin-top:8px;padding-top:12px">
           <div style="font-size:13px;font-weight:700;margin-bottom:10px" id="pin-change-title">Modifier le PIN</div>
-          <div class="form-group"><label id="pin-current-label">PIN actuel</label><input id="pin-current" type="password" inputmode="numeric"></div>
-          <div class="form-group"><label id="pin-new-label">Nouveau PIN</label><input id="pin-new" type="password" inputmode="numeric"></div>
-          <div class="form-group"><label id="pin-confirm-label">Confirmer</label><input id="pin-confirm" type="password" inputmode="numeric"></div>
+          <div class="form-group"><label id="pin-current-label">PIN actuel</label><input id="pin-current" type="text" inputmode="numeric" autocomplete="off" style="-webkit-text-security:disc;text-security:disc"></div>
+          <div class="form-group"><label id="pin-new-label">Nouveau PIN</label><input id="pin-new" type="text" inputmode="numeric" autocomplete="off" style="-webkit-text-security:disc;text-security:disc"></div>
+          <div class="form-group"><label id="pin-confirm-label">Confirmer</label><input id="pin-confirm" type="text" inputmode="numeric" autocomplete="off" style="-webkit-text-security:disc;text-security:disc"></div>
           <button class="btn btn-gray" onclick="changePin()" id="change-pin-btn">Modifier le PIN</button>
           <div id="pin-msg"></div>
         </div>
@@ -290,7 +291,11 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
         <button class="btn btn-green" style="margin-top:8px" onclick="copyWhatsApp()" id="copy-whatsapp-btn">📋 Copier le message</button>
         <div id="whatsapp-msg-result"></div>
       </div>
-      <div style="text-align:center;margin-top:8px">
+      <div id="admin-ranking" class="card" style="display:none;visibility:hidden;height:0;overflow:hidden">
+      <h2 id="ranking-title">Classement global</h2>
+      <div id="ranking-content"></div>
+    </div>
+    <div style="text-align:center;margin-top:8px">
         <button class="btn btn-gray btn-sm" style="display:inline-block;width:auto" onclick="adminLogout()" id="logout-btn">Déconnexion</button>
       </div>
     </div>
@@ -305,7 +310,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
   <div id="maint-text" style="color:#aaa;font-size:14px;text-align:center;line-height:1.6">Le site est temporairement indisponible.<br>Revenez dans quelques instants.</div>
   <div style="margin-top:40px;border-top:1px solid #333;padding-top:20px;width:100%;max-width:280px">
     <div style="font-size:11px;color:#555;text-align:center;margin-bottom:10px">Accès administrateur</div>
-    <input id="maint-pin" type="password" inputmode="numeric" placeholder="Code PIN" style="width:100%;padding:10px 12px;border:1px solid #333;border-radius:8px;background:#222;color:#fff;font-size:14px;text-align:center;margin-bottom:8px">
+    <input id="maint-pin" type="text" inputmode="numeric" autocomplete="off" placeholder="Code PIN" style="width:100%;padding:10px 12px;border:1px solid #333;border-radius:8px;background:#222;color:#fff;font-size:14px;text-align:center;margin-bottom:8px;-webkit-text-security:disc;text-security:disc">
     <button onclick="maintAdminLogin()" style="width:100%;padding:10px;border:none;border-radius:8px;background:var(--gold);color:var(--dark);font-weight:700;font-size:13px;cursor:pointer">Connexion admin</button>
     <div id="maint-pin-msg" style="font-size:12px;color:var(--red);text-align:center;margin-top:6px"></div>
   </div>
@@ -376,7 +381,9 @@ const fbApp = initializeApp(firebaseConfig);
 const db = getDatabase(fbApp);
 
 // ── PUSH NOTIFICATIONS (FCM) ──
-const VAPID_KEY = 'BEQmMXuj4tL4J7bfodS6wycUnY5QDuS6iy-6AAEjDNF8kfRFN2hx8Dc3bh_eTtnZVlEeFjVMjIV7MmTOjcklp-8';
+const VAPID_KEY = 'BDy7Ykx_56HPF9np6HhyQcwnvEFjkRpC3_P_Y3I9NE5gNrXpH3jPufff_c_qcTperoPyXnynH-lAG0XS6sTh6kA';
+
+
 
 function urlBase64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -390,41 +397,27 @@ function urlBase64ToUint8Array(base64String) {
 async function subscribeToNotifications() {
   try {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      showMsg('notif-msg', t('notif_install_hint'), false);
-      return;
+      showMsg('notif-msg', t('notif_install_hint'), false, true); return;
     }
-    if (!('Notification' in window)) { showMsg('notif-msg', t('notif_unsupported'), false); return; }
+    if (!('Notification' in window)) { showMsg('notif-msg', t('notif_unsupported'), false, true); return; }
     const permission = await Notification.requestPermission();
-    if (permission !== 'granted') { showMsg('notif-msg', t('notif_denied'), false); return; }
-    // Wait for SW with timeout
-    // Wait for SW registration
-    let reg;
-    try {
-      reg = await Promise.race([
-        navigator.serviceWorker.ready,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 10000))
-      ]);
-    } catch(swErr) {
-      // SW not available - show install hint
-      showMsg('notif-msg', t('notif_install_hint'), false);
-      return;
-    }
+    if (permission !== 'granted') { const isPWA = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone; showMsg('notif-msg', t(isPWA ? 'notif_denied_pwa' : 'notif_denied'), false, true); return; }
+    const reg = await navigator.serviceWorker.ready;
     const sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(VAPID_KEY)
     });
-    // Store subscription in Firebase
-    const subId = btoa(sub.endpoint).slice(-20);
+    const subObj = sub.toJSON();
+    const subId = btoa(subObj.endpoint).slice(-20);
     await set(ref(db, 'subscriptions/' + subId), {
-      endpoint: sub.endpoint,
-      keys: { p256dh: btoa(String.fromCharCode(...new Uint8Array(sub.getKey('p256dh')))), auth: btoa(String.fromCharCode(...new Uint8Array(sub.getKey('auth')))) },
+      endpoint: subObj.endpoint,
+      keys: subObj.keys,
       timestamp: Date.now()
     });
     localStorage.setItem('abct-notif-subid', subId);
     localStorage.setItem('abct-notif', 'on');
     updateNotifBtn();
     showMsg('notif-msg', t('notif_enabled'));
-    setTimeout(updateNotifBtn, 500);
   } catch(e) {
     console.error('Subscription error:', e);
     showMsg('notif-msg', 'Erreur: ' + e.message, false);
@@ -449,14 +442,42 @@ async function unsubscribeFromNotifications() {
 
 function updateNotifBtn() {
   const btn = document.getElementById('notif-toggle-btn');
-  const on = localStorage.getItem('abct-notif') === 'on';
+  const testBtn = document.getElementById('notif-test-btn');
+  let on = localStorage.getItem('abct-notif') === 'on';
+  // Sync: if browser revoked permission, reset local state
+  if (on && 'Notification' in window && Notification.permission !== 'granted') {
+    localStorage.removeItem('abct-notif');
+    on = false;
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+    showMsg('notif-msg', t(isPWA ? 'notif_denied_pwa' : 'notif_denied'), false, true);
+  }
   if (btn) {
     btn.textContent = on ? t('notif_on') : t('notif_off');
     btn.style.background = on ? 'var(--green)' : '#EBEBEB';
     btn.style.color = on ? '#fff' : '#555';
     btn.style.fontWeight = on ? '700' : '600';
   }
+  if (testBtn) testBtn.style.display = on ? 'inline-block' : 'none';
 }
+
+window.testNotification = async function() {
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (!sub) { showMsg('notif-msg', '❌ ' + t('notif_test_nosub'), false, true); return; }
+    await reg.showNotification(state?.settings?.name || 'Air Base Chess Tour', {
+      body: t('notif_test_body'),
+      icon: '/icon-192.jpg',
+      badge: '/icon-192.jpg',
+      vibrate: [200, 100, 200],
+      tag: 'abct-test',
+      requireInteraction: true
+    });
+    showMsg('notif-msg', t('notif_test_sent'));
+  } catch(e) {
+    showMsg('notif-msg', '❌ Erreur: ' + e.message, false);
+  }
+};
 
 let lastNotifTimestamp = 0;
 
@@ -525,7 +546,7 @@ const T = {
     rules:`<p>🚀 Consultez l'onglet Matchs pour voir vos parties dès que la phase de poules est lancée. Envoyez une invitation à votre adversaire sur Chess.com (pseudo visible dans l'onglet Tournoi) ou jouez sur échiquier physique. Vous pouvez jouer plusieurs parties en même temps. Inscrivez le résultat dès la fin de chaque partie directement dans l'app.</p><br>
 <p>Format : Poules round-robin, puis phases finales à élimination directe.</p><br>
 <p>Scores : 1 (victoire) · 0.5 (nul) · 0 (défaite)</p><br>
-<p>Départage : Points → Victoires → Victoires avec les Noirs → Buchholz → Confrontation directe</p><br>
+<p>Départage dans les groupes : ① Points ② Victoires ③ Victoires avec les Noirs ④ Confrontation directe ⑤ Tête de série</p><p>Départage global (finalistes) : ① Points/match ② Victoires/match ③ Victoires Noirs/match ④ Buchholz/match ⑤ Tête de série</p><br>
 <p>Finales : Le mieux classé choisit sa couleur. Nul = match rejoué couleurs inversées.</p><br>
 <p>⛔ Interdit : Analyse, coups conditionnels sur Chess.com. Max 24h/coup, min 10min/coup, pas de mode vacances.</p><br>
 <p>🏆 Demi-finales &amp; Finale en présentiel sur échiquier physique. Absent à la date convenue = disqualifié.</p><br>
@@ -539,11 +560,15 @@ const T = {
     late_msg:"Certains matchs sont en retard, jouez rapidement !",
     pending_msg:"Certains matchs sont encore en attente, pensez à organiser vos parties rapidement !",
     notif_unsupported:"Notifications non supportées sur ce navigateur.",
-    notif_denied:"Permission refusée.",
+    notif_denied:"Permission refusée. Ouvre les réglages du site (🔒 dans la barre d'adresse) → Autorisations → Notifications → Autoriser, puis recharge la page.",
+    notif_denied_pwa:"Permission refusée. Va dans Paramètres de ton téléphone → Applications → ton navigateur → Notifications, et autorise ce site. Puis réouvre l'app.",
     notif_on:"🔔 Désactiver les notifications",
     notif_off:"🔕 Activer les notifications",
     notif_enabled:"✓ Notifications activées !",
     notif_disabled:"Notifications désactivées.",
+    notif_test_body:"🔔 Ceci est un test de notification.",
+    notif_test_sent:"✓ Notification test envoyée !",
+    notif_test_nosub:"Pas d'abonnement actif. Désactive puis réactive les notifications.",
     notif_enter_msg:"Entrez un message.",
     notif_sent:"✓ Notification enregistrée !",
     notif_subscriber:" abonné",
@@ -580,6 +605,10 @@ const T = {
     admin_pin_hint:"Première utilisation ? Créez votre PIN maintenant.",admin_pin_err:"PIN incorrect.",
     admin_logout:"Déconnexion",
     subtab_settings:"Réglages",subtab_players:"Joueurs",subtab_seeding:"Groupes",subtab_actions:"Actions",
+    subtab_ranking:"Ranking",
+    ranking_title:"Global Ranking",
+    subtab_ranking:"Classement",
+    ranking_title:"Classement global",
     settings_title:"Paramètres du tournoi",set_name:"Nom du tournoi",set_ppg:"Joueurs par groupe",set_fin:"Nombre de finalistes",set_status:"Statut",
     status_opt_reg:"Inscriptions ouvertes",status_opt_play:"Phase de poules",status_opt_fin:"Phases finales",status_opt_done:"Terminé",
     save_settings:"Enregistrer",settings_saved:"Enregistré !",
@@ -617,7 +646,7 @@ const T = {
     rules:`<p>🚀 Sieh dir deine Partien im Tab <strong>Partien</strong> an, sobald die Gruppenphase gestartet ist. Sende deinem Gegner eine Einladung auf Chess.com (Benutzername im Tab <strong>Turnier</strong>) oder spiele auf dem Brett. Du kannst mehrere Partien gleichzeitig spielen. Trage das Ergebnis direkt im Tab <strong>Partien</strong> ein.</p><br>
 <p>Format: Round-Robin-Gruppen, dann K.o.-Finalrunden.</p><br>
 <p>Punkte: 1 (Sieg) · 0.5 (Remis) · 0 (Niederlage)</p><br>
-<p>Tiebreak: Punkte → Siege → Siege mit Schwarz → Buchholz → Direkter Vergleich</p><br>
+<p>Tiebreak Gruppen: ① Punkte ② Siege ③ Siege mit Schwarz ④ Direkter Vergleich ⑤ Setzrang</p><p>Globaler Tiebreak (Finalisten): ① Punkte/Partie ② Siege/Partie ③ Siege Schwarz/Partie ④ Buchholz/Partie ⑤ Setzrang</p><br>
 <p>Finals: Der Besser­platzierte wählt die Farbe. Remis = Wiederholung mit getauschten Farben.</p><br>
 <p>⛔ Verboten: Analyse, bedingte Züge auf Chess.com. Max. 24h/Zug, kein Urlaubsmodus.</p><br>
 <p>Schiedsrichter: Bei Streitigkeiten entscheidet der Organisator. Fair Play wird erwartet.</p>`,
@@ -631,6 +660,8 @@ const T = {
     admin_pin_hint:"Erste Verwendung? Erstellen Sie jetzt Ihren PIN.",admin_pin_err:"Falscher PIN.",
     admin_logout:"Abmelden",
     subtab_settings:"Einstellungen",subtab_players:"Spieler",subtab_seeding:"Gruppen",subtab_actions:"Aktionen",
+    subtab_ranking:"Rangliste",
+    ranking_title:"Globale Rangliste",
     settings_title:"Turniereinstellungen",set_name:"Turniername",set_ppg:"Spieler pro Gruppe",set_fin:"Anzahl Finalisten",set_status:"Status",
     status_opt_reg:"Anmeldung offen",status_opt_play:"Gruppenphase",status_opt_fin:"Finalphase",status_opt_done:"Beendet",
     save_settings:"Speichern",settings_saved:"Gespeichert!",
@@ -660,11 +691,15 @@ const T = {
     late_msg:"Einige Partien sind verspätet, spielen Sie schnell!",
     pending_msg:"Einige Partien sind noch ausstehend, bitte spielen Sie schnell!",
     notif_unsupported:"Benachrichtigungen nicht unterstützt.",
-    notif_denied:"Berechtigung verweigert.",
+    notif_denied:"Berechtigung verweigert. Öffne die Website-Einstellungen (🔒 in der Adressleiste) → Berechtigungen → Benachrichtigungen → Zulassen, dann lade die Seite neu.",
+    notif_denied_pwa:"Berechtigung verweigert. Gehe zu Einstellungen → Apps → dein Browser → Benachrichtigungen, und erlaube diese Seite. Dann öffne die App erneut.",
     notif_on:"🔔 Benachrichtigungen deaktivieren",
     notif_off:"🔕 Benachrichtigungen aktivieren",
     notif_enabled:"✓ Benachrichtigungen aktiviert!",
     notif_disabled:"Benachrichtigungen deaktiviert.",
+    notif_test_body:"🔔 Dies ist eine Testbenachrichtigung.",
+    notif_test_sent:"✓ Testbenachrichtigung gesendet!",
+    notif_test_nosub:"Kein aktives Abonnement. Deaktiviere und reaktiviere die Benachrichtigungen.",
     notif_enter_msg:"Bitte eine Nachricht eingeben.",
     notif_sent:"✓ Benachrichtigung gespeichert!",
     notif_subscriber:" Abonnent",
@@ -707,7 +742,7 @@ const T = {
     rules:`<p>🚀 Check the <strong>Matches</strong> tab to see your games when the group stage starts. Send an invitation to your opponent on Chess.com (username in the <strong>Tournament</strong> tab) or play on a physical board. You can play multiple games at once. Enter the result directly in the <strong>Matches</strong> tab.</p><br>
 <p>Format: Round-robin groups, then knockout finals.</p><br>
 <p>Scores: 1 (win) · 0.5 (draw) · 0 (loss)</p><br>
-<p>Tiebreak: Points → Wins → Wins with Black → Buchholz → Head-to-head</p><br>
+<p>Group tiebreak: ① Points ② Wins ③ Wins with Black ④ Head-to-head ⑤ Seed</p><p>Global tiebreak (finalists): ① Points/game ② Wins/game ③ Black wins/game ④ Buchholz/game ⑤ Seed</p><br>
 <p>Finals: Higher-ranked player chooses color. Draw = replay with swapped colors.</p><br>
 <p>⛔ Forbidden: Analysis board, conditional moves on Chess.com. Max 24h/move, no vacation mode.</p><br>
 <p>Arbiter: In case of dispute, the organizer decides. Fair play expected from all.</p>`,
@@ -720,11 +755,15 @@ const T = {
     late_msg:"Some matches are overdue, please play quickly!",
     pending_msg:"Some matches are still pending, please organize your games quickly!",
     notif_unsupported:"Notifications not supported on this browser.",
-    notif_denied:"Permission denied.",
+    notif_denied:"Permission denied. Open site settings (🔒 in address bar) → Permissions → Notifications → Allow, then reload the page.",
+    notif_denied_pwa:"Permission denied. Go to your phone's Settings → Apps → your browser → Notifications, and allow this site. Then reopen the app.",
     notif_on:"🔔 Disable notifications",
     notif_off:"🔕 Enable notifications",
     notif_enabled:"✓ Notifications enabled!",
     notif_disabled:"Notifications disabled.",
+    notif_test_body:"🔔 This is a test notification.",
+    notif_test_sent:"✓ Test notification sent!",
+    notif_test_nosub:"No active subscription. Disable then re-enable notifications.",
     notif_enter_msg:"Please enter a message.",
     notif_sent:"✓ Notification saved!",
     notif_subscriber:" subscriber",
@@ -798,7 +837,7 @@ const T = {
     rules:`<p>🚀 Consulta la scheda <strong>Partite</strong> per vedere le tue partite non appena inizia la fase a gironi. Invia un invito al tuo avversario su Chess.com (nome utente nella scheda <strong>Torneo</strong>) o gioca su una scacchiera. Puoi giocare più partite contemporaneamente. Inserisci il risultato nella scheda <strong>Partite</strong>.</p><br>
 <p>Formato: Gironi round-robin, poi fasi finali ad eliminazione diretta.</p><br>
 <p>Punteggi: 1 (vittoria) · 0.5 (patta) · 0 (sconfitta)</p><br>
-<p>Spareggio: Punti → Vittorie → Vittorie con il Nero → Buchholz → Scontro diretto</p><br>
+<p>Spareggio gironi: ① Punti ② Vittorie ③ Vittorie con il Nero ④ Scontro diretto ⑤ Testa di serie</p><p>Spareggio globale (finalisti): ① Punti/partita ② Vittorie/partita ③ Vittorie Nero/partita ④ Buchholz/partita ⑤ Testa di serie</p><br>
 <p>Finali: Il meglio classificato sceglie il colore. Patta = rivincita con colori invertiti.</p><br>
 <p>⛔ Vietato: Analisi, mosse condizionali su Chess.com. Max 24h/mossa, nessuna modalità vacanze.</p><br>
 <p>Arbitraggio: In caso di controversia, decide l'organizzatore. Fair play atteso da tutti.</p>`,
@@ -811,11 +850,15 @@ const T = {
     late_msg:"Alcune partite sono in ritardo, giocare rapidamente!",
     pending_msg:"Alcune partite sono ancora in attesa, organizzate le vostre partite rapidamente!",
     notif_unsupported:"Notifiche non supportate su questo browser.",
-    notif_denied:"Autorizzazione negata.",
+    notif_denied:"Autorizzazione negata. Apri le impostazioni del sito (🔒 nella barra degli indirizzi) → Autorizzazioni → Notifiche → Consenti, poi ricarica la pagina.",
+    notif_denied_pwa:"Autorizzazione negata. Vai nelle Impostazioni del telefono → App → il tuo browser → Notifiche, e consenti questo sito. Poi riapri l'app.",
     notif_on:"🔔 Disattivare le notifiche",
     notif_off:"🔕 Attivare le notifiche",
     notif_enabled:"✓ Notifiche attivate!",
     notif_disabled:"Notifiche disattivate.",
+    notif_test_body:"🔔 Questa è una notifica di prova.",
+    notif_test_sent:"✓ Notifica di prova inviata!",
+    notif_test_nosub:"Nessun abbonamento attivo. Disattiva e riattiva le notifiche.",
     notif_enter_msg:"Inserire un messaggio.",
     notif_sent:"✓ Notifica salvata!",
     notif_subscriber:" abbonato",
@@ -852,6 +895,8 @@ const T = {
     admin_pin_hint:"Prima utilizzo? Crea il tuo PIN adesso.",admin_pin_err:"PIN errato.",
     admin_logout:"Disconnettersi",
     subtab_settings:"Impostazioni",subtab_players:"Giocatori",subtab_seeding:"Gruppi",subtab_actions:"Azioni",
+    subtab_ranking:"Classifica",
+    ranking_title:"Classifica globale",
     settings_title:"Impostazioni torneo",set_name:"Nome del torneo",set_ppg:"Giocatori per gruppo",set_fin:"Numero di finalisti",set_status:"Stato",
     status_opt_reg:"Iscrizioni aperte",status_opt_play:"Fase a gironi",status_opt_fin:"Fase finale",status_opt_done:"Terminato",
     save_settings:"Salvare",settings_saved:"Salvato!",
@@ -928,6 +973,8 @@ function applyTranslations() {
   document.getElementById('set-label-fin').textContent = t('set_fin');
 
   document.getElementById('save-settings-btn').textContent = t('save_settings');
+  const sR=document.getElementById('subtab-ranking'); if(sR) sR.textContent=t('subtab_ranking');
+  const rT=document.getElementById('ranking-title'); if(rT) rT.textContent=t('ranking_title');
   document.getElementById('seeding-title').textContent = t('seeding_title');
   document.getElementById('seeding-desc').textContent = t('seeding_desc');
   document.getElementById('assign-btn').textContent = t('assign_btn');
@@ -1015,10 +1062,18 @@ function defaultData() {
 
 function genId() { return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function objToArr(obj) { return obj ? Object.entries(obj).map(([id,v])=>({...v,id})) : []; }
-function showMsg(id, text, ok=true) {
+function showMsg(id, text, ok=true, persist=false) {
   const el = document.getElementById(id); if(!el) return;
-  el.className='msg '+(ok?'ok':'err'); el.textContent=text;
-  setTimeout(()=>{ el.textContent=''; el.className='msg'; }, 3500);
+  el.className='msg '+(ok?'ok':'err');
+  if (persist) {
+    el.innerHTML = '<span style="flex:1">' + esc(text) + '</span><span class="msg-close" onclick="this.parentElement.textContent=\'\';this.parentElement.className=\'msg\';" style="cursor:pointer;margin-left:8px;font-size:16px;font-weight:700;opacity:0.7">✕</span>';
+    el.style.display = 'flex';
+    el.style.alignItems = 'flex-start';
+  } else {
+    el.textContent = text;
+    el.style.display = '';
+    setTimeout(()=>{ el.textContent=''; el.className='msg'; }, 3500);
+  }
 }
 function esc(s) { if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
@@ -1052,6 +1107,7 @@ window.adminLogin = async function() {
   else { showMsg('login-msg', t('admin_pin_err'), false); return; }
   document.getElementById('admin-login').style.display='none';
   document.getElementById('admin-dashboard').style.display='block';
+  sessionStorage.setItem('abct-session-pin', document.getElementById('admin-pin-input').value);
   applyMaintenanceOverlay();
   showAdminTab('actions');
   renderAdmin();
@@ -1080,6 +1136,75 @@ window.changePin = async function() {
   document.getElementById('pin-confirm').value='';
   showMsg('pin-msg',t('pin_changed'));
 };
+
+function renderRanking() {
+  const standings = computeStandings();
+  const players = getPlayers();
+  const el = document.getElementById('ranking-content');
+  if (!el) return;
+
+  if (!players.length) {
+    el.innerHTML = `<div style="color:var(--gray);text-align:center;padding:16px">${t('groups_empty')}</div>`;
+    return;
+  }
+
+  const seedMap = {};
+  players.forEach(p => { seedMap[p.nickname] = typeof p.seed === 'number' ? p.seed + 1 : '—'; });
+
+  const hasGroups = Object.keys(standings).length > 0;
+  const total = state?.settings?.finalistsCount || 8;
+
+  let rows = [];
+
+  if (hasGroups) {
+    // Full ranking from discoverFinalists
+    const fin = discoverFinalists(standings, 9999);
+    const qualifiedSet = new Set(discoverFinalists(standings, total).map(f => f.player));
+    rows = fin.map((f, i) => {
+      const s = f.stats;
+      const qualified = qualifiedSet.has(f.player);
+      return `<tr class="${qualified ? 'qualified' : ''}">
+        <td><strong style="color:${qualified ? 'var(--gold)' : 'var(--gray)'}">${i+1}</strong></td>
+        <td>${esc(f.player)}</td>
+        <td style="color:var(--gray);font-size:11px">${f.group}</td>
+        <td>${s.points}</td>
+        <td>${s.matches}</td>
+        <td>${s.totalWins}</td>
+        <td>${s.blackWins}</td>
+        <td>${s.tieBreak.toFixed(1)}</td>
+        <td style="color:var(--gray);font-size:11px">${(()=>{const h2h=s.headToHead||{};const opp=Object.keys(h2h);return opp.length?opp.map(o=>esc(o)+':'+h2h[o]).join(', '):'—';})()}</td>
+        <td style="color:var(--gray)">${seedMap[f.player] !== undefined ? seedMap[f.player]+1 : '—'}</td>
+      </tr>`;
+    });
+  } else {
+    // No groups yet — show players sorted by seed
+    const sorted = [...players].sort((a,b) => (typeof a.seed==='number'?a.seed:999)-(typeof b.seed==='number'?b.seed:999));
+    rows = sorted.map((p, i) => `<tr>
+      <td><strong style="color:var(--gray)">${i+1}</strong></td>
+      <td>${esc(p.nickname)}</td>
+      <td style="color:var(--gray);font-size:11px">—</td>
+      <td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>
+      <td style="color:var(--gray)">${i+1}</td>
+    </tr>`);
+  }
+
+  el.innerHTML = `<div class="scroll-x"><table class="rank-table">
+    <thead><tr>
+      <th>#</th>
+      <th>${t('rank_player')}</th>
+      <th>Grp</th>
+      <th>${t('rank_pts')}</th>
+      <th>${t('rank_mj')}</th>
+      <th>${t('rank_v')}</th>
+      <th>${t('rank_vn')}</th>
+      <th>TB</th>
+      <th>H2H</th>
+      <th>Seed</th>
+    </tr></thead>
+    <tbody>${rows.join('')}</tbody>
+  </table></div>
+  <div style="font-size:11px;color:var(--gray);margin-top:8px">TB = Buchholz · ${t('rank_legend')}</div>`;
+}
 
 window.showAdminTab = function(tab) {
   currentAdminTab=tab;
@@ -1183,7 +1308,7 @@ window.moveDown = function(idx) {
 window.assignGroups = async function() {
   const ppg=state.settings.playersPerGroup||5;
   // Re-read seedOrder from current state to get latest saved order
-  const freshPlayers = getPlayers().sort((a,b)=>(a.seed||0)-(b.seed||0));
+  const freshPlayers = getPlayers().sort((a,b)=>(typeof a.seed==='number'?a.seed:999)-(typeof b.seed==='number'?b.seed:999));
   // Merge with in-memory seedOrder: if lengths match, use in-memory (has unsaved changes)
   // If seeds in Firebase match seedOrder, use seedOrder; otherwise use Firebase order
   const workingOrder = seedOrder.length === freshPlayers.length ? seedOrder : freshPlayers;
@@ -1411,7 +1536,10 @@ async function propagateFinalWinner(id, winner, game) {
     if (tp && loser) {
       const [tpId, tpGame] = tp;
       const slot = !tpGame.player1 ? 'player1' : 'player2';
+      const rankSlot = slot === 'player1' ? 'rank1' : 'rank2';
+      const loserRank = winner === game.player1 ? game.rank2 : game.rank1;
       await set(ref(db, 'finals/' + tpId + '/' + slot), loser);
+      if (loserRank) await set(ref(db, 'finals/' + tpId + '/' + rankSlot), loserRank);
     }
   }
 }
@@ -1605,6 +1733,7 @@ window.maintAdminLogin = async function() {
   const stored = await get(ref(db,'adminPin')).then(s=>s.exists()?s.val():null);
   if (stored === pin) {
     isAdmin = true;
+    sessionStorage.setItem('abct-session-pin', pin);
     // Disable maintenance
     maintenanceMode = false;
     await set(ref(db,'maintenance'), false);
@@ -1738,20 +1867,35 @@ window.sendPushToAll = async function() {
   const msgEl = document.getElementById('notif-admin-msg');
   const msg = msgEl?.value?.trim();
   if (!msg) { showMsg('notif-admin-msg-result', t('notif_enter_msg'), false); return; }
-  // Store notification in Firebase — subscribers will receive it via their own polling
-  // or via a backend push service. For now, store in Firebase for clients to display.
-  const notifId = genId();
-  await set(ref(db, 'notifications/' + notifId), {
-    title: state?.settings?.name || 'Air Base Chess Tour',
-    body: msg,
-    timestamp: Date.now(),
-    sent: true
-  });
-  // Count subscribers
+
   const subs = state?.subscriptions || {};
-  const count = Object.keys(subs).length;
-  showMsg('notif-admin-msg-result', `${t('notif_sent')} ${count}${count > 1 ? t('notif_subscribers') : t('notif_subscriber')}.`);
-  msgEl.value = '';
+  const subList = Object.values(subs).filter(s => s.endpoint && s.keys);
+  const count = subList.length;
+
+  if (!count) { showMsg('notif-admin-msg-result', '0 abonné.', false); return; }
+
+  const title = state?.settings?.name || 'Air Base Chess Tour';
+
+  try {
+    showMsg('notif-admin-msg-result', '📤 Envoi en cours...');
+    const res = await fetch('/.netlify/functions/send-notification', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pin: sessionStorage.getItem('abct-session-pin') || '', subscriptions: subList, title, body: msg })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      const notifId = genId();
+      await set(ref(db, 'notifications/' + notifId), { title, body: msg, timestamp: Date.now(), sent: true });
+      const errMsg = data.errors && data.errors.length ? ' ' + data.errors[0] : '';
+      showMsg('notif-admin-msg-result', `${t('notif_sent')} ${data.success}/${count}.${errMsg}`);
+      msgEl.value = '';
+    } else {
+      showMsg('notif-admin-msg-result', 'Erreur: ' + (data.error || 'Unknown'), false);
+    }
+  } catch(e) {
+    showMsg('notif-admin-msg-result', 'Erreur: ' + e.message, false);
+  }
 };
 
 window.copyWhatsApp = async function() {
@@ -1815,9 +1959,18 @@ function computeStandings(){
 }
 
 function sortGroup(g){
+  // Get seed lookup from players
+  const players = getPlayers();
+  const seedMap = {};
+  players.forEach(p => { seedMap[p.nickname] = typeof p.seed === 'number' ? p.seed : 999; });
   return Object.keys(g).sort((a,b)=>{
     const pa=g[a],pb=g[b];
-    return(pb.points-pa.points)||(pb.totalWins-pa.totalWins)||(pb.blackWins-pa.blackWins)||(pb.tieBreak-pa.tieBreak)||((pb.headToHead[a]||0)-(pa.headToHead[b]||0));
+    // 1. Points 2. Victoires 3. Victoires Noirs 4. H2H 5. Seed
+    return(pb.points-pa.points)
+      ||(pb.totalWins-pa.totalWins)
+      ||(pb.blackWins-pa.blackWins)
+      ||((pb.headToHead[a]||0)-(pa.headToHead[b]||0))
+      ||((seedMap[a] !== undefined ? seedMap[a] : 999)-(seedMap[b] !== undefined ? seedMap[b] : 999));
   });
 }
 
@@ -1837,14 +1990,31 @@ function discoverFinalists(standings,total){
     });
     if(!cands.length) break;
     const norm=(s,f)=>s.matches>0?s[f]/s.matches:0;
-    cands.sort((a,b)=>(norm(b.stats,'points')-norm(a.stats,'points'))||(norm(b.stats,'tieBreak')-norm(a.stats,'tieBreak'))||(norm(b.stats,'totalWins')-norm(a.stats,'totalWins'))||(norm(b.stats,'blackWins')-norm(a.stats,'blackWins')));
+    // Global: Points/M → Wins/M → BlackWins/M → Buchholz/M → Seed
+    const players2 = getPlayers();
+    const seedMap2 = {};
+    players2.forEach(p => { seedMap2[p.nickname] = typeof p.seed === 'number' ? p.seed : 999; });
+    cands.sort((a,b)=>
+      (norm(b.stats,'points')-norm(a.stats,'points'))
+      ||(norm(b.stats,'totalWins')-norm(a.stats,'totalWins'))
+      ||(norm(b.stats,'blackWins')-norm(a.stats,'blackWins'))
+      ||(norm(b.stats,'tieBreak')-norm(a.stats,'tieBreak'))
+      ||((seedMap2[a.player] !== undefined ? seedMap2[a.player] : 999)-(seedMap2[b.player] !== undefined ? seedMap2[b.player] : 999))
+    );
     finalists.push(...cands.slice(0,total-finalists.length));
     layer++;
   }
   finalists.sort((a,b)=>{
     if(a.groupRank!==b.groupRank) return a.groupRank-b.groupRank;
     const norm=(s,f)=>s.matches>0?s[f]/s.matches:0;
-    return(norm(b.stats,'points')-norm(a.stats,'points'))||(norm(b.stats,'tieBreak')-norm(a.stats,'tieBreak'))||(norm(b.stats,'totalWins')-norm(a.stats,'totalWins'))||(norm(b.stats,'blackWins')-norm(a.stats,'blackWins'));
+    const players3 = getPlayers();
+    const seedMap3 = {};
+    players3.forEach(p => { seedMap3[p.nickname] = typeof p.seed === 'number' ? p.seed : 999; });
+    return(norm(b.stats,'points')-norm(a.stats,'points'))
+      ||(norm(b.stats,'totalWins')-norm(a.stats,'totalWins'))
+      ||(norm(b.stats,'blackWins')-norm(a.stats,'blackWins'))
+      ||(norm(b.stats,'tieBreak')-norm(a.stats,'tieBreak'))
+      ||((seedMap3[a.player]||999)-(seedMap3[b.player]||999));
   });
   return finalists;
 }
@@ -1859,6 +2029,7 @@ function playerEditForm(p) {
     <div style="display:flex;gap:8px">
       <button onclick="saveEditPlayer('${p.id}')" style="flex:1;padding:8px;border:none;border-radius:8px;background:var(--green);color:#fff;font-weight:700;cursor:pointer;font-size:13px">✓ Enregistrer</button>
       <button onclick="cancelEditPlayer()" style="padding:8px 14px;border:none;border-radius:8px;background:#eee;color:#666;font-weight:600;cursor:pointer;font-size:13px">✕</button>
+      <button onclick="confirmUnregister('${p.id}','${esc(p.nickname)}')" style="padding:8px 14px;border:none;border-radius:8px;background:var(--red);color:#fff;font-weight:700;cursor:pointer;font-size:13px">🗑️</button>
     </div>
   </div>`;
 }
@@ -1902,10 +2073,7 @@ function renderHome(){
           <div style="font-size:12px;color:#555;margin-top:2px">${esc(p.name)}${p.sector?' · <span style="color:var(--gray)">'+esc(p.sector)+'</span>':''}</div>
           ${p.group?`<div style="font-size:11px;color:var(--gold);margin-top:2px;font-weight:600">${esc(p.group)}</div>`:''}
         </div>
-        ${isReg?`<div style="display:flex;gap:6px;align-items:center">
-          <button onclick="startEditPlayer('${p.id}')" style="border:none;background:none;color:var(--gold);cursor:pointer;font-size:15px;padding:2px 4px" title="Modifier">✏️</button>
-          <button onclick="confirmUnregister('${p.id}','${esc(p.nickname)}')" style="border:none;background:none;color:var(--red);cursor:pointer;font-size:15px;padding:2px 4px" title="Se désinscrire">🗑️</button>
-        </div>`:''}
+        ${isReg?`<button onclick="startEditPlayer('${p.id}')" style="border:none;background:none;color:var(--gold);cursor:pointer;font-size:15px;padding:2px 4px" title="Modifier">✏️</button>`:''}
       </div>
       ${isEditing ? playerEditForm(p) : ''}
     </div>`;
@@ -1924,12 +2092,14 @@ function renderGroups(){
   container.innerHTML=groupNames.map(grp=>{
     const g=standings[grp],sorted=sortGroup(g);
     return `<div class="card"><h3>${grp.toUpperCase()}</h3><div class="scroll-x"><table class="rank-table">
-      <thead><tr><th>#</th><th>${t('rank_player')}</th><th>${t('rank_pts')}</th><th>${t('rank_mj')}</th><th>${t('rank_v')}</th><th>${t('rank_vn')}</th><th>${t('rank_tb')}</th></tr></thead>
-      <tbody>${sorted.map((p,i)=>`<tr class="${qualifiedPlayers.has(p)?'qualified':''}">
-        <td><strong style="color:${qualifiedPlayers.has(p)?'var(--gold)':'var(--gray)'}">${i+1}</td>
-        <td>${esc(p)}</td><td>${g[p].points}</td>
-        <td>${g[p].matches}</td><td>${g[p].totalWins}</td><td>${g[p].blackWins}</td><td>${g[p].tieBreak}</td>
-      </tr>`).join('')}</tbody></table></div></div>`;
+      <thead><tr><th>#</th><th>${t('rank_player')}</th><th>${t('rank_pts')}</th><th>${t('rank_mj')}</th><th>${t('rank_v')}</th><th>${t('rank_vn')}</th><th>TB</th></tr></thead>
+      <tbody>${sorted.map((p, i)=>{
+        return `<tr class="${qualifiedPlayers.has(p)?'qualified':''}">
+        <td><strong style="color:${qualifiedPlayers.has(p)?'var(--gold)':'var(--gray)'}">${i+1}</strong></td>
+        <td>${esc(p)}</td>
+        <td>${g[p].points}</td>
+        <td>${g[p].matches}</td><td>${g[p].totalWins}</td><td>${g[p].blackWins}</td><td>${g[p].tieBreak.toFixed(1)}</td>
+      </tr>`;}).join('')}</tbody></table></div></div>`;
   }).join('')+`<div style="font-size:11px;color:#aaa;text-align:center;padding:8px 0 4px">${t('rank_legend')}</div>`;
 }
 
@@ -2003,7 +2173,7 @@ function finalCardHTML(f){
   return `<div class="final-card ${f.winner?'winner':''}" style="${lateFinal?'border-left:3px solid #E67E22;':''}">
     ${isPresential?`<div style="font-size:12px;color:#888;text-align:center;margin-bottom:6px;font-weight:500">${t("presential")} · ${f.round==='Demis'?(state?.settings?.semisFormat||'20min + 10s/coup'):(state?.settings?.finalFormat||'30min + 10s/coup')}</div>`:''}
     ${lateFinal?`<div style="font-size:13px;color:#E67E22;font-weight:700;margin-bottom:6px;padding:4px 8px;background:#FFF3E0;border-radius:6px;text-align:center">${t("late_match")}</div>`:''}
-    ${(f.player1&&f.player2&&!f.winner)?`<div style="font-size:11px;color:#888;text-align:center;margin-bottom:5px">⚪ ${f.rank1<=f.rank2?esc(f.player1):esc(f.player2)} ${t("color_choice")}</div>`:''}
+    ${(f.player1&&f.player2&&!f.winner&&(f.rank1||f.rank2))?`<div style="font-size:11px;color:#888;text-align:center;margin-bottom:5px">⚪ ${(f.rank1!==null&&f.rank1!==undefined&&(f.rank2===null||f.rank2===undefined||f.rank1<=f.rank2))?esc(f.player1):esc(f.player2)} ${t("color_choice")}</div>`:''}
     <div class="match-players">
       <div class="match-player"><div class="match-player-name" style="color:${f.winner===f.player1?'var(--green)':'var(--dark)'}">${f.player1||'?'}</div></div>
       ${played&&!isEditing?`<div class="match-score" onclick="openFinalEdit('${f.id}')" style="cursor:pointer" title="Modifier">${f.score1} — ${f.score2}</div>`:`<div class="match-vs">vs</div>`}
@@ -2037,7 +2207,7 @@ function renderAdmin(){
   const numGroups=Math.ceil(players.length/ppg);
   document.getElementById('set-ppg-hint').textContent=`${players.length} → ${numGroups} groupe${numGroups>1?'s':''} ~${ppg}`;
   document.getElementById('admin-player-count').textContent=players.length;
-  document.getElementById('admin-player-list').innerHTML=players.sort((a,b)=>(a.seed||0)-(b.seed||0)).map(p=>{
+  document.getElementById('admin-player-list').innerHTML=players.sort((a,b)=>(typeof a.seed==='number'?a.seed:999)-(typeof b.seed==='number'?b.seed:999)).map(p=>{
     const isEditing = editingPlayerId===p.id;
     return `<div class="seed-item" style="flex-direction:column;align-items:stretch">
       <div style="display:flex;align-items:center;gap:8px;width:100%">
@@ -2052,9 +2222,10 @@ function renderAdmin(){
     </div>`;
   }).join('')||`<div style="color:var(--gray);font-size:13px">${t('no_matches')}</div>`;
   // Always sync seedOrder from Firebase to reflect saved order
-  seedOrder=[...players].sort((a,b)=>(a.seed||0)-(b.seed||0));
+  seedOrder=[...players].sort((a,b)=>(typeof a.seed==='number'?a.seed:999)-(typeof b.seed==='number'?b.seed:999));
   renderSeedList();
   document.getElementById('seed-info').textContent=`${players.length} → ${numGroups} groupe${numGroups>1?'s':''} ~${ppg}`;
+  if(currentAdminTab==='ranking') renderRanking();
   if(currentAdminTab==='actions'){
     // Show subscriber count
     const subsCount = Object.keys(state?.subscriptions || {}).length;
@@ -2102,9 +2273,29 @@ function renderAdmin(){
     const fin=discoverFinalists(standings,s.finalistsCount||8);
     const fp=document.getElementById('finalists-preview');
     if(!fin.length){fp.innerHTML=`<div style="color:var(--gray);font-size:13px">${t('no_matches')}</div>`;}
-    else{fp.innerHTML=`<div class="scroll-x"><table class="rank-table">
-      <thead><tr><th>#</th><th>${t('rank_player')}</th><th>${t('group_rank')}</th><th>${t('group_grp')}</th><th>${t('pts_per_match')}</th></tr></thead>
-      <tbody>${fin.map((f,i)=>`<tr><td><strong style="color:var(--gold)">${i+1}</td><td>${esc(f.player)}</td><td>${f.groupRank}</td><td>${esc(f.group.replace('Groupe ','G'))}</td><td>${f.stats.matches>0?(f.stats.points/f.stats.matches).toFixed(2):'—'}</td></tr>`).join('')}</tbody>
+    else{const seedMapF = {};
+      getPlayers().forEach(p => { seedMapF[p.nickname] = typeof p.seed === 'number' ? p.seed + 1 : null; });
+      fp.innerHTML=`<div class="scroll-x"><table class="rank-table">
+      <thead><tr>
+        <th>#</th><th>${t('rank_player')}</th><th>Rg</th><th>Grp</th>
+        <th>Pts/M</th><th>MJ</th><th>V/M</th><th>VN/M</th><th>TB/M</th><th>H2H</th><th>Seed</th>
+      </tr></thead>
+      <tbody>${fin.map((f,i)=>{
+        const s=f.stats; const m=s.matches||1;
+        const h2h=s.headToHead||{};
+        const h2hStr=Object.keys(h2h).length?Object.keys(h2h).map(o=>esc(o)+':'+h2h[o]).join(', '):'—';
+        return `<tr>
+          <td><strong style="color:var(--gold)">${i+1}</strong></td>
+          <td>${esc(f.player)}</td>
+          <td style="color:var(--gray)">${f.groupRank}</td>
+          <td style="color:var(--gray);font-size:11px">${esc(f.group.replace('Groupe ','G'))}</td>
+          <td>${(s.points/m).toFixed(2)}</td><td>${s.matches}</td>
+          <td>${(s.totalWins/m).toFixed(2)}</td><td>${(s.blackWins/m).toFixed(2)}</td>
+          <td>${(s.tieBreak/m).toFixed(2)}</td>
+          <td style="font-size:10px;color:var(--gray)">${h2hStr}</td>
+          <td style="color:var(--gray)">${seedMapF[f.player] !== null && seedMapF[f.player] !== undefined ? seedMapF[f.player] : '—'}</td>
+        </tr>`;
+      }).join('')}</tbody>
     </table></div>`;}
   }
 }
@@ -2139,12 +2330,12 @@ onValue(ref(db),(snapshot)=>{
   // Only reset seedOrder from Firebase if not actively editing seeding
   // (prevents Firebase sync from undoing user's unsaved reordering)
   if (currentPage !== 'admin' || currentAdminTab !== 'seeding') {
-    seedOrder=[...getPlayers()].sort((a,b)=>(a.seed||0)-(b.seed||0));
+    seedOrder=[...getPlayers()].sort((a,b)=>(typeof a.seed==='number'?a.seed:999)-(typeof b.seed==='number'?b.seed:999));
   } else {
     // Seeding tab open: only sync if player list changed (additions/removals)
     const freshPlayers = getPlayers();
     if (freshPlayers.length !== seedOrder.length) {
-      seedOrder=[...freshPlayers].sort((a,b)=>(a.seed||0)-(b.seed||0));
+      seedOrder=[...freshPlayers].sort((a,b)=>(typeof a.seed==='number'?a.seed:999)-(typeof b.seed==='number'?b.seed:999));
     }
   }
   applyMaintenanceOverlay();
@@ -2157,7 +2348,37 @@ onValue(ref(db),(snapshot)=>{
 
 window.addEventListener('offline',()=>document.getElementById('offline-bar').style.display='block');
 // Init notification button state
-setTimeout(updateNotifBtn, 500);
+setTimeout(async () => {
+  updateNotifBtn();
+  // Migration silencieuse : réabonne avec la clé VAPID courante sans rien demander
+  if (localStorage.getItem('abct-notif') === 'on' && 'serviceWorker' in navigator && 'PushManager' in window) {
+    try {
+      if (Notification.permission === 'granted') {
+        const reg = await navigator.serviceWorker.ready;
+        const old = await reg.pushManager.getSubscription();
+        // Un abonnement existant porte peut-être l'ANCIENNE clé VAPID -> il faut le révoquer
+        if (old) {
+          const oldId = btoa(old.endpoint).slice(-20);
+          await old.unsubscribe();
+          await set(ref(db, 'subscriptions/' + oldId), null);
+        }
+        const sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_KEY)
+        });
+        const o = sub.toJSON();
+        const subId = btoa(o.endpoint).slice(-20);
+        await set(ref(db, 'subscriptions/' + subId), { endpoint: o.endpoint, keys: o.keys, timestamp: Date.now() });
+        localStorage.setItem('abct-notif-subid', subId);
+        localStorage.removeItem('abct-notif-token');
+        console.log('Abonnement push migré silencieusement');
+      }
+    } catch(e) {
+      console.log('Migration silencieuse (non bloquant) :', e.message);
+    }
+  }
+}, 500);
+
 window.addEventListener('online',()=>document.getElementById('offline-bar').style.display='none');
 
 // Init lang buttons

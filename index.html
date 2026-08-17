@@ -1078,6 +1078,7 @@ let currentAdminTab = 'actions';
 let editingMatchId = null;
 let editingFinalId = null;
 let editingPlayerId = null;
+let lastAutoNotifMsg = '';
 let seedOrder = [];
 
 function defaultData() {
@@ -2192,7 +2193,10 @@ function renderMatches(){
   document.getElementById('match-filters').innerHTML=[{id:'all',label:t('matches_all')},...groups.map(g=>({id:g,label:g}))].map(f=>`
     <button class="pill ${currentMatchFilter===f.id?'active':'inactive'}" onclick="setMatchFilter('${f.id}')">${f.label}</button>`).join('');
   const filtered=currentMatchFilter==='all'?games:games.filter(g=>g.group===currentMatchFilter);
-  const pending=filtered.filter(g=>g.scoreWhite===null||g.scoreWhite===undefined);
+  const pending=filtered.filter(g=>g.scoreWhite===null||g.scoreWhite===undefined).sort((a,b)=>{
+    const da=matchDueDate(a,false), db=matchDueDate(b,false);
+    return (da?da.getTime():Infinity)-(db?db.getTime():Infinity);
+  });
   const done=filtered.filter(g=>g.scoreWhite!==null&&g.scoreWhite!==undefined);
   document.getElementById('matches-empty').style.display=games.length===0?'block':'none';
   document.getElementById('matches-empty').textContent=t('matches_empty');
@@ -2211,14 +2215,16 @@ function matchCardHTML(g){
   const dueStr = due ? due.toLocaleDateString(lang==='fr'?'fr-CH':lang==='de'?'de-CH':lang==='it'?'it-CH':'en-GB',{day:'numeric',month:'short'}) : null;
   return `<div class="match-card" style="${late?'border-left:3px solid #E67E22;':''}">
     <div class="match-grp">${esc(g.group)}${late?` <span style="font-size:13px;font-weight:700;color:#E67E22;background:#FFF3E0;padding:2px 6px;border-radius:5px;margin-left:4px">${t("late_badge")}</span>`:''}</div>
-    ${!played&&dueStr?`<div style="font-size:11px;color:#999;margin-top:-4px;margin-bottom:6px">${t('due_by')} ${dueStr}</div>`:''}
     <div class="match-players">
-      <div class="match-player"><div class="match-player-name">${esc(g.playerWhite)}</div><div class="match-player-color">${t('whites')}</div></div>
+      <div class="match-player"><div class="match-player-name">${esc(g.playerWhite)}</div><div class="match-player-color" style="display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px;margin-top:4px;background:#F5F5F0;color:#555;border:1px solid #ddd">${t('whites')}</div></div>
       ${played&&!isEditing?`<div style="text-align:center;cursor:pointer" onclick="openScoreEdit('${g.id}')">
         <div class="match-score">${g.scoreWhite} — ${g.scoreBlack}</div>
         <div style="font-size:10px;color:#ccc;margin-top:-2px">${t("modify")}</div>
-      </div>`:`<div class="match-vs">vs</div>`}
-      <div class="match-player"><div class="match-player-name">${esc(g.playerBlack)}</div><div class="match-player-color">${t('blacks')}</div></div>
+      </div>`:(dueStr?`<div style="text-align:center">
+        <div style="font-size:16px;font-weight:800;color:${late?'#E67E22':'var(--dark)'};white-space:nowrap">${dueStr}</div>
+        <div style="font-size:9px;color:#aaa;margin-top:-2px;white-space:nowrap">${t('due_by')}</div>
+      </div>`:`<div class="match-vs">vs</div>`)}
+      <div class="match-player"><div class="match-player-name">${esc(g.playerBlack)}</div><div class="match-player-color" style="display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px;margin-top:4px;background:#2c2c2c;color:#fff">${t('blacks')}</div></div>
     </div>
     ${!played&&!isEditing?`<button class="btn btn-gold" style="margin-top:10px;font-size:13px;padding:9px" onclick="openScoreEdit('${g.id}')">${t('enter_score')}</button>`:''}
     ${isEditing?`<div class="score-row">
@@ -2322,10 +2328,14 @@ function renderAdmin(){
     const subsCount = Object.keys(state?.[SUB_PATH] || {}).length;
     const subsEl = document.getElementById('notif-subscribers-count');
     if (subsEl) subsEl.textContent = subsCount + (subsCount > 1 ? t('notif_subscribers') : t('notif_subscriber')) + ' aux notifications';
-    // Generate default notification message
+    // Generate default notification message — reste synchronisé (retards inclus) tant que l'admin n'a pas personnalisé le texte
     const notifMsgEl = document.getElementById('notif-admin-msg');
-    if (notifMsgEl && !notifMsgEl.value) {
-      notifMsgEl.value = generateWhatsAppMsg();
+    if (notifMsgEl) {
+      const freshNotifMsg = generateWhatsAppMsg();
+      if (!notifMsgEl.value || notifMsgEl.value === lastAutoNotifMsg) {
+        notifMsgEl.value = freshNotifMsg;
+        lastAutoNotifMsg = freshNotifMsg;
+      }
     }
     // Populate WhatsApp message preview
     const msgPreview = document.getElementById('whatsapp-preview');

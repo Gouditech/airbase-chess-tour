@@ -142,6 +142,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
     <button class="btn btn-gray btn-sm" style="display:inline-block;width:auto;margin-top:12px" onclick="openInstallModal()" id="install-btn-home">📲 Installer l'app</button>
     <button class="btn btn-gray btn-sm" style="display:inline-block;width:auto;margin-top:8px" onclick="toggleNotifications()" id="notif-toggle-btn">🔕 Activer les notifications</button>
     <button class="btn btn-gray btn-sm" style="display:none;width:auto;margin-top:8px;margin-left:6px;font-size:11px" onclick="testNotification()" id="notif-test-btn">🔔 Test</button>
+    <div><a href="#" onclick="toggleNotifPrefsPanel();return false;" id="notif-prefs-link" style="display:none;font-size:12px;color:var(--gray);margin-top:8px;text-decoration:underline">⚙️ Préférences de notification</a></div>
     <div id="notif-prefs" style="display:none;margin-top:10px;text-align:left;display:inline-block">
       <label style="display:flex;align-items:center;gap:6px;font-size:12px;margin-bottom:5px;cursor:pointer"><input type="checkbox" id="pref-officiel" onchange="updateNotifPrefs()"><span id="pref-officiel-label"></span></label>
       <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="pref-match" onchange="updateNotifPrefs()"><span id="pref-match-label"></span></label>
@@ -243,6 +244,24 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
           <button class="btn btn-gray" onclick="changePin()" id="change-pin-btn">Modifier le PIN</button>
           <div id="pin-msg"></div>
         </div>
+        <div style="border-top:1px solid #eee;margin-top:8px;padding-top:12px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:10px">🔔 Notifications automatiques</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;padding:10px 12px;background:#f8f8f8;border-radius:8px">
+            <input type="checkbox" id="auto-notify-toggle" onchange="toggleAutoNotify()" style="width:18px;height:18px;flex-shrink:0">
+            <label for="auto-notify-toggle" style="font-size:13px;line-height:1.4">🤖 Envoi automatique — catégorie <b>Match</b> (résultat saisi par un joueur ou l'admin). Se coupe aussi en mode maintenance.</label>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:10px 12px;background:#f8f8f8;border-radius:8px">
+            <input type="checkbox" id="auto-late-toggle" onchange="toggleAutoLateAlert()" style="width:18px;height:18px;flex-shrink:0">
+            <label for="auto-late-toggle" style="font-size:13px;line-height:1.4">📅 Alerte quotidienne des matchs en retard — <b>toi uniquement</b>, l'admin. Rien n'est envoyé aux joueurs automatiquement.</label>
+          </div>
+        </div>
+        <div style="border-top:1px solid #eee;margin-top:8px;padding-top:12px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:10px">📍 Appareil admin (alerte retard)</div>
+          <div id="admin-device-status" style="font-size:13px;margin-bottom:10px;padding:0 2px"></div>
+          <div id="admin-device-actions" style="margin-bottom:12px;display:flex;flex-direction:column;gap:8px"></div>
+          <button class="btn btn-gray" onclick="checkLateNow()" id="check-late-btn">🔍 Vérifier les retards maintenant</button>
+          <div id="check-late-result" style="font-size:12px;margin-top:6px"></div>
+        </div>
       </div>
     </div>
     <div id="admin-players" class="card" style="display:none">
@@ -287,16 +306,6 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
       </div>
       <div class="card" style="margin-top:0">
         <h2 id="notif-admin-title">🔔 Envoyer une notification</h2>
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;padding:10px 12px;background:#f8f8f8;border-radius:8px">
-          <input type="checkbox" id="auto-notify-toggle" onchange="toggleAutoNotify()" style="width:18px;height:18px;flex-shrink:0">
-          <label for="auto-notify-toggle" style="font-size:13px;line-height:1.4">🤖 Envoi automatique — catégorie <b>Match</b> (résultat saisi par un joueur ou l'admin). Se coupe aussi en mode maintenance.</label>
-        </div>
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;padding:10px 12px;background:#f8f8f8;border-radius:8px">
-          <input type="checkbox" id="auto-late-toggle" onchange="toggleAutoLateAlert()" style="width:18px;height:18px;flex-shrink:0">
-          <label for="auto-late-toggle" style="font-size:13px;line-height:1.4">📅 Alerte quotidienne des matchs en retard — <b>toi uniquement</b>, l'admin. Rien n'est envoyé aux joueurs automatiquement ; tu décides ensuite via le champ ci-dessous.</label>
-        </div>
-        <div id="admin-device-status" style="font-size:12px;margin-bottom:6px;padding:0 2px"></div>
-        <div id="admin-device-actions" style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap"></div>
         <div style="margin-bottom:12px">
           <textarea id="notif-admin-msg" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;min-height:80px;resize:vertical" placeholder="Message de notification..."></textarea>
           <button class="btn btn-gray" style="margin-top:6px" onclick="confirmAction('sendPushToAll')" id="send-notif-btn">📤 Envoyer à tous les abonnés</button>
@@ -483,9 +492,11 @@ function updateNotifBtn() {
     btn.style.fontWeight = on ? '700' : '600';
   }
   if (testBtn) testBtn.style.display = on ? 'inline-block' : 'none';
+  const prefsLink = document.getElementById('notif-prefs-link');
+  if (prefsLink) prefsLink.style.display = on ? 'inline-block' : 'none';
   const prefsBox = document.getElementById('notif-prefs');
   if (prefsBox) {
-    prefsBox.style.display = on ? 'inline-block' : 'none';
+    if (!on) prefsBox.style.display = 'none'; // toujours masqué si désabonné, quoi qu'il arrive
     if (on) {
       const subId = localStorage.getItem('abct-notif-subid');
       const stored = subId ? state?.[SUB_PATH]?.[subId]?.prefs : null;
@@ -496,6 +507,12 @@ function updateNotifBtn() {
     }
   }
   renderAdminDeviceStatus();
+}
+
+window.toggleNotifPrefsPanel = function() {
+  const box = document.getElementById('notif-prefs');
+  if (!box) return;
+  box.style.display = (box.style.display === 'none') ? 'inline-block' : 'none';
 }
 
 // État à 3 valeurs : aucun appareil enregistré / cet appareil / un autre appareil.
@@ -517,15 +534,15 @@ function renderAdminDeviceStatus() {
     if (d.kind === 'none') {
       devStatus.innerHTML = '⚠️ Aucun appareil admin enregistré pour l\'alerte retard.';
       devActions.innerHTML = d.thisIsSubscribed
-        ? `<button class="btn btn-gray btn-sm" style="width:auto;font-size:12px" onclick="registerThisDeviceAsAdmin()">📍 Faire de cet appareil mon appareil admin</button>`
-        : `<span style="font-size:11px;color:var(--gray)">Active tes notifications ci-dessus d'abord.</span>`;
+        ? `<button class="btn btn-gold" onclick="registerThisDeviceAsAdmin()">📍 Faire de cet appareil mon appareil admin</button>`
+        : `<span style="font-size:12px;color:var(--gray)">Active tes notifications ci-dessus d'abord.</span>`;
     } else if (d.kind === 'this') {
       devStatus.innerHTML = '✅ C\'est cet appareil qui est enregistré pour l\'alerte retard.';
       devActions.innerHTML = `<button class="btn btn-gray btn-sm" style="width:auto;font-size:12px;background:#fee;color:var(--red)" onclick="resetAdminDevice()">🔄 Retirer cet enregistrement</button>`;
     } else {
       devStatus.innerHTML = '⚠️ Un <b>autre</b> appareil est enregistré pour l\'alerte retard — pas celui-ci.';
-      devActions.innerHTML = `<button class="btn btn-gray btn-sm" style="width:auto;font-size:12px" onclick="resetAdminDevice()">🔄 Retirer l'enregistrement actuel</button>` +
-        (d.thisIsSubscribed ? `<button class="btn btn-gray btn-sm" style="width:auto;font-size:12px" onclick="registerThisDeviceAsAdmin()">📍 Enregistrer cet appareil à la place</button>` : '');
+      devActions.innerHTML = (d.thisIsSubscribed ? `<button class="btn btn-gold" onclick="registerThisDeviceAsAdmin()">📍 Enregistrer cet appareil à la place</button>` : '') +
+        `<button class="btn btn-gray btn-sm" style="width:auto;font-size:12px" onclick="resetAdminDevice()">🔄 Retirer l'enregistrement actuel</button>`;
     }
   }
   // Version compacte, page d'accueil — visible seulement si on est connecté en admin sur CET appareil.
@@ -1461,6 +1478,50 @@ function generateRoundRobinSchedule(players) {
   return rounds;
 }
 
+// Répartition EXACTE des couleurs par couplage biparti (chemins augmentants).
+// Une approche gloutonne (même raffinée) peut produire des écarts de 2 ou 3 dans les
+// grands groupes ; ceci garantit mathématiquement la cible pour chaque joueur.
+//   - Nombre de matchs PAIR par joueur -> exactement moitié blancs / moitié noirs pour tous.
+//   - Nombre de matchs IMPAIR -> la moitié la mieux classée (seed) reçoit un blanc de plus,
+//     l'autre moitié un noir de plus.
+function assignBalancedColors(pls, schedule, seedLookup) {
+  const n = pls.length;
+  const matchesEach = n - 1;
+  const target = {};
+  if (matchesEach % 2 === 0) {
+    pls.forEach(p => { target[p] = matchesEach / 2; });
+  } else {
+    const half = Math.ceil(n / 2);
+    const bySeed = [...pls].sort((a,b)=>(seedLookup[a]??999)-(seedLookup[b]??999));
+    bySeed.forEach((p, i) => { target[p] = (i < half) ? Math.ceil(matchesEach/2) : Math.floor(matchesEach/2); });
+  }
+
+  const matches = [];
+  schedule.forEach((roundPairs, r) => roundPairs.forEach(([a,b]) => matches.push({a,b,round:r})));
+
+  const slots = [];
+  pls.forEach(p => { for (let k=0;k<target[p];k++) slots.push(p); });
+  const matchAdj = slots.map(p => matches.map((m,mi)=>mi).filter(mi => matches[mi].a===p || matches[mi].b===p));
+
+  const matchOwner = new Array(matches.length).fill(-1);
+  function tryAugment(slotIdx, visited) {
+    for (const mi of matchAdj[slotIdx]) {
+      if (visited[mi]) continue;
+      visited[mi] = true;
+      if (matchOwner[mi] === -1 || tryAugment(matchOwner[mi], visited)) {
+        matchOwner[mi] = slotIdx;
+        return true;
+      }
+    }
+    return false;
+  }
+  for (let s = 0; s < slots.length; s++) tryAugment(s, new Array(matches.length).fill(false));
+
+  const whiteFor = matches.map(() => null);
+  matchOwner.forEach((slotIdx, mi) => { if (slotIdx !== -1) whiteFor[mi] = slots[slotIdx]; });
+  return matches.map((m, mi) => ({ a: m.a, b: m.b, round: m.round, white: whiteFor[mi] }));
+}
+
 window.assignGroups = async function() {
   const ppg=state.settings.playersPerGroup||5;
   // Re-read seedOrder from current state to get latest saved order
@@ -1492,29 +1553,12 @@ window.assignGroups = async function() {
   workingOrder.forEach((p, i) => { seedLookup[p.nickname] = i; });
 
   Object.entries(groups).forEach(([grp,pls])=>{
-    // Track white/black counts per player for balanced color distribution
-    const whiteCounts = {};
-    pls.forEach(p => { whiteCounts[p] = 0; });
     const schedule = generateRoundRobinSchedule(pls);
-    schedule.forEach((roundPairs, roundIdx) => {
-      roundPairs.forEach(([a, b]) => {
-        // Give white to player with fewer whites so far
-        // Tiebreak: lower seed (better player) gets white
-        let w, bl;
-        const wA = whiteCounts[a], wB = whiteCounts[b];
-        if (wA < wB) { w=a; bl=b; }
-        else if (wB < wA) { w=b; bl=a; }
-        else {
-          // Equal whites: better seed gets white
-          const seedA = seedLookup[a] ?? 999;
-          const seedB = seedLookup[b] ?? 999;
-          if (seedA <= seedB) { w=a; bl=b; }
-          else { w=b; bl=a; }
-        }
-        whiteCounts[w]++;
-        const id=genId();
-        games[id]={group:grp,playerWhite:w,playerBlack:bl,scoreWhite:null,scoreBlack:null,round:roundIdx+1};
-      });
+    const coloredMatches = assignBalancedColors(pls, schedule, seedLookup);
+    coloredMatches.forEach(m => {
+      const w = m.white, bl = (m.white===m.a) ? m.b : m.a;
+      const id=genId();
+      games[id]={group:grp,playerWhite:w,playerBlack:bl,scoreWhite:null,scoreBlack:null,round:m.round+1};
     });
   });
   await set(ref(db,'games'),games);
@@ -1942,6 +1986,29 @@ window.registerThisDeviceAsAdmin = async function() {
 window.resetAdminDevice = async function() {
   if (!isAdmin) return;
   await set(ref(db, 'settings/' + ADMIN_SUB_KEY), null);
+};
+
+window.checkLateNow = async function() {
+  const btn = document.getElementById('check-late-btn');
+  const resultEl = document.getElementById('check-late-result');
+  if (btn) btn.disabled = true;
+  if (resultEl) { resultEl.style.color = 'var(--gray)'; resultEl.textContent = '⏳ Vérification en cours...'; }
+  try {
+    const res = await fetch('/.netlify/functions/check-late-now', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pin: sessionStorage.getItem('abct-session-pin') || '' })
+    });
+    const data = await res.json();
+    if (resultEl) {
+      if (!res.ok) { resultEl.style.color = 'var(--red)'; resultEl.textContent = '❌ ' + (data.error || 'Erreur'); }
+      else { resultEl.style.color = data.sent ? 'var(--green)' : 'var(--gray)'; resultEl.textContent = (data.sent ? '✅ ' : 'ℹ️ ') + (data.reason || ''); }
+    }
+  } catch (e) {
+    if (resultEl) { resultEl.style.color = 'var(--red)'; resultEl.textContent = '❌ Erreur : ' + e.message; }
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 };
 
 // Déclenchement automatique après un score : côté serveur, la fonction revérifie
@@ -2609,30 +2676,48 @@ setTimeout(async () => {
     } catch(e) { console.log('Recovery notif (non bloquant) :', e.message); }
   }
   updateNotifBtn();
-  // Migration silencieuse : réabonne avec la clé VAPID courante sans rien demander
+  // Migration : ne réabonne QUE si la clé VAPID a réellement changé. Sinon, l'abonnement
+  // (et son identifiant d'appareil) reste stable d'une ouverture à l'autre — important pour
+  // que l'enregistrement "appareil admin" ne se perde pas à chaque fermeture du site.
   if (localStorage.getItem('abct-notif') === 'on' && 'serviceWorker' in navigator && 'PushManager' in window) {
     try {
       if (Notification.permission === 'granted') {
         const reg = await navigator.serviceWorker.ready;
         const old = await reg.pushManager.getSubscription();
-        // Un abonnement existant porte peut-être l'ANCIENNE clé VAPID -> il faut le révoquer
-        let carriedPrefs = null;
-        if (old) {
-          const oldId = btoa(old.endpoint).slice(-20);
-          carriedPrefs = state?.[SUB_PATH]?.[oldId]?.prefs || null;
-          await old.unsubscribe();
-          await set(ref(db, SUB_PATH + '/' + oldId), null);
+
+        let needsMigration = true;
+        if (old && old.options && old.options.applicationServerKey) {
+          const currentKey = urlBase64ToUint8Array(VAPID_KEY);
+          const existingKey = new Uint8Array(old.options.applicationServerKey);
+          needsMigration = !(existingKey.length === currentKey.length && existingKey.every((b, i) => b === currentKey[i]));
         }
-        const sub = await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(VAPID_KEY)
-        });
-        const o = sub.toJSON();
-        const subId = btoa(o.endpoint).slice(-20);
-        await set(ref(db, SUB_PATH + '/' + subId), { endpoint: o.endpoint, keys: o.keys, timestamp: Date.now(), prefs: carriedPrefs || { officiel: true, match: true } });
-        localStorage.setItem('abct-notif-subid', subId);
-        localStorage.removeItem('abct-notif-token');
-        console.log('Abonnement push migré silencieusement');
+
+        if (needsMigration) {
+          // Un abonnement existant porte peut-être l'ANCIENNE clé VAPID -> il faut le révoquer
+          let carriedPrefs = null;
+          if (old) {
+            const oldId = btoa(old.endpoint).slice(-20);
+            carriedPrefs = state?.[SUB_PATH]?.[oldId]?.prefs || null;
+            await old.unsubscribe();
+            await set(ref(db, SUB_PATH + '/' + oldId), null);
+          }
+          const sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(VAPID_KEY)
+          });
+          const o = sub.toJSON();
+          const subId = btoa(o.endpoint).slice(-20);
+          await set(ref(db, SUB_PATH + '/' + subId), { endpoint: o.endpoint, keys: o.keys, timestamp: Date.now(), prefs: carriedPrefs || { officiel: true, match: true } });
+          localStorage.setItem('abct-notif-subid', subId);
+          localStorage.removeItem('abct-notif-token');
+          console.log('Abonnement push migré (clé VAPID différente)');
+        } else if (old) {
+          // Deja a jour : juste s'assurer que l'identifiant local correspond bien
+          const currentSubId = btoa(old.endpoint).slice(-20);
+          if (localStorage.getItem('abct-notif-subid') !== currentSubId) {
+            localStorage.setItem('abct-notif-subid', currentSubId);
+          }
+        }
       }
     } catch(e) {
       console.log('Migration silencieuse (non bloquant) :', e.message);

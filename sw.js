@@ -1,10 +1,11 @@
 // Air Base Chess Tour — Service Worker
-const CACHE_NAME = 'abct-v4';
+const CACHE_NAME = 'abct-v5';
 
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(['/', '/index.html']).catch(() => {});
+      // match-dates.js est indispensable au site : il doit être en cache hors ligne.
+      return cache.addAll(['/', '/index.html', '/match-dates.js']).catch(() => {});
     })
   );
   self.skipWaiting();

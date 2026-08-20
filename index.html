@@ -122,6 +122,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
     <div id="header-title">Air Base Chess Tour</div>
     <div id="header-sub"></div>
   </div>
+  <div id="header-admin-badge" onclick="showPage('admin')" style="display:none;color:var(--gold);font-size:19px;cursor:pointer;flex-shrink:0" title="Cet appareil est ton appareil admin — alerte retard active">🔑</div>
 
 </div>
 
@@ -141,7 +142,12 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
     <button class="btn btn-gray btn-sm" style="display:inline-block;width:auto;margin-top:12px" onclick="openInstallModal()" id="install-btn-home">📲 Installer l'app</button>
     <button class="btn btn-gray btn-sm" style="display:inline-block;width:auto;margin-top:8px" onclick="toggleNotifications()" id="notif-toggle-btn">🔕 Activer les notifications</button>
     <button class="btn btn-gray btn-sm" style="display:none;width:auto;margin-top:8px;margin-left:6px;font-size:11px" onclick="testNotification()" id="notif-test-btn">🔔 Test</button>
+    <div id="notif-prefs" style="display:none;margin-top:10px;text-align:left;display:inline-block">
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;margin-bottom:5px;cursor:pointer"><input type="checkbox" id="pref-officiel" onchange="updateNotifPrefs()"><span id="pref-officiel-label"></span></label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="pref-match" onchange="updateNotifPrefs()"><span id="pref-match-label"></span></label>
+    </div>
     <div id="notif-msg" style="font-size:12px;margin-top:4px"></div>
+    <div id="home-admin-device-status" style="display:none;font-size:11px;color:var(--gray);margin-top:6px;padding:5px 10px;background:#f8f8f8;border-radius:6px"></div>
   </div>
   <div id="pool-reminder" style="display:none;background:var(--gold-light);border-left:4px solid var(--gold);border-radius:10px;padding:14px 16px;margin-bottom:12px;font-size:13px;color:var(--dark);line-height:1.6">
     <strong id="pool-reminder-title"></strong><br>
@@ -281,6 +287,16 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
       </div>
       <div class="card" style="margin-top:0">
         <h2 id="notif-admin-title">🔔 Envoyer une notification</h2>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;padding:10px 12px;background:#f8f8f8;border-radius:8px">
+          <input type="checkbox" id="auto-notify-toggle" onchange="toggleAutoNotify()" style="width:18px;height:18px;flex-shrink:0">
+          <label for="auto-notify-toggle" style="font-size:13px;line-height:1.4">🤖 Envoi automatique — catégorie <b>Match</b> (résultat saisi par un joueur ou l'admin). Se coupe aussi en mode maintenance.</label>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;padding:10px 12px;background:#f8f8f8;border-radius:8px">
+          <input type="checkbox" id="auto-late-toggle" onchange="toggleAutoLateAlert()" style="width:18px;height:18px;flex-shrink:0">
+          <label for="auto-late-toggle" style="font-size:13px;line-height:1.4">📅 Alerte quotidienne des matchs en retard — <b>toi uniquement</b>, l'admin. Rien n'est envoyé aux joueurs automatiquement ; tu décides ensuite via le champ ci-dessous.</label>
+        </div>
+        <div id="admin-device-status" style="font-size:12px;margin-bottom:6px;padding:0 2px"></div>
+        <div id="admin-device-actions" style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap"></div>
         <div style="margin-bottom:12px">
           <textarea id="notif-admin-msg" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;min-height:80px;resize:vertical" placeholder="Message de notification..."></textarea>
           <button class="btn btn-gray" style="margin-top:6px" onclick="confirmAction('sendPushToAll')" id="send-notif-btn">📤 Envoyer à tous les abonnés</button>
@@ -356,6 +372,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
   </div>
 </div>
 
+<script src="match-dates.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 
@@ -386,6 +403,9 @@ const db = getDatabase(fbApp);
 const VAPID_KEY = 'BDy7Ykx_56HPF9np6HhyQcwnvEFjkRpC3_P_Y3I9NE5gNrXpH3jPufff_c_qcTperoPyXnynH-lAG0XS6sTh6kA';
 const IS_DEV = location.hostname.startsWith('dev--');
 const SUB_PATH = IS_DEV ? 'subscriptions-dev' : 'subscriptions';
+// Pointeur d'appareil admin séparé lui aussi : enregistrer un appareil depuis dev
+// ne doit jamais casser l'alerte retard de prod.
+const ADMIN_SUB_KEY = IS_DEV ? 'adminSubIdDev' : 'adminSubId';
 
 
 
@@ -416,7 +436,8 @@ async function subscribeToNotifications() {
     await set(ref(db, SUB_PATH + '/' + subId), {
       endpoint: subObj.endpoint,
       keys: subObj.keys,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      prefs: { officiel: true, match: true }
     });
     localStorage.setItem('abct-notif-subid', subId);
     localStorage.setItem('abct-notif', 'on');
@@ -462,6 +483,78 @@ function updateNotifBtn() {
     btn.style.fontWeight = on ? '700' : '600';
   }
   if (testBtn) testBtn.style.display = on ? 'inline-block' : 'none';
+  const prefsBox = document.getElementById('notif-prefs');
+  if (prefsBox) {
+    prefsBox.style.display = on ? 'inline-block' : 'none';
+    if (on) {
+      const subId = localStorage.getItem('abct-notif-subid');
+      const stored = subId ? state?.[SUB_PATH]?.[subId]?.prefs : null;
+      const cbO = document.getElementById('pref-officiel');
+      const cbM = document.getElementById('pref-match');
+      if (cbO) cbO.checked = stored?.officiel !== false;
+      if (cbM) cbM.checked = stored?.match !== false;
+    }
+  }
+  renderAdminDeviceStatus();
+}
+
+// État à 3 valeurs : aucun appareil enregistré / cet appareil / un autre appareil.
+// Utilisé à la fois par le panneau admin (détaillé) et la page d'accueil (compact).
+function adminDeviceState() {
+  const adminSubId = state?.settings?.[ADMIN_SUB_KEY];
+  const thisSubId = localStorage.getItem('abct-notif-subid');
+  const thisIsSubscribed = localStorage.getItem('abct-notif') === 'on' && !!thisSubId;
+  if (!adminSubId) return { kind: 'none', thisIsSubscribed };
+  if (thisIsSubscribed && adminSubId === thisSubId) return { kind: 'this', thisIsSubscribed };
+  return { kind: 'other', thisIsSubscribed };
+}
+
+function renderAdminDeviceStatus() {
+  const d = adminDeviceState();
+  const devStatus = document.getElementById('admin-device-status');
+  const devActions = document.getElementById('admin-device-actions');
+  if (devStatus && devActions) {
+    if (d.kind === 'none') {
+      devStatus.innerHTML = '⚠️ Aucun appareil admin enregistré pour l\'alerte retard.';
+      devActions.innerHTML = d.thisIsSubscribed
+        ? `<button class="btn btn-gray btn-sm" style="width:auto;font-size:12px" onclick="registerThisDeviceAsAdmin()">📍 Faire de cet appareil mon appareil admin</button>`
+        : `<span style="font-size:11px;color:var(--gray)">Active tes notifications ci-dessus d'abord.</span>`;
+    } else if (d.kind === 'this') {
+      devStatus.innerHTML = '✅ C\'est cet appareil qui est enregistré pour l\'alerte retard.';
+      devActions.innerHTML = `<button class="btn btn-gray btn-sm" style="width:auto;font-size:12px;background:#fee;color:var(--red)" onclick="resetAdminDevice()">🔄 Retirer cet enregistrement</button>`;
+    } else {
+      devStatus.innerHTML = '⚠️ Un <b>autre</b> appareil est enregistré pour l\'alerte retard — pas celui-ci.';
+      devActions.innerHTML = `<button class="btn btn-gray btn-sm" style="width:auto;font-size:12px" onclick="resetAdminDevice()">🔄 Retirer l'enregistrement actuel</button>` +
+        (d.thisIsSubscribed ? `<button class="btn btn-gray btn-sm" style="width:auto;font-size:12px" onclick="registerThisDeviceAsAdmin()">📍 Enregistrer cet appareil à la place</button>` : '');
+    }
+  }
+  // Version compacte, page d'accueil — visible seulement si on est connecté en admin sur CET appareil.
+  const homeStatus = document.getElementById('home-admin-device-status');
+  if (homeStatus) {
+    if (!isAdmin) {
+      homeStatus.style.display = 'none';
+    } else {
+      homeStatus.style.display = 'block';
+      const label = d.kind === 'this'
+        ? '✅ Appareil admin — alerte retard active ici'
+        : d.kind === 'other'
+          ? '⚠️ Pas l\'appareil admin enregistré — aucune alerte retard ici'
+          : '⚠️ Aucun appareil admin enregistré';
+      homeStatus.textContent = label;
+    }
+  }
+  // Badge discret, visible sans connexion admin — uniquement dans le cas positif.
+  // Ne révèle jamais "ce n'est pas cet appareil" ou "aucun appareil" à quelqu'un de non-authentifié.
+  const headerBadge = document.getElementById('header-admin-badge');
+  if (headerBadge) headerBadge.style.display = (d.kind === 'this') ? 'block' : 'none';
+}
+
+window.updateNotifPrefs = async function() {
+  const subId = localStorage.getItem('abct-notif-subid');
+  if (!subId) return;
+  const officiel = document.getElementById('pref-officiel')?.checked !== false;
+  const match = document.getElementById('pref-match')?.checked !== false;
+  await set(ref(db, SUB_PATH + '/' + subId + '/prefs'), { officiel, match });
 }
 
 window.testNotification = async function() {
@@ -569,6 +662,8 @@ const T = {
     notif_denied_pwa:"Permission refusée. Va dans Paramètres de ton téléphone → Applications → ton navigateur → Notifications, et autorise ce site. Puis réouvre l'app.",
     notif_on:"🔔 Désactiver les notifications",
     notif_off:"🔕 Activer les notifications",
+    pref_officiel:"📢 Annonces officielles",
+    pref_match:"⚔️ Résultats de matchs",
     notif_enabled:"✓ Notifications activées !",
     notif_disabled:"Notifications désactivées.",
     notif_test_body:"🔔 Ceci est un test de notification.",
@@ -707,6 +802,8 @@ const T = {
     notif_denied_pwa:"Berechtigung verweigert. Gehe zu Einstellungen → Apps → dein Browser → Benachrichtigungen, und erlaube diese Seite. Dann öffne die App erneut.",
     notif_on:"🔔 Benachrichtigungen deaktivieren",
     notif_off:"🔕 Benachrichtigungen aktivieren",
+    pref_officiel:"📢 Offizielle Ankündigungen",
+    pref_match:"⚔️ Spielergebnisse",
     notif_enabled:"✓ Benachrichtigungen aktiviert!",
     notif_disabled:"Benachrichtigungen deaktiviert.",
     notif_test_body:"🔔 Dies ist eine Testbenachrichtigung.",
@@ -772,6 +869,8 @@ const T = {
     notif_denied_pwa:"Permission denied. Go to your phone's Settings → Apps → your browser → Notifications, and allow this site. Then reopen the app.",
     notif_on:"🔔 Disable notifications",
     notif_off:"🔕 Enable notifications",
+    pref_officiel:"📢 Official announcements",
+    pref_match:"⚔️ Match results",
     notif_enabled:"✓ Notifications enabled!",
     notif_disabled:"Notifications disabled.",
     notif_test_body:"🔔 This is a test notification.",
@@ -871,6 +970,8 @@ const T = {
     notif_denied_pwa:"Autorizzazione negata. Vai nelle Impostazioni del telefono → App → il tuo browser → Notifiche, e consenti questo sito. Poi riapri l'app.",
     notif_on:"🔔 Disattivare le notifiche",
     notif_off:"🔕 Attivare le notifiche",
+    pref_officiel:"📢 Annunci ufficiali",
+    pref_match:"⚔️ Risultati delle partite",
     notif_enabled:"✓ Notifiche attivate!",
     notif_disabled:"Notifiche disattivate.",
     notif_test_body:"🔔 Questa è una notifica di prova.",
@@ -960,6 +1061,8 @@ window.setLang = function(l) {
 function applyTranslations() {
   document.getElementById('loading-text').textContent = t('loading');
   document.getElementById('offline-bar').textContent = t('offline');
+  const prefO=document.getElementById('pref-officiel-label'); if(prefO) prefO.textContent=t('pref_officiel');
+  const prefM=document.getElementById('pref-match-label'); if(prefM) prefM.textContent=t('pref_match');
   document.getElementById('tab-label-home').textContent = t('tab_home');
   document.getElementById('tab-label-groups').textContent = t('tab_groups');
   document.getElementById('tab-label-matches').textContent = t('tab_matches');
@@ -1144,6 +1247,7 @@ window.adminLogout = function() {
   document.getElementById('admin-dashboard').style.display='none';
   document.getElementById('admin-pin-input').value='';
   applyMaintenanceOverlay();
+  renderAdminDeviceStatus();
 };
 
 window.changePin = async function() {
@@ -1460,10 +1564,13 @@ window.submitScore = async function(id) {
   const sw=document.getElementById('sw-'+id)?.value;
   const sb=document.getElementById('sb-'+id)?.value;
   if(sw===''||sb===''||sw===undefined||sb===undefined) return;
+  const prev = state.games?.[id];
+  const wasPlayed = prev && prev.scoreWhite!==null && prev.scoreWhite!==undefined;
   editingMatchId=null;
   renderMatches();
   await set(ref(db,'games/'+id+'/scoreWhite'),parseFloat(sw));
   await set(ref(db,'games/'+id+'/scoreBlack'),parseFloat(sb));
+  if (!wasPlayed) triggerAutoResultNotif(id, false);
 };
 window.cancelScore = function() { editingMatchId=null; renderMatches(); };
 
@@ -1473,6 +1580,7 @@ window.submitFinalScore = async function(id) {
   const s2=parseFloat(document.getElementById('fs2-'+id)?.value);
   if(isNaN(s1)||isNaN(s2)) return;
   const game=state.finals?.[id]; if(!game) return;
+  const wasPlayed = game.score1!==null && game.score1!==undefined;
   const oldWinner=game.winner;
   const newWinner=s1>s2?game.player1:s2>s1?game.player2:null;
   editingFinalId=null;
@@ -1485,6 +1593,7 @@ window.submitFinalScore = async function(id) {
   await set(ref(db,'finals/'+id+'/score2'),s2);
   await set(ref(db,'finals/'+id+'/winner'),newWinner);
   if(newWinner) propagateFinalWinner(id,newWinner,game);
+  if (!wasPlayed) triggerAutoResultNotif(id, true);
 };
 window.cancelFinal = function() { editingFinalId=null; renderFinals(); };
 
@@ -1811,6 +1920,51 @@ window.toggleMaintenance = async function() {
   updateMaintenanceBtn();
 };
 
+window.toggleAutoNotify = async function() {
+  const current = state?.settings?.autoNotifyResults === true;
+  await set(ref(db, 'settings/autoNotifyResults'), !current);
+};
+
+window.toggleAutoLateAlert = async function() {
+  const current = state?.settings?.autoNotifyLateAlerts === true;
+  await set(ref(db, 'settings/autoNotifyLateAlerts'), !current);
+};
+
+// Action explicite et consciente uniquement — jamais automatique, pour éviter qu'un
+// emprunt ponctuel du téléphone d'un joueur (pour se connecter en admin) ne l'enregistre par erreur.
+window.registerThisDeviceAsAdmin = async function() {
+  if (!isAdmin) return;
+  const subId = localStorage.getItem('abct-notif-subid');
+  if (localStorage.getItem('abct-notif') !== 'on' || !subId) return;
+  await set(ref(db, 'settings/' + ADMIN_SUB_KEY), subId);
+};
+
+window.resetAdminDevice = async function() {
+  if (!isAdmin) return;
+  await set(ref(db, 'settings/' + ADMIN_SUB_KEY), null);
+};
+
+// Déclenchement automatique après un score : côté serveur, la fonction revérifie
+// elle-même le réglage admin et le mode maintenance (pas seulement ce check local).
+async function triggerAutoResultNotif(gameId, isFinal) {
+  try {
+    if (state?.settings?.autoNotifyResults !== true) return;
+    // Sur dev, on ignore la maintenance : c'est justement pendant qu'elle protège
+    // les joueurs de prod qu'on veut pouvoir tester les notifications.
+    if (maintenanceMode && !IS_DEV) return;
+    const subs = state?.[SUB_PATH] || {};
+    const subList = Object.values(subs).filter(s => s?.endpoint && s?.keys && s?.prefs?.match !== false);
+    if (!subList.length) return;
+    await fetch('/.netlify/functions/send-notification', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'auto_result', gameId, isFinal })
+    });
+  } catch (e) {
+    console.log('Notification auto (non bloquant) :', e.message);
+  }
+}
+
 function updateMaintenanceBtn() {
   const btn = document.getElementById('maint-btn');
   if (btn) {
@@ -1855,43 +2009,17 @@ window.resetFinals = async function() {
   showMsg('actions-msg', t('finals_reset'));
 };
 
-const FINALS_ROUND_SEQUENCE = ['32èmes','16èmes','8èmes','Quarts','Demis','Finale'];
+// ⚠️ La logique de calcul vit dans match-dates.js (fichier partagé avec l'alerte
+// quotidienne Netlify). Ci-dessous, uniquement des raccourcis qui y branchent l'état
+// courant — ne pas réimplémenter le calcul ici.
+const FINALS_ROUND_SEQUENCE = ABCT_DATES.FINALS_ROUND_SEQUENCE;
 
-// Date d'échéance d'un match : poule -> startDate + (round-1)*interval ; finale -> ancrée sur
-// la première ronde réellement jouée dans CE bracket (peut commencer à Quarts, 8èmes, etc.)
 function matchDueDate(game, isFinal) {
-  const s = state?.settings || {};
-  if (isFinal) {
-    const startDate = s.finalsStartDate;
-    const interval = s.finalsInterval || 4;
-    if (!startDate || !game.round) return null;
-    const presentRounds = [...new Set(getFinals().map(f => f.round))].filter(r => FINALS_ROUND_SEQUENCE.includes(r));
-    if (!presentRounds.length) return null;
-    const firstIdx = Math.min(...presentRounds.map(r => FINALS_ROUND_SEQUENCE.indexOf(r)));
-    const thisIdx = FINALS_ROUND_SEQUENCE.indexOf(game.round);
-    if (thisIdx < 0) return null; // ex. '3ème place', pas de date propre
-    const position = thisIdx - firstIdx;
-    if (position < 0) return null;
-    const d = new Date(startDate);
-    d.setDate(d.getDate() + position * interval);
-    return d;
-  } else {
-    const startDate = s.poolStartDate;
-    const interval = s.poolInterval || 4;
-    if (!startDate || !game.round) return null;
-    const d = new Date(startDate);
-    d.setDate(d.getDate() + (game.round - 1) * interval);
-    return d;
-  }
+  return ABCT_DATES.matchDueDate(game, isFinal, state?.settings || {}, getFinals());
 }
 
 function isMatchLate(game, isFinal) {
-  const s = state?.settings || {};
-  const interval = (isFinal ? s.finalsInterval : s.poolInterval) || 4;
-  const due = matchDueDate(game, isFinal);
-  if (!due) return false;
-  const daysPassed = (Date.now() - due.getTime()) / (1000 * 60 * 60 * 24);
-  return daysPassed > interval;
+  return ABCT_DATES.isMatchLate(game, isFinal, state?.settings || {}, getFinals());
 }
 
 function generateWhatsAppMsg() {
@@ -1953,7 +2081,7 @@ window.sendPushToAll = async function() {
   if (!msg) { showMsg('notif-admin-msg-result', t('notif_enter_msg'), false); return; }
 
   const subs = state?.[SUB_PATH] || {};
-  const subList = Object.values(subs).filter(s => s.endpoint && s.keys);
+  const subList = Object.values(subs).filter(s => s.endpoint && s.keys && s?.prefs?.officiel !== false);
   const count = subList.length;
 
   if (!count) { showMsg('notif-admin-msg-result', '0 abonné.', false); return; }
@@ -1965,7 +2093,7 @@ window.sendPushToAll = async function() {
     const res = await fetch('/.netlify/functions/send-notification', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pin: sessionStorage.getItem('abct-session-pin') || '', subscriptions: subList, title, body: msg })
+      body: JSON.stringify({ pin: sessionStorage.getItem('abct-session-pin') || '', title, body: msg })
     });
     const data = await res.json();
     if (res.ok) {
@@ -2002,7 +2130,13 @@ window.resetScores = async function() {
 };
 window.resetAll = async function() {
   const pin=await get(ref(db,'adminPin')).then(s=>s.exists()?s.val():null);
-  await set(ref(db),{...defaultData(),adminPin:pin});
+  const prevSettings=await get(ref(db,'settings')).then(s=>s.exists()?s.val():{});
+  const fresh=defaultData();
+  fresh.settings.adminSubId=prevSettings?.adminSubId||null;
+  fresh.settings.adminSubIdDev=prevSettings?.adminSubIdDev||null;
+  fresh.settings.autoNotifyResults=prevSettings?.autoNotifyResults||false;
+  fresh.settings.autoNotifyLateAlerts=prevSettings?.autoNotifyLateAlerts||false;
+  await set(ref(db),{...fresh,adminPin:pin});
   showMsg('actions-msg',t('tournament_reset'));
 };
 
@@ -2121,6 +2255,7 @@ function playerEditForm(p) {
 function renderHome(){
   const s=state?.settings||{};
   const players=getPlayers();
+  renderAdminDeviceStatus();
   document.getElementById('header-title').textContent=s.name||'Air Base Chess Tour';
   const statusMap={registration:t('status_registration'),playing:t('status_playing'),finals:t('status_finals'),finished:t('status_finished')};
   document.getElementById('header-sub').textContent=statusMap[s.status]||'';
@@ -2328,6 +2463,12 @@ function renderAdmin(){
     const subsCount = Object.values(state?.[SUB_PATH] || {}).filter(s => s?.endpoint && s?.keys).length;
     const subsEl = document.getElementById('notif-subscribers-count');
     if (subsEl) subsEl.textContent = subsCount + (subsCount > 1 ? t('notif_subscribers') : t('notif_subscriber')) + ' aux notifications';
+    // Sync auto-notify toggle with Firebase (source of truth)
+    const autoNotifCb = document.getElementById('auto-notify-toggle');
+    if (autoNotifCb) autoNotifCb.checked = state?.settings?.autoNotifyResults === true;
+    const autoLateCb = document.getElementById('auto-late-toggle');
+    if (autoLateCb) autoLateCb.checked = state?.settings?.autoNotifyLateAlerts === true;
+    renderAdminDeviceStatus();
     // Generate default notification message — reste synchronisé (retards inclus) tant que l'admin n'a pas personnalisé le texte
     const notifMsgEl = document.getElementById('notif-admin-msg');
     if (notifMsgEl) {
@@ -2442,6 +2583,7 @@ onValue(ref(db),(snapshot)=>{
   applyMaintenanceOverlay();
   applyTranslations();
   renderPage(currentPage);
+  renderAdminDeviceStatus();
 },(error)=>{
   console.error('Firebase error:',error);
   document.getElementById('offline-bar').style.display='block';
@@ -2474,8 +2616,10 @@ setTimeout(async () => {
         const reg = await navigator.serviceWorker.ready;
         const old = await reg.pushManager.getSubscription();
         // Un abonnement existant porte peut-être l'ANCIENNE clé VAPID -> il faut le révoquer
+        let carriedPrefs = null;
         if (old) {
           const oldId = btoa(old.endpoint).slice(-20);
+          carriedPrefs = state?.[SUB_PATH]?.[oldId]?.prefs || null;
           await old.unsubscribe();
           await set(ref(db, SUB_PATH + '/' + oldId), null);
         }
@@ -2485,7 +2629,7 @@ setTimeout(async () => {
         });
         const o = sub.toJSON();
         const subId = btoa(o.endpoint).slice(-20);
-        await set(ref(db, SUB_PATH + '/' + subId), { endpoint: o.endpoint, keys: o.keys, timestamp: Date.now() });
+        await set(ref(db, SUB_PATH + '/' + subId), { endpoint: o.endpoint, keys: o.keys, timestamp: Date.now(), prefs: carriedPrefs || { officiel: true, match: true } });
         localStorage.setItem('abct-notif-subid', subId);
         localStorage.removeItem('abct-notif-token');
         console.log('Abonnement push migré silencieusement');

@@ -2,6 +2,7 @@
   "name": "abct-functions",
   "version": "1.0.0",
   "dependencies": {
-    "web-push": "^3.6.0"
+    "web-push": "^3.6.0",
+    "@netlify/functions": "^5.3.0"
   }
 }

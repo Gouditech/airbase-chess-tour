@@ -455,6 +455,8 @@ async function subscribeToNotifications() {
     });
     localStorage.setItem('abct-notif-subid', subId);
     localStorage.setItem('abct-notif', 'on');
+    recentlySubscribed = true;
+    setTimeout(() => { recentlySubscribed = false; }, 5000);
     updateNotifBtn();
     showMsg('notif-msg', t('notif_enabled'));
   } catch(e) {
@@ -520,19 +522,36 @@ window.toggleNotifPrefsPanel = function() {
   box.style.display = (box.style.display === 'none') ? 'inline-block' : 'none';
 }
 
+function renderSubsDetail() {
+  const box = document.getElementById('notif-subs-detail');
+  if (!box) return;
+  const subsObj = state?.[SUB_PATH] || {};
+  const subsEntries = Object.entries(subsObj).filter(([,s]) => s?.endpoint && s?.keys);
+  if (!subsEntries.length) { box.innerHTML = '(aucun)'; return; }
+  const sorted = subsEntries.slice().sort((a,b) => (a[1].timestamp||0) - (b[1].timestamp||0));
+  box.innerHTML = sorted.map(([id, s]) => {
+    const d = s.timestamp ? new Date(s.timestamp).toLocaleString('fr-CH', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'date inconnue';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid #eee">
+      <span>${d}</span>
+      <button onclick="deleteSubscription('${id}')" title="Retirer" style="border:none;background:none;color:var(--red);cursor:pointer;font-size:14px;padding:2px 6px">🗑️</button>
+    </div>`;
+  }).join('');
+}
+
 window.toggleSubsDetail = function() {
   const box = document.getElementById('notif-subs-detail');
   if (!box) return;
   const showing = box.style.display !== 'none';
   if (showing) { box.style.display = 'none'; return; }
-  const subs = Object.values(state?.[SUB_PATH] || {}).filter(s => s?.endpoint && s?.keys);
-  if (!subs.length) { box.innerHTML = '(aucun)'; box.style.display = 'block'; return; }
-  const sorted = subs.slice().sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-  box.innerHTML = sorted.map(s => {
-    const d = s.timestamp ? new Date(s.timestamp).toLocaleString('fr-CH', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'date inconnue';
-    return `<div>${d}</div>`;
-  }).join('');
+  renderSubsDetail();
   box.style.display = 'block';
+}
+
+window.deleteSubscription = async function(subId) {
+  if (!isAdmin) return;
+  if (!confirm('Retirer cet abonnement ? Cette personne ne recevra plus rien tant qu\'elle ne se réabonne pas.')) return;
+  await set(ref(db, SUB_PATH + '/' + subId), null);
+  renderSubsDetail();
 }
 
 // État à 3 valeurs : aucun appareil enregistré / cet appareil / un autre appareil.
@@ -1250,6 +1269,7 @@ let editingFinalId = null;
 let editingPlayerId = null;
 let lastAutoNotifMsg = '';
 let seedOrder = [];
+let recentlySubscribed = false; // évite un faux positif du contrôle d'orphelin juste après un nouvel abonnement
 
 function defaultData() {
   return { settings:{ name:"Air Base Chess Tour", playersPerGroup:5, finalistsCount:8, status:"registration" }, players:{}, games:{}, finals:{} };
@@ -2681,6 +2701,18 @@ onValue(ref(db),(snapshot)=>{
   delete rawData.maintenance;
   state = rawData;
   if(!state.settings) state.settings=defaultData().settings;
+  // Auto-guérison : si on croit être abonné mais que l'entrée Firebase n'existe plus
+  // (ex: supprimée manuellement dans le panneau admin), on se resynchronise plutôt que
+  // de rester "on" à tort — ça évite un joueur silencieusement coupé sans le savoir,
+  // et ça règle le même souci pour la reconnaissance d'appareil admin par ricochet.
+  if (!recentlySubscribed && localStorage.getItem('abct-notif') === 'on') {
+    const mySubId = localStorage.getItem('abct-notif-subid');
+    if (mySubId && !state?.[SUB_PATH]?.[mySubId]) {
+      localStorage.removeItem('abct-notif');
+      localStorage.removeItem('abct-notif-subid');
+      showMsg('notif-msg', '⚠️ Ton abonnement aux notifications a été retiré (côté serveur) — réactive-le si tu le souhaites.', false, true);
+    }
+  }
   document.getElementById('loading').style.opacity='0';
   setTimeout(()=>{
     document.getElementById('loading').style.display='none';

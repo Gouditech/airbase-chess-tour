@@ -43,7 +43,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
 .lang-bar{background:#111;display:flex;justify-content:center;gap:4px;padding:6px 12px;padding-top:0}
 .lang-btn{border:none;background:none;color:#666;font-size:12px;font-weight:600;cursor:pointer;padding:4px 8px;border-radius:6px;transition:all .15s}
 .lang-btn.active{background:var(--gold);color:var(--dark)}
-.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:13px;font-weight:700}
 .badge-open{background:#E8F5E9;color:var(--green)}
 .badge-playing{background:#FFF8E1;color:#B8860B}
 .badge-finals{background:#E3F2FD;color:#1565C0}
@@ -128,8 +128,8 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
 
 <div class="lang-bar">
   <button class="lang-btn" onclick="setLang('fr')">🇫🇷 FR</button>
-  <button class="lang-btn" onclick="setLang('de')">🇩🇪 DE</button>
   <button class="lang-btn" onclick="setLang('en')">🇬🇧 EN</button>
+  <button class="lang-btn" onclick="setLang('de')">🇩🇪 DE</button>
   <button class="lang-btn" onclick="setLang('it')">🇮🇹 IT</button>
 </div>
 
@@ -312,6 +312,8 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
           <button class="btn btn-gray" style="margin-top:6px" onclick="confirmAction('sendPushToAll')" id="send-notif-btn">📤 Envoyer à tous les abonnés</button>
           <div id="notif-admin-msg-result" style="font-size:12px;margin-top:4px"></div>
           <div id="notif-subscribers-count" style="font-size:11px;color:var(--gray);margin-top:4px"></div>
+          <a href="#" onclick="toggleSubsDetail();return false;" style="font-size:11px;color:var(--gold);text-decoration:underline">🔍 Voir le détail des dates d'abonnement</a>
+          <div id="notif-subs-detail" style="display:none;font-size:11px;color:var(--gray);margin-top:6px;max-height:180px;overflow-y:auto;background:#f8f8f8;border-radius:6px;padding:8px"></div>
         </div>
         <h2 id="whatsapp-title">📲 Rappel WhatsApp</h2>
         <div id="whatsapp-preview" style="font-size:12px;color:#555;background:#f8f8f8;border-radius:8px;padding:10px;margin-bottom:10px;white-space:pre-wrap;min-height:60px;line-height:1.6"></div>
@@ -518,6 +520,21 @@ window.toggleNotifPrefsPanel = function() {
   box.style.display = (box.style.display === 'none') ? 'inline-block' : 'none';
 }
 
+window.toggleSubsDetail = function() {
+  const box = document.getElementById('notif-subs-detail');
+  if (!box) return;
+  const showing = box.style.display !== 'none';
+  if (showing) { box.style.display = 'none'; return; }
+  const subs = Object.values(state?.[SUB_PATH] || {}).filter(s => s?.endpoint && s?.keys);
+  if (!subs.length) { box.innerHTML = '(aucun)'; box.style.display = 'block'; return; }
+  const sorted = subs.slice().sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+  box.innerHTML = sorted.map(s => {
+    const d = s.timestamp ? new Date(s.timestamp).toLocaleString('fr-CH', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'date inconnue';
+    return `<div>${d}</div>`;
+  }).join('');
+  box.style.display = 'block';
+}
+
 // État à 3 valeurs : aucun appareil enregistré / cet appareil / un autre appareil.
 // Utilisé à la fois par le panneau admin (détaillé) et la page d'accueil (compact).
 function adminDeviceState() {
@@ -531,6 +548,7 @@ function adminDeviceState() {
 
 function renderAdminDeviceStatus() {
   const d = adminDeviceState();
+  const alertsOn = state?.settings?.autoNotifyLateAlerts === true;
   const devStatus = document.getElementById('admin-device-status');
   const devActions = document.getElementById('admin-device-actions');
   if (devStatus && devActions) {
@@ -540,7 +558,9 @@ function renderAdminDeviceStatus() {
         ? `<button class="btn btn-gold" onclick="registerThisDeviceAsAdmin()">📍 Faire de cet appareil mon appareil admin</button>`
         : `<span style="font-size:12px;color:var(--gray)">Active tes notifications ci-dessus d'abord.</span>`;
     } else if (d.kind === 'this') {
-      devStatus.innerHTML = '✅ C\'est cet appareil qui est enregistré pour l\'alerte retard.';
+      devStatus.innerHTML = alertsOn
+        ? '✅ C\'est cet appareil qui est enregistré pour l\'alerte retard.'
+        : '⏸️ Cet appareil est enregistré, mais l\'alerte automatique est désactivée (case ci-dessus).';
       devActions.innerHTML = `<button class="btn btn-gray btn-sm" style="width:auto;font-size:12px;background:#fee;color:var(--red)" onclick="resetAdminDevice()">🔄 Retirer cet enregistrement</button>`;
     } else {
       devStatus.innerHTML = '⚠️ Un <b>autre</b> appareil est enregistré pour l\'alerte retard — pas celui-ci.';
@@ -556,7 +576,7 @@ function renderAdminDeviceStatus() {
     } else {
       homeStatus.style.display = 'block';
       const label = d.kind === 'this'
-        ? '✅ Appareil admin — alerte retard active ici'
+        ? (alertsOn ? '✅ Appareil admin — alerte retard active ici' : '⏸️ Appareil admin enregistré ici — alerte désactivée')
         : d.kind === 'other'
           ? '⚠️ Pas l\'appareil admin enregistré — aucune alerte retard ici'
           : '⚠️ Aucun appareil admin enregistré';
@@ -566,7 +586,7 @@ function renderAdminDeviceStatus() {
   // Badge discret, visible sans connexion admin — uniquement dans le cas positif.
   // Ne révèle jamais "ce n'est pas cet appareil" ou "aucun appareil" à quelqu'un de non-authentifié.
   const headerBadge = document.getElementById('header-admin-badge');
-  if (headerBadge) headerBadge.style.display = (d.kind === 'this') ? 'block' : 'none';
+  if (headerBadge) headerBadge.style.display = (d.kind === 'this' && alertsOn) ? 'block' : 'none';
 }
 
 window.updateNotifPrefs = async function() {
@@ -1098,7 +1118,7 @@ window.setLang = function(l) {
   lang = l;
   localStorage.setItem('abct-lang', l);
   document.querySelectorAll('.lang-btn').forEach((b,i)=>{
-    b.classList.toggle('active', ['fr','de','en','it'][i]===l);
+    b.classList.toggle('active', ['fr','en','de','it'][i]===l);
   });
   applyMaintenanceOverlay();
   applyTranslations();
@@ -2759,7 +2779,7 @@ window.addEventListener('online',()=>document.getElementById('offline-bar').styl
 
 // Init lang buttons
 document.querySelectorAll('.lang-btn').forEach((b,i)=>{
-  b.classList.toggle('active',['fr','de','en','it'][i]===lang);
+  b.classList.toggle('active',['fr','en','de','it'][i]===lang);
 });
 </script>
 </body>

@@ -43,7 +43,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
 .lang-bar{background:#111;display:flex;justify-content:center;gap:4px;padding:6px 12px;padding-top:0}
 .lang-btn{border:none;background:none;color:#666;font-size:12px;font-weight:600;cursor:pointer;padding:4px 8px;border-radius:6px;transition:all .15s}
 .lang-btn.active{background:var(--gold);color:var(--dark)}
-.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:13px;font-weight:700}
 .badge-open{background:#E8F5E9;color:var(--green)}
 .badge-playing{background:#FFF8E1;color:#B8860B}
 .badge-finals{background:#E3F2FD;color:#1565C0}
@@ -128,8 +128,8 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
 
 <div class="lang-bar">
   <button class="lang-btn" onclick="setLang('fr')">🇫🇷 FR</button>
-  <button class="lang-btn" onclick="setLang('de')">🇩🇪 DE</button>
   <button class="lang-btn" onclick="setLang('en')">🇬🇧 EN</button>
+  <button class="lang-btn" onclick="setLang('de')">🇩🇪 DE</button>
   <button class="lang-btn" onclick="setLang('it')">🇮🇹 IT</button>
 </div>
 
@@ -312,6 +312,8 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
           <button class="btn btn-gray" style="margin-top:6px" onclick="confirmAction('sendPushToAll')" id="send-notif-btn">📤 Envoyer à tous les abonnés</button>
           <div id="notif-admin-msg-result" style="font-size:12px;margin-top:4px"></div>
           <div id="notif-subscribers-count" style="font-size:11px;color:var(--gray);margin-top:4px"></div>
+          <a href="#" onclick="toggleSubsDetail();return false;" style="font-size:11px;color:var(--gold);text-decoration:underline">🔍 Voir le détail des dates d'abonnement</a>
+          <div id="notif-subs-detail" style="display:none;font-size:11px;color:var(--gray);margin-top:6px;max-height:180px;overflow-y:auto;background:#f8f8f8;border-radius:6px;padding:8px"></div>
         </div>
         <h2 id="whatsapp-title">📲 Rappel WhatsApp</h2>
         <div id="whatsapp-preview" style="font-size:12px;color:#555;background:#f8f8f8;border-radius:8px;padding:10px;margin-bottom:10px;white-space:pre-wrap;min-height:60px;line-height:1.6"></div>
@@ -453,6 +455,8 @@ async function subscribeToNotifications() {
     });
     localStorage.setItem('abct-notif-subid', subId);
     localStorage.setItem('abct-notif', 'on');
+    recentlySubscribed = true;
+    setTimeout(() => { recentlySubscribed = false; }, 5000);
     updateNotifBtn();
     showMsg('notif-msg', t('notif_enabled'));
   } catch(e) {
@@ -481,9 +485,13 @@ function updateNotifBtn() {
   const btn = document.getElementById('notif-toggle-btn');
   const testBtn = document.getElementById('notif-test-btn');
   let on = localStorage.getItem('abct-notif') === 'on';
-  // Sync: if browser revoked permission, reset local state
+  // Sync: if browser revoked permission (ou une autorisation temporaire type Brave a expiré),
+  // nettoyage complet — local ET Firebase, pas juste le drapeau "on".
   if (on && 'Notification' in window && Notification.permission !== 'granted') {
     localStorage.removeItem('abct-notif');
+    const expiredSubId = localStorage.getItem('abct-notif-subid');
+    localStorage.removeItem('abct-notif-subid');
+    if (expiredSubId) set(ref(db, SUB_PATH + '/' + expiredSubId), null).catch(()=>{});
     on = false;
     const isPWA = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
     showMsg('notif-msg', t(isPWA ? 'notif_denied_pwa' : 'notif_denied'), false, true);
@@ -518,6 +526,38 @@ window.toggleNotifPrefsPanel = function() {
   box.style.display = (box.style.display === 'none') ? 'inline-block' : 'none';
 }
 
+function renderSubsDetail() {
+  const box = document.getElementById('notif-subs-detail');
+  if (!box) return;
+  const subsObj = state?.[SUB_PATH] || {};
+  const subsEntries = Object.entries(subsObj).filter(([,s]) => s?.endpoint && s?.keys);
+  if (!subsEntries.length) { box.innerHTML = '(aucun)'; return; }
+  const sorted = subsEntries.slice().sort((a,b) => (a[1].timestamp||0) - (b[1].timestamp||0));
+  box.innerHTML = sorted.map(([id, s]) => {
+    const d = s.timestamp ? new Date(s.timestamp).toLocaleString('fr-CH', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'date inconnue';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid #eee">
+      <span>${d}</span>
+      <button onclick="deleteSubscription('${id}')" title="Retirer" style="border:none;background:none;color:var(--red);cursor:pointer;font-size:14px;padding:2px 6px">🗑️</button>
+    </div>`;
+  }).join('');
+}
+
+window.toggleSubsDetail = function() {
+  const box = document.getElementById('notif-subs-detail');
+  if (!box) return;
+  const showing = box.style.display !== 'none';
+  if (showing) { box.style.display = 'none'; return; }
+  renderSubsDetail();
+  box.style.display = 'block';
+}
+
+window.deleteSubscription = async function(subId) {
+  if (!isAdmin) return;
+  if (!confirm('Retirer cet abonnement ? Cette personne ne recevra plus rien tant qu\'elle ne se réabonne pas.')) return;
+  await set(ref(db, SUB_PATH + '/' + subId), null);
+  renderSubsDetail();
+}
+
 // État à 3 valeurs : aucun appareil enregistré / cet appareil / un autre appareil.
 // Utilisé à la fois par le panneau admin (détaillé) et la page d'accueil (compact).
 function adminDeviceState() {
@@ -531,6 +571,7 @@ function adminDeviceState() {
 
 function renderAdminDeviceStatus() {
   const d = adminDeviceState();
+  const alertsOn = state?.settings?.autoNotifyLateAlerts === true;
   const devStatus = document.getElementById('admin-device-status');
   const devActions = document.getElementById('admin-device-actions');
   if (devStatus && devActions) {
@@ -540,7 +581,9 @@ function renderAdminDeviceStatus() {
         ? `<button class="btn btn-gold" onclick="registerThisDeviceAsAdmin()">📍 Faire de cet appareil mon appareil admin</button>`
         : `<span style="font-size:12px;color:var(--gray)">Active tes notifications ci-dessus d'abord.</span>`;
     } else if (d.kind === 'this') {
-      devStatus.innerHTML = '✅ C\'est cet appareil qui est enregistré pour l\'alerte retard.';
+      devStatus.innerHTML = alertsOn
+        ? '✅ C\'est cet appareil qui est enregistré pour l\'alerte retard.'
+        : '⏸️ Cet appareil est enregistré, mais l\'alerte automatique est désactivée (case ci-dessus).';
       devActions.innerHTML = `<button class="btn btn-gray btn-sm" style="width:auto;font-size:12px;background:#fee;color:var(--red)" onclick="resetAdminDevice()">🔄 Retirer cet enregistrement</button>`;
     } else {
       devStatus.innerHTML = '⚠️ Un <b>autre</b> appareil est enregistré pour l\'alerte retard — pas celui-ci.';
@@ -556,7 +599,7 @@ function renderAdminDeviceStatus() {
     } else {
       homeStatus.style.display = 'block';
       const label = d.kind === 'this'
-        ? '✅ Appareil admin — alerte retard active ici'
+        ? (alertsOn ? '✅ Appareil admin — alerte retard active ici' : '⏸️ Appareil admin enregistré ici — alerte désactivée')
         : d.kind === 'other'
           ? '⚠️ Pas l\'appareil admin enregistré — aucune alerte retard ici'
           : '⚠️ Aucun appareil admin enregistré';
@@ -566,7 +609,7 @@ function renderAdminDeviceStatus() {
   // Badge discret, visible sans connexion admin — uniquement dans le cas positif.
   // Ne révèle jamais "ce n'est pas cet appareil" ou "aucun appareil" à quelqu'un de non-authentifié.
   const headerBadge = document.getElementById('header-admin-badge');
-  if (headerBadge) headerBadge.style.display = (d.kind === 'this') ? 'block' : 'none';
+  if (headerBadge) headerBadge.style.display = (d.kind === 'this' && alertsOn) ? 'block' : 'none';
 }
 
 window.updateNotifPrefs = async function() {
@@ -624,23 +667,35 @@ function showInAppNotification(title, body) {
   setTimeout(() => { if (banner.parentNode) banner.remove(); }, 8000);
 }
 
+function showNotifConfirmPanel() {
+  const cbO = document.getElementById('pref-officiel');
+  const cbM = document.getElementById('pref-match');
+  if (cbO) cbO.checked = true;
+  if (cbM) cbM.checked = true;
+  const box = document.getElementById('notif-prefs');
+  if (box) box.style.display = 'inline-block';
+  const validateBtn = document.getElementById('notif-validate-btn');
+  if (validateBtn) validateBtn.style.display = 'inline-block';
+  const mainBtn = document.getElementById('notif-toggle-btn');
+  if (mainBtn) mainBtn.style.display = 'none';
+}
+
 window.toggleNotifications = async function() {
   const on = localStorage.getItem('abct-notif') === 'on';
   if (on) {
     await unsubscribeFromNotifications();
   } else {
+    // Vérifier la compatibilité AVANT de montrer le panneau — sinon sur iPhone (onglet
+    // normal, app pas installée) on afficherait des cases à cocher qui ne mèneraient
+    // à rien, et la personne ne le découvrirait qu'après avoir cliqué Valider.
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      showMsg('notif-msg', t('notif_install_hint'), false, true);
+      return;
+    }
+    if (!('Notification' in window)) { showMsg('notif-msg', t('notif_unsupported'), false, true); return; }
     // Première activation : on montre les préférences (pré-cochées) à confirmer,
     // plutôt que de s'abonner tout de suite avec des choix qu'on n'a pas vus.
-    const cbO = document.getElementById('pref-officiel');
-    const cbM = document.getElementById('pref-match');
-    if (cbO) cbO.checked = true;
-    if (cbM) cbM.checked = true;
-    const box = document.getElementById('notif-prefs');
-    if (box) box.style.display = 'inline-block';
-    const validateBtn = document.getElementById('notif-validate-btn');
-    if (validateBtn) validateBtn.style.display = 'inline-block';
-    const mainBtn = document.getElementById('notif-toggle-btn');
-    if (mainBtn) mainBtn.style.display = 'none';
+    showNotifConfirmPanel();
   }
 };
 
@@ -1098,7 +1153,7 @@ window.setLang = function(l) {
   lang = l;
   localStorage.setItem('abct-lang', l);
   document.querySelectorAll('.lang-btn').forEach((b,i)=>{
-    b.classList.toggle('active', ['fr','de','en','it'][i]===l);
+    b.classList.toggle('active', ['fr','en','de','it'][i]===l);
   });
   applyMaintenanceOverlay();
   applyTranslations();
@@ -1230,6 +1285,7 @@ let editingFinalId = null;
 let editingPlayerId = null;
 let lastAutoNotifMsg = '';
 let seedOrder = [];
+let recentlySubscribed = false; // évite un faux positif du contrôle d'orphelin juste après un nouvel abonnement
 
 function defaultData() {
   return { settings:{ name:"Air Base Chess Tour", playersPerGroup:5, finalistsCount:8, status:"registration" }, players:{}, games:{}, finals:{} };
@@ -2661,6 +2717,43 @@ onValue(ref(db),(snapshot)=>{
   delete rawData.maintenance;
   state = rawData;
   if(!state.settings) state.settings=defaultData().settings;
+  // Si on croit être abonné mais que l'entrée Firebase n'existe plus (ex: supprimée
+  // manuellement dans le panneau admin) : la volonté du joueur prime. On vérifie si son
+  // abonnement technique (navigateur) est TOUJOURS valide -> si oui, on le recrée en
+  // silence, rien à faire pour lui. Sinon, on l'éteint et on lui redemande activement
+  // de se réabonner, plutôt qu'un simple message qu'il peut ignorer. Fonctionne pareil
+  // que l'onglet vienne d'être ouvert ou qu'il soit resté ouvert pendant la suppression.
+  if (!recentlySubscribed && localStorage.getItem('abct-notif') === 'on') {
+    const mySubId = localStorage.getItem('abct-notif-subid');
+    if (mySubId && !state?.[SUB_PATH]?.[mySubId]) {
+      (async () => {
+        try {
+          if ('serviceWorker' in navigator && 'Notification' in window && Notification.permission === 'granted') {
+            const reg = await navigator.serviceWorker.ready;
+            const existing = await reg.pushManager.getSubscription();
+            if (existing) {
+              const o = existing.toJSON();
+              const currentSubId = btoa(o.endpoint).slice(-20);
+              await set(ref(db, SUB_PATH + '/' + currentSubId), {
+                endpoint: o.endpoint, keys: o.keys, timestamp: Date.now(),
+                prefs: { officiel: true, match: true }
+              });
+              if (currentSubId !== mySubId) localStorage.setItem('abct-notif-subid', currentSubId);
+              console.log('Abonnement recréé automatiquement (toujours valide côté navigateur)');
+              return;
+            }
+          }
+        } catch(e) { console.log('Auto-guérison (non bloquant) :', e.message); }
+        // Vraiment mort des deux côtés : le bouton repasse sur "Activer" (comportement
+        // normal), et le message explique pourquoi — pas besoin d'ouvrir le panneau
+        // sans qu'on lui ait rien demandé, le bouton suffit s'il veut se réabonner.
+        localStorage.removeItem('abct-notif');
+        localStorage.removeItem('abct-notif-subid');
+        updateNotifBtn();
+        showMsg('notif-msg', '⚠️ Tes notifications ont été coupées côté serveur — réactive-les si tu le souhaites.', false, true);
+      })();
+    }
+  }
   document.getElementById('loading').style.opacity='0';
   setTimeout(()=>{
     document.getElementById('loading').style.display='none';
@@ -2690,6 +2783,8 @@ window.addEventListener('offline',()=>document.getElementById('offline-bar').sty
 // Init notification button state
 setTimeout(async () => {
   // Recovery: si localStorage effacé mais abonnement push encore actif, restaurer l'état
+  // — ET recréer l'entrée Firebase si elle manque (ex: supprimée par l'admin), sinon on
+  // ne fait que remettre le bouton sur "actif" sans que rien ne soit réellement reçu.
   if (localStorage.getItem('abct-notif') !== 'on' && 'serviceWorker' in navigator && 'PushManager' in window) {
     try {
       if (Notification.permission === 'granted') {
@@ -2700,7 +2795,15 @@ setTimeout(async () => {
           const subId = btoa(o.endpoint).slice(-20);
           localStorage.setItem('abct-notif', 'on');
           localStorage.setItem('abct-notif-subid', subId);
-          console.log('État notifications restauré depuis le service worker');
+          if (!state?.[SUB_PATH]?.[subId]) {
+            await set(ref(db, SUB_PATH + '/' + subId), {
+              endpoint: o.endpoint, keys: o.keys, timestamp: Date.now(),
+              prefs: { officiel: true, match: true }
+            });
+            console.log('État restauré ET entrée Firebase recréée (était absente)');
+          } else {
+            console.log('État notifications restauré depuis le service worker');
+          }
         }
       }
     } catch(e) { console.log('Recovery notif (non bloquant) :', e.message); }
@@ -2759,7 +2862,7 @@ window.addEventListener('online',()=>document.getElementById('offline-bar').styl
 
 // Init lang buttons
 document.querySelectorAll('.lang-btn').forEach((b,i)=>{
-  b.classList.toggle('active',['fr','de','en','it'][i]===lang);
+  b.classList.toggle('active',['fr','en','de','it'][i]===lang);
 });
 </script>
 </body>

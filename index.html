@@ -314,6 +314,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
           <div id="notif-subscribers-count" style="font-size:11px;color:var(--gray);margin-top:4px"></div>
           <a href="#" onclick="toggleSubsDetail();return false;" style="font-size:11px;color:var(--gold);text-decoration:underline">🔍 Voir le détail des dates d'abonnement</a>
           <div id="notif-subs-detail" style="display:none;font-size:11px;color:var(--gray);margin-top:6px;max-height:180px;overflow-y:auto;background:#f8f8f8;border-radius:6px;padding:8px"></div>
+          <button class="btn btn-gray" style="margin-top:8px;font-size:12px" onclick="confirmAction('resetSubscriptions','','',false)" id="reset-subs-btn">↺ Réinitialiser tous les abonnements</button>
         </div>
         <h2 id="whatsapp-title">📲 Rappel WhatsApp</h2>
         <div id="whatsapp-preview" style="font-size:12px;color:#555;background:#f8f8f8;border-radius:8px;padding:10px;margin-bottom:10px;white-space:pre-wrap;min-height:60px;line-height:1.6"></div>
@@ -339,9 +340,9 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
   <div id="maint-title" style="color:#fff;font-size:18px;font-weight:700;margin-bottom:8px;text-align:center">Maintenance en cours</div>
   <div id="maint-text" style="color:#aaa;font-size:14px;text-align:center;line-height:1.6">Le site est temporairement indisponible.<br>Revenez dans quelques instants.</div>
   <div style="margin-top:40px;border-top:1px solid #333;padding-top:20px;width:100%;max-width:280px">
-    <div style="font-size:11px;color:#555;text-align:center;margin-bottom:10px">Accès administrateur</div>
+    <div id="maint-admin-access-label" style="font-size:11px;color:#555;text-align:center;margin-bottom:10px">Accès administrateur</div>
     <input id="maint-pin" type="text" inputmode="numeric" autocomplete="off" placeholder="Code PIN" style="width:100%;padding:10px 12px;border:1px solid #333;border-radius:8px;background:#222;color:#fff;font-size:14px;text-align:center;margin-bottom:8px;-webkit-text-security:disc;text-security:disc">
-    <button onclick="maintAdminLogin()" style="width:100%;padding:10px;border:none;border-radius:8px;background:var(--gold);color:var(--dark);font-weight:700;font-size:13px;cursor:pointer">Connexion admin</button>
+    <button id="maint-login-btn" onclick="maintAdminLogin()" style="width:100%;padding:10px;border:none;border-radius:8px;background:var(--gold);color:var(--dark);font-weight:700;font-size:13px;cursor:pointer">Connexion admin</button>
     <div id="maint-pin-msg" style="font-size:12px;color:var(--red);text-align:center;margin-top:6px"></div>
   </div>
 </div>
@@ -507,7 +508,7 @@ function updateNotifBtn() {
   if (prefsLink) prefsLink.style.display = on ? 'inline-block' : 'none';
   const prefsBox = document.getElementById('notif-prefs');
   if (prefsBox) {
-    if (!on) prefsBox.style.display = 'none'; // toujours masqué si désabonné, quoi qu'il arrive
+    if (!on && !notifPanelPendingConfirm) prefsBox.style.display = 'none'; // toujours masqué si désabonné — sauf en pleine confirmation
     if (on) {
       const subId = localStorage.getItem('abct-notif-subid');
       const stored = subId ? state?.[SUB_PATH]?.[subId]?.prefs : null;
@@ -556,6 +557,13 @@ window.deleteSubscription = async function(subId) {
   if (!confirm('Retirer cet abonnement ? Cette personne ne recevra plus rien tant qu\'elle ne se réabonne pas.')) return;
   await set(ref(db, SUB_PATH + '/' + subId), null);
   renderSubsDetail();
+}
+
+window.resetSubscriptions = async function() {
+  if (!isAdmin) return;
+  await set(ref(db, SUB_PATH), null);
+  renderSubsDetail();
+  showMsg('notif-admin-msg-result', '✓ Tous les abonnements ont été effacés. Les abonnements toujours valides reviendront tout seuls à la réouverture de chaque appareil.');
 }
 
 // État à 3 valeurs : aucun appareil enregistré / cet appareil / un autre appareil.
@@ -668,6 +676,7 @@ function showInAppNotification(title, body) {
 }
 
 function showNotifConfirmPanel() {
+  notifPanelPendingConfirm = true;
   const cbO = document.getElementById('pref-officiel');
   const cbM = document.getElementById('pref-match');
   if (cbO) cbO.checked = true;
@@ -703,6 +712,7 @@ window.confirmNotifSubscribe = async function() {
   const validateBtn = document.getElementById('notif-validate-btn');
   if (validateBtn) validateBtn.disabled = true;
   await subscribeToNotifications();
+  notifPanelPendingConfirm = false;
   if (validateBtn) { validateBtn.disabled = false; validateBtn.style.display = 'none'; }
   const mainBtn = document.getElementById('notif-toggle-btn');
   if (mainBtn) mainBtn.style.display = 'inline-block';
@@ -741,6 +751,25 @@ const T = {
     reg_name_hint:"Prénom, surnom ou nom réel — à votre choix",reg_sector:"Secteur / Unité (optionnel)",reg_btn:"S'inscrire",
     reg_ok:"Inscription réussie ! Bienvenue ",reg_err_fields:"Pseudo et nom requis.",reg_err_exists:"Ce pseudo est déjà pris.",
     players_title:"Joueurs inscrits",
+    admin_players_title:"Joueurs",
+    notif_prefs_link:"⚙️ Préférences de notification",
+    notif_validate_btn:"✅ Valider et activer",
+    change_pin_btn:"Modifier le PIN",
+    check_late_btn:"🔍 Vérifier les retards maintenant",
+    open_reg_btn:"📋 Ouvrir les inscriptions",
+    start_pools_btn:"⚔️ Lancer la phase de poules",
+    finish_btn:"🏁 Terminer le tournoi",
+    assign_btn_action:"♟ Assigner groupes & générer matchs",
+    reset_groups:"↺ Réinitialiser les groupes",
+    reset_finals:"↺ Réinitialiser les phases finales",
+    notif_admin_title:"🔔 Envoyer une notification",
+    send_notif_btn:"📤 Envoyer à tous les abonnés",
+    reset_subs_btn:"↺ Réinitialiser tous les abonnements",
+    copy_whatsapp_btn:"📋 Copier le message",
+    maint_title:"Maintenance en cours",
+    maint_text:"Le site est temporairement indisponible.<br>Revenez dans quelques instants.",
+    maint_admin_access:"Accès administrateur",
+    maint_login_btn:"Connexion admin",
     rules_title:"Règlement",
     rules:`<p>🚀 Consultez l'onglet Matchs pour voir vos parties dès que la phase de poules est lancée. Envoyez une invitation à votre adversaire sur Chess.com (pseudo visible dans l'onglet Tournoi) ou jouez sur échiquier physique. Vous pouvez jouer plusieurs parties en même temps. Inscrivez le résultat dès la fin de chaque partie directement dans l'app.</p><br>
 <p>Format : Poules round-robin, puis phases finales à élimination directe.</p><br>
@@ -823,6 +852,8 @@ const T = {
     confirm_reset_scores_title:"Réinitialiser les scores ?",confirm_reset_scores_text:"Tous les résultats des matchs de poule seront effacés.",
     confirm_reset_all_title:"Réinitialiser le tournoi ?",confirm_reset_all_text:"Tous les joueurs, matchs et résultats seront définitivement effacés.",
     confirm_send_notif_title:"Envoyer la notification ?",confirm_send_notif_text:"Ce message sera envoyé à tous les abonnés aux notifications.",
+    confirm_reset_subs_title:"Réinitialiser tous les abonnements ?",
+    confirm_reset_subs_text:"Tous les abonnements aux notifications seront supprimés. Les abonnements toujours valides reviendront automatiquement dès que chaque appareil rouvre l'app — les autres resteront supprimés pour de bon.",
     confirm_ok:"Confirmer",confirm_cancel:"Annuler",
     finals_launched:["Phases finales lancées avec "," finalistes !"],not_enough_finalists:"Pas assez de finalistes qualifiés.",
     scores_reset:"Scores réinitialisés.",tournament_reset:"Tournoi réinitialisé.",
@@ -847,6 +878,25 @@ const T = {
     reg_name_hint:"Vorname, Spitzname oder echter Name — Ihre Wahl",reg_sector:"Sektor / Einheit (optional)",reg_btn:"Anmelden",
     reg_ok:"Erfolgreich angemeldet! Willkommen ",reg_err_fields:"Spitzname und Name erforderlich.",reg_err_exists:"Dieser Spitzname ist bereits vergeben.",
     players_title:"Angemeldete Spieler",
+    admin_players_title:"Spieler",
+    notif_prefs_link:"⚙️ Benachrichtigungseinstellungen",
+    notif_validate_btn:"✅ Bestätigen und aktivieren",
+    change_pin_btn:"PIN ändern",
+    check_late_btn:"🔍 Verspätungen jetzt prüfen",
+    open_reg_btn:"📋 Anmeldung öffnen",
+    start_pools_btn:"⚔️ Gruppenphase starten",
+    finish_btn:"🏁 Turnier beenden",
+    assign_btn_action:"♟ Gruppen zuweisen & Partien erstellen",
+    reset_groups:"↺ Gruppen zurücksetzen",
+    reset_finals:"↺ Finalrunden zurücksetzen",
+    notif_admin_title:"🔔 Benachrichtigung senden",
+    send_notif_btn:"📤 An alle Abonnenten senden",
+    reset_subs_btn:"↺ Alle Abonnements zurücksetzen",
+    copy_whatsapp_btn:"📋 Nachricht kopieren",
+    maint_title:"Wartung läuft",
+    maint_text:"Die Website ist vorübergehend nicht verfügbar.<br>Bitte versuchen Sie es in Kürze erneut.",
+    maint_admin_access:"Administratorzugang",
+    maint_login_btn:"Admin-Anmeldung",
     rules_title:"Reglement",
     rules:`<p>🚀 Sieh dir deine Partien im Tab <strong>Partien</strong> an, sobald die Gruppenphase gestartet ist. Sende deinem Gegner eine Einladung auf Chess.com (Benutzername im Tab <strong>Turnier</strong>) oder spiele auf dem Brett. Du kannst mehrere Partien gleichzeitig spielen. Trage das Ergebnis direkt im Tab <strong>Partien</strong> ein.</p><br>
 <p>Format: Round-Robin-Gruppen, dann K.o.-Finalrunden.</p><br>
@@ -879,6 +929,8 @@ const T = {
     confirm_reset_scores_title:"Ergebnisse zurücksetzen?",confirm_reset_scores_text:"Alle Gruppenpartie-Ergebnisse werden gelöscht.",
     confirm_reset_all_title:"Turnier zurücksetzen?",confirm_reset_all_text:"Alle Spieler, Partien und Ergebnisse werden dauerhaft gelöscht.",
     confirm_send_notif_title:"Benachrichtigung senden?",confirm_send_notif_text:"Diese Nachricht wird an alle Abonnenten gesendet.",
+    confirm_reset_subs_title:"Alle Benachrichtigungsabonnements zurücksetzen?",
+    confirm_reset_subs_text:"Alle Benachrichtigungsabonnements werden gelöscht. Noch gültige kommen automatisch zurück, sobald das jeweilige Gerät die App wieder öffnet — die anderen bleiben endgültig entfernt.",
     confirm_ok:"Bestätigen",confirm_cancel:"Abbrechen",
     finals_launched:["Finalrunden gestartet mit "," Finalisten!"],not_enough_finalists:"Nicht genug qualifizierte Finalisten.",
     scores_reset:"Ergebnisse zurückgesetzt.",tournament_reset:"Turnier zurückgesetzt.",
@@ -949,6 +1001,25 @@ const T = {
     reg_name_hint:"First name, nickname or real name — your choice",reg_sector:"Sector / Unit (optional)",reg_btn:"Register",
     reg_ok:"Registration successful! Welcome ",reg_err_fields:"Nickname and name are required.",reg_err_exists:"This nickname is already taken.",
     players_title:"Registered players",
+    admin_players_title:"Players",
+    notif_prefs_link:"⚙️ Notification preferences",
+    notif_validate_btn:"✅ Confirm and activate",
+    change_pin_btn:"Change PIN",
+    check_late_btn:"🔍 Check for overdue matches now",
+    open_reg_btn:"📋 Open registration",
+    start_pools_btn:"⚔️ Launch group stage",
+    finish_btn:"🏁 Finish tournament",
+    assign_btn_action:"♟ Assign groups & generate matches",
+    reset_groups:"↺ Reset groups",
+    reset_finals:"↺ Reset final stage",
+    notif_admin_title:"🔔 Send a notification",
+    send_notif_btn:"📤 Send to all subscribers",
+    reset_subs_btn:"↺ Reset all subscriptions",
+    copy_whatsapp_btn:"📋 Copy message",
+    maint_title:"Maintenance in progress",
+    maint_text:"The site is temporarily unavailable.<br>Please check back shortly.",
+    maint_admin_access:"Administrator access",
+    maint_login_btn:"Admin login",
     rules_title:"Rules",
     rules:`<p>🚀 Check the <strong>Matches</strong> tab to see your games when the group stage starts. Send an invitation to your opponent on Chess.com (username in the <strong>Tournament</strong> tab) or play on a physical board. You can play multiple games at once. Enter the result directly in the <strong>Matches</strong> tab.</p><br>
 <p>Format: Round-robin groups, then knockout finals.</p><br>
@@ -1026,6 +1097,8 @@ const T = {
     confirm_reset_scores_title:"Reset scores?",confirm_reset_scores_text:"All group stage results will be erased.",
     confirm_reset_all_title:"Reset tournament?",confirm_reset_all_text:"All players, matches and results will be permanently deleted.",
     confirm_send_notif_title:"Send notification?",confirm_send_notif_text:"This message will be sent to all notification subscribers.",
+    confirm_reset_subs_title:"Reset all notification subscriptions?",
+    confirm_reset_subs_text:"All notification subscriptions will be deleted. Still-valid ones will automatically come back as each device reopens the app — the rest will stay gone for good.",
     confirm_ok:"Confirm",confirm_cancel:"Cancel",
     finals_launched:["Final stage launched with "," finalists!"],not_enough_finalists:"Not enough qualified finalists.",
     scores_reset:"Scores reset.",tournament_reset:"Tournament reset.",
@@ -1050,6 +1123,25 @@ const T = {
     reg_name_hint:"Nome, soprannome o nome reale — a tua scelta",reg_sector:"Settore / Unità (opzionale)",reg_btn:"Iscriversi",
     reg_ok:"Iscrizione riuscita! Benvenuto/a ",reg_err_fields:"Soprannome e nome richiesti.",reg_err_exists:"Questo soprannome è già utilizzato.",
     players_title:"Giocatori iscritti",
+    admin_players_title:"Giocatori",
+    notif_prefs_link:"⚙️ Preferenze di notifica",
+    notif_validate_btn:"✅ Conferma e attiva",
+    change_pin_btn:"Modificare il PIN",
+    check_late_btn:"🔍 Verificare i ritardi adesso",
+    open_reg_btn:"📋 Aprire le iscrizioni",
+    start_pools_btn:"⚔️ Avviare la fase a gironi",
+    finish_btn:"🏁 Terminare il torneo",
+    assign_btn_action:"♟ Assegnare i gruppi & generare le partite",
+    reset_groups:"↺ Azzerare i gruppi",
+    reset_finals:"↺ Azzerare le fasi finali",
+    notif_admin_title:"🔔 Inviare una notifica",
+    send_notif_btn:"📤 Inviare a tutti gli iscritti",
+    reset_subs_btn:"↺ Azzerare tutti gli abbonamenti",
+    copy_whatsapp_btn:"📋 Copiare il messaggio",
+    maint_title:"Manutenzione in corso",
+    maint_text:"Il sito è temporaneamente non disponibile.<br>Riprova tra qualche istante.",
+    maint_admin_access:"Accesso amministratore",
+    maint_login_btn:"Accesso admin",
     rules_title:"Regolamento",
     rules:`<p>🚀 Consulta la scheda <strong>Partite</strong> per vedere le tue partite non appena inizia la fase a gironi. Invia un invito al tuo avversario su Chess.com (nome utente nella scheda <strong>Torneo</strong>) o gioca su una scacchiera. Puoi giocare più partite contemporaneamente. Inserisci il risultato nella scheda <strong>Partite</strong>.</p><br>
 <p>Formato: Gironi round-robin, poi fasi finali ad eliminazione diretta.</p><br>
@@ -1129,6 +1221,8 @@ const T = {
     confirm_reset_scores_title:"Azzerare i risultati?",confirm_reset_scores_text:"Tutti i risultati delle partite di gruppo saranno cancellati.",
     confirm_reset_all_title:"Azzerare il torneo?",confirm_reset_all_text:"Tutti i giocatori, le partite e i risultati saranno eliminati definitivamente.",
     confirm_send_notif_title:"Inviare la notifica?",confirm_send_notif_text:"Questo messaggio sarà inviato a tutti gli iscritti alle notifiche.",
+    confirm_reset_subs_title:"Azzerare tutti gli abbonamenti alle notifiche?",
+    confirm_reset_subs_text:"Tutti gli abbonamenti alle notifiche saranno eliminati. Quelli ancora validi torneranno automaticamente non appena ogni dispositivo riapre l'app — gli altri resteranno eliminati definitivamente.",
     confirm_ok:"Confermare",confirm_cancel:"Annullare",
     finals_launched:["Fasi finali avviate con "," finalisti!"],not_enough_finalists:"Finalisti qualificati insufficienti.",
     scores_reset:"Risultati azzerati.",tournament_reset:"Torneo azzerato.",
@@ -1225,6 +1319,34 @@ function applyTranslations() {
   const trigger = document.getElementById('install-trigger-btn');
   if (trigger) trigger.textContent = t('install_now');
   renderInstallSteps(currentInstallOS);
+
+  // Textes précédemment codés en dur, jamais traduits (trouvés par balayage systématique).
+  const setT = (id, key) => { const el = document.getElementById(id); if (el) el.textContent = t(key); };
+  setT('notif-prefs-link', 'notif_prefs_link');
+  setT('notif-validate-btn', 'notif_validate_btn');
+  setT('change-pin-btn', 'change_pin_btn');
+  setT('check-late-btn', 'check_late_btn');
+  setT('open-reg-btn', 'open_reg_btn');
+  setT('start-pools-btn', 'start_pools_btn');
+  setT('finish-btn', 'finish_btn');
+  setT('assign-btn-action', 'assign_btn_action');
+  setT('reset-groups-btn', 'reset_groups');
+  setT('reset-finals-btn', 'reset_finals');
+  setT('notif-admin-title', 'notif_admin_title');
+  setT('send-notif-btn', 'send_notif_btn');
+  setT('reset-subs-btn', 'reset_subs_btn');
+  setT('copy-whatsapp-btn', 'copy_whatsapp_btn');
+  setT('maint-title', 'maint_title');
+  setT('maint-admin-access-label', 'maint_admin_access');
+  setT('maint-login-btn', 'maint_login_btn');
+  const maintTextEl = document.getElementById('maint-text');
+  if (maintTextEl) maintTextEl.innerHTML = t('maint_text'); // contient un <br>, pas de textContent
+  // Ces deux titres contiennent un compteur en direct (<span>) : on le reconstruit pour ne
+  // pas l'écraser — le vrai chiffre est réécrit juste après par renderHome()/renderAdmin().
+  const plTitle = document.getElementById('players-title');
+  if (plTitle) plTitle.innerHTML = t('players_title') + ' (<span id="player-list-count">0</span>)';
+  const aplTitle = document.getElementById('admin-players-title');
+  if (aplTitle) aplTitle.innerHTML = t('admin_players_title') + ' (<span id="admin-player-count">0</span>)';
 }
 
 // ── INSTALL ──
@@ -1286,6 +1408,7 @@ let editingPlayerId = null;
 let lastAutoNotifMsg = '';
 let seedOrder = [];
 let recentlySubscribed = false; // évite un faux positif du contrôle d'orphelin juste après un nouvel abonnement
+let notifPanelPendingConfirm = false; // panneau ouvert, en attente du clic "Valider" — protège contre une fermeture accidentelle (ex: changement de langue) avant confirmation
 
 function defaultData() {
   return { settings:{ name:"Air Base Chess Tour", playersPerGroup:5, finalistsCount:8, status:"registration" }, players:{}, games:{}, finals:{} };
@@ -2001,14 +2124,16 @@ window.confirmAction = function(action,t1,t2,isScores) {
     resetScores: t('confirm_reset_scores_title'),
     resetFinals: t('confirm_reset_finals_title'),
     resetAll: t('confirm_reset_all_title'),
-    sendPushToAll: t('confirm_send_notif_title')
+    sendPushToAll: t('confirm_send_notif_title'),
+    resetSubscriptions: t('confirm_reset_subs_title')
   };
   const texts = {
     resetGroups: t('confirm_reset_groups_text'),
     resetScores: t('confirm_reset_scores_text'),
     resetFinals: t('confirm_reset_finals_text'),
     resetAll: t('confirm_reset_all_text'),
-    sendPushToAll: t('confirm_send_notif_text')
+    sendPushToAll: t('confirm_send_notif_text'),
+    resetSubscriptions: t('confirm_reset_subs_text')
   };
   document.getElementById('confirm-title').textContent = titles[action] || t('confirm_reset_all_title');
   document.getElementById('confirm-text').textContent = texts[action] || t('confirm_reset_all_text');

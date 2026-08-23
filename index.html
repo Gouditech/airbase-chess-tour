@@ -283,6 +283,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
     <div id="admin-actions" style="display:none">
       <div class="card">
         <h2 id="finalists-title">Finalistes qualifiés</h2>
+        <div id="bracket-warning" style="display:none;font-size:12px;line-height:1.5;padding:10px 12px;border-radius:8px;margin-bottom:10px;background:#FDECEA;color:var(--red);border-left:3px solid var(--red)"></div>
         <div id="finalists-preview"></div>
       </div>
       <div class="card">
@@ -1960,10 +1961,73 @@ async function propagateFinalWinner(id, winner, game) {
 }
 
 // ── FINALS ──
+// Vérifie si une combinaison (groupes × nombre de finalistes) peut produire un tableau
+// qui se termine réellement. Reproduit exactement le calcul de launchFinals ci-dessous —
+// si tu modifies la construction du bracket, mets aussi cette fonction à jour.
+// Retourne { ok:true } ou { ok:false, reason, suggestions:[...] }.
+function validateBracket(fin) {
+  if (!fin || fin.length < 2) return { ok: false, reason: 'pas assez de finalistes', suggestions: [] };
+
+  const numWinners = fin.filter(f => f.groupRank === 1).length;
+  const numOthers = fin.filter(f => f.groupRank > 1).length;
+  let bracketSize = 2; while (bracketSize < fin.length) bracketSize *= 2;
+
+  const roundNames = { 2:'Finale', 4:'Demis', 8:'Quarts', 16:'8èmes', 32:'16èmes' };
+  const allRoundNames = []; let rs = bracketSize;
+  while (rs >= 2) { allRoundNames.push(roundNames[rs] || ('Tour ' + rs)); rs = rs / 2; }
+
+  const hasTwoSpeed = bracketSize > fin.length && allRoundNames.length > 1
+    && numWinners > 0 && numOthers > 0
+    && numWinners <= bracketSize / 2 && numOthers <= bracketSize / 2;
+
+  // Bracket simple : tout le monde entre au même tour, toujours cohérent.
+  if (!hasTwoSpeed) return { ok: true };
+
+  // Bracket à deux vitesses : les vainqueurs de groupe entrent au 2e tour.
+  // Le nombre de matchs du 2e tour doit se réduire proprement jusqu'au 3e.
+  const nbFirstRound = Math.ceil(numOthers / 2);
+  const nbSecondRound = Math.max(numWinners, nbFirstRound);
+  const nbThirdRound = bracketSize / Math.pow(2, 3);
+  if (nbSecondRound === nbThirdRound * 2) return { ok: true };
+
+  // Incohérent : on cherche les nombres de finalistes qui marcheraient vraiment.
+  const suggestions = [];
+  for (let n = 4; n <= Math.min(32, fin.length + 12); n++) {
+    if (n === fin.length) continue;
+    const sub = fin.slice(0, n);
+    if (sub.length < n) break;
+    const w = sub.filter(f => f.groupRank === 1).length;
+    const o = sub.filter(f => f.groupRank > 1).length;
+    let bs = 2; while (bs < n) bs *= 2;
+    const rn = []; let r2 = bs;
+    while (r2 >= 2) { rn.push(roundNames[r2] || 'x'); r2 = r2 / 2; }
+    const twoSpeed = bs > n && rn.length > 1 && w > 0 && o > 0 && w <= bs/2 && o <= bs/2;
+    if (!twoSpeed) { suggestions.push(n); continue; }
+    if (Math.max(w, Math.ceil(o/2)) === (bs / Math.pow(2,3)) * 2) suggestions.push(n);
+  }
+  // Les plus proches du nombre souhaité d'abord — plus utile qu'une liste croissante.
+  suggestions.sort((a, b) => Math.abs(a - fin.length) - Math.abs(b - fin.length));
+
+  return {
+    ok: false,
+    reason: `${numWinners} vainqueurs de groupe qualifiés directement → ${nbSecondRound} matchs en ${allRoundNames[1]}, mais ${allRoundNames[2]} n'offre que ${nbThirdRound * 2} places. Le tableau ne pourrait pas aller à son terme.`,
+    suggestions: suggestions.slice(0, 6)
+  };
+}
+
 window.launchFinals = async function() {
   const standings = computeStandings();
   const fin = discoverFinalists(standings, state.settings.finalistsCount || 8);
   if (fin.length < 2) { showMsg('actions-msg', t('not_enough_finalists'), false); return; }
+
+  const check = validateBracket(fin);
+  if (!check.ok) {
+    const sugg = check.suggestions.length
+      ? ` Nombres de finalistes compatibles avec tes groupes actuels : ${check.suggestions.join(', ')}.`
+      : ' Essaie un autre nombre de finalistes, ou change le nombre de joueurs par groupe.';
+    showMsg('actions-msg', '⛔ Impossible de lancer : ' + check.reason + sugg, false, true);
+    return;
+  }
 
   const roundNames = {2:'Finale', 4:'Demis', 8:'Quarts', 16:'8èmes', 32:'16èmes'};
   const semisName = 'Demis';
@@ -2791,6 +2855,20 @@ function renderAdmin(){
     }
     const standings=computeStandings();
     const fin=discoverFinalists(standings,s.finalistsCount||8);
+    // Avertissement préventif : signale une combinaison impossible AVANT le clic sur "Lancer".
+    const bw = document.getElementById('bracket-warning');
+    if (bw) {
+      const chk = fin.length >= 2 ? validateBracket(fin) : { ok: true };
+      if (!chk.ok) {
+        const sugg = chk.suggestions.length
+          ? `<br><br>Nombres de finalistes compatibles : <b>${chk.suggestions.join(', ')}</b> — ou modifie le nombre de joueurs par groupe.`
+          : '';
+        bw.innerHTML = '⛔ <b>Combinaison impossible</b><br>' + esc(chk.reason) + sugg;
+        bw.style.display = 'block';
+      } else {
+        bw.style.display = 'none';
+      }
+    }
     const fp=document.getElementById('finalists-preview');
     if(!fin.length){fp.innerHTML=`<div style="color:var(--gray);font-size:13px">${t('no_matches')}</div>`;}
     else{const seedMapF = {};

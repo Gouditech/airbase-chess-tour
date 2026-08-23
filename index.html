@@ -1618,9 +1618,17 @@ window.registerPlayer = async function() {
 
 window.removePlayer = async function(id) { await set(ref(db,'players/'+id),null); };
 
+// Rafraîchit la page réellement affichée. Se baser sur isAdmin envoyait le rafraîchissement
+// dans le panneau admin même quand on cliquait depuis la page Tournoi : le crayon semblait
+// alors ne rien faire, et le formulaire s'ouvrait ailleurs.
+function refreshPlayerLists() {
+  if (currentPage === 'admin') renderAdmin();
+  else renderHome();
+}
+
 window.startEditPlayer = function(id) {
   editingPlayerId = editingPlayerId === id ? null : id;
-  if (isAdmin) renderAdmin(); else renderHome();
+  refreshPlayerLists();
 };
 
 window.saveEditPlayer = async function(id) {
@@ -1642,7 +1650,7 @@ window.saveEditPlayer = async function(id) {
 
 window.cancelEditPlayer = function() {
   editingPlayerId = null;
-  if (isAdmin) renderAdmin(); else renderHome();
+  refreshPlayerLists();
 };
 
 window.saveSeedOrder = async function() {

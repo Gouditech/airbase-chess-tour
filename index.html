@@ -1965,6 +1965,40 @@ async function propagateFinalWinner(id, winner, game) {
 // qui se termine réellement. Reproduit exactement le calcul de launchFinals ci-dessous —
 // si tu modifies la construction du bracket, mets aussi cette fonction à jour.
 // Retourne { ok:true } ou { ok:false, reason, suggestions:[...] }.
+// Cherche les réglages "joueurs par groupe" qui rendraient le nombre de finalistes
+// souhaité réalisable. Le nombre de groupes découle de ce réglage exactement comme dans
+// assignGroups (ceil(joueurs / joueursParGroupe)), et de là découle le nombre de
+// vainqueurs qualifiés d'office — c'est ce qui détermine si le tableau tient debout.
+// Retourne [{ ppg, groupes }] pour les réglages compatibles.
+function suggestPlayersPerGroup(totalPlayers, wantedFinalists) {
+  const out = [];
+  if (!totalPlayers || !wantedFinalists || wantedFinalists < 2) return out;
+  for (let ppg = 3; ppg <= 10; ppg++) {
+    const numGroups = Math.ceil(totalPlayers / ppg);
+    if (numGroups < 1) continue;
+    if (wantedFinalists > totalPlayers) continue;
+    // Reconstitue la composition par rang telle que discoverFinalists la produirait :
+    // on prend les 1ers de chaque groupe, puis les 2èmes, etc.
+    const fakeFin = [];
+    let rank = 1;
+    while (fakeFin.length < wantedFinalists) {
+      let addedThisRank = 0;
+      for (let g = 1; g <= numGroups && fakeFin.length < wantedFinalists; g++) {
+        // un groupe ne peut fournir un joueur de rang R que s'il a au moins R joueurs
+        const sizeOfGroup = Math.floor(totalPlayers / numGroups) + ((g - 1) < (totalPlayers % numGroups) ? 1 : 0);
+        if (sizeOfGroup >= rank) { fakeFin.push({ groupRank: rank }); addedThisRank++; }
+      }
+      if (!addedThisRank) break; // plus personne à qualifier
+      rank++;
+    }
+    if (fakeFin.length < wantedFinalists) continue; // pas assez de joueurs pour ce réglage
+    if (validateBracket(fakeFin).ok) out.push({ ppg, groupes: numGroups });
+  }
+  // Les petits groupes d'abord (moins de matchs par joueur), et on s'arrête à 3 options
+  // pour rester lisible plutôt que de noyer sous les possibilités.
+  return out.slice(0, 3);
+}
+
 function validateBracket(fin) {
   if (!fin || fin.length < 2) return { ok: false, reason: 'pas assez de finalistes', suggestions: [] };
 
@@ -2022,10 +2056,15 @@ window.launchFinals = async function() {
 
   const check = validateBracket(fin);
   if (!check.ok) {
+    const wanted = state.settings.finalistsCount || 8;
+    const ppgOpts = suggestPlayersPerGroup(getPlayers().length, wanted);
+    const ppgTxt = ppgOpts.length
+      ? ` Pour garder ${wanted} finalistes, règle "joueurs par groupe" sur ${ppgOpts.map(o => `${o.ppg} (${o.groupes} groupes)`).join(' ou ')}.`
+      : '';
     const sugg = check.suggestions.length
-      ? ` Nombres de finalistes compatibles avec tes groupes actuels : ${check.suggestions.join(', ')}.`
+      ? ` Ou garde tes groupes actuels et choisis ${check.suggestions.join(', ')} finalistes.`
       : ' Essaie un autre nombre de finalistes, ou change le nombre de joueurs par groupe.';
-    showMsg('actions-msg', '⛔ Impossible de lancer : ' + check.reason + sugg, false, true);
+    showMsg('actions-msg', '⛔ Impossible de lancer : ' + check.reason + ppgTxt + sugg, false, true);
     return;
   }
 
@@ -2860,10 +2899,15 @@ function renderAdmin(){
     if (bw) {
       const chk = fin.length >= 2 ? validateBracket(fin) : { ok: true };
       if (!chk.ok) {
-        const sugg = chk.suggestions.length
-          ? `<br><br>Nombres de finalistes compatibles : <b>${chk.suggestions.join(', ')}</b> — ou modifie le nombre de joueurs par groupe.`
+        const wanted = s.finalistsCount || 8;
+        const ppgOpts = suggestPlayersPerGroup(getPlayers().length, wanted);
+        const ppgTxt = ppgOpts.length
+          ? `<br><br>➤ Pour garder <b>${wanted} finalistes</b>, règle "joueurs par groupe" sur : <b>${ppgOpts.map(o => `${o.ppg}</b> (${o.groupes} groupes)`).join(' ou <b>')}`
           : '';
-        bw.innerHTML = '⛔ <b>Combinaison impossible</b><br>' + esc(chk.reason) + sugg;
+        const sugg = chk.suggestions.length
+          ? `<br><br>➤ Ou garde tes groupes actuels et choisis : <b>${chk.suggestions.join(', ')}</b> finalistes.`
+          : '';
+        bw.innerHTML = '⛔ <b>Combinaison impossible</b><br>' + esc(chk.reason) + ppgTxt + sugg;
         bw.style.display = 'block';
       } else {
         bw.style.display = 'none';

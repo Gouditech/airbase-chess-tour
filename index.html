@@ -1970,6 +1970,22 @@ async function propagateFinalWinner(id, winner, game) {
 // assignGroups (ceil(joueurs / joueursParGroupe)), et de là découle le nombre de
 // vainqueurs qualifiés d'office — c'est ce qui détermine si le tableau tient debout.
 // Retourne [{ ppg, groupes }] pour les réglages compatibles.
+// Ordre de placement standard d'un tableau à élimination directe.
+// Sans ça, l'appariement naïf (1v16, 2v15, 3v14…) fait se rencontrer les têtes de série
+// 1 et 2 dès le 2e tour. Ici, à chaque tour la moitié haute et la moitié basse se
+// répondent en miroir : seed1 et seed2 ne peuvent se croiser qu'en finale.
+// Retourne par ex. pour 8 : [1,8,4,5,2,7,3,6] (lu deux par deux = les matchs).
+function standardSeedOrder(size) {
+  let order = [1];
+  while (order.length < size) {
+    const n = order.length * 2;
+    const next = [];
+    order.forEach(s => { next.push(s, n + 1 - s); });
+    order = next;
+  }
+  return order;
+}
+
 function suggestPlayersPerGroup(totalPlayers, wantedFinalists) {
   const out = [];
   if (!totalPlayers || !wantedFinalists || wantedFinalists < 2) return out;
@@ -2188,14 +2204,20 @@ window.launchFinals = async function() {
     // Simple bracket: everyone enters first round
     const firstRoundName = allRoundNames[0];
     const numMatches = bracketSize / 2;
+    const firstRoundIds = [];
+    const seedOrderList = standardSeedOrder(bracketSize);
     for (let i = 0; i < numMatches; i++) {
-      const p1 = fin[i]?.player || null;
-      const p2Idx = bracketSize - 1 - i;
-      const p2 = (fin[p2Idx] && fin[p2Idx].player !== p1) ? fin[p2Idx].player : null;
+      // Placement standard : seedOrderList donne les positions 2 par 2 (1-indexées).
+      const seedA = seedOrderList[i * 2], seedB = seedOrderList[i * 2 + 1];
+      const p1 = fin[seedA - 1]?.player || null;
+      const pB = fin[seedB - 1]?.player || null;
+      const p2 = (pB && pB !== p1) ? pB : null;
       const winner = (p1 && !p2) ? p1 : null;
       const finalistRankMapS = {};
       fin.forEach((f, idx) => { finalistRankMapS[f.player] = idx + 1; });
-      finals[genId()] = {
+      const fid = genId();
+      firstRoundIds.push(fid);
+      finals[fid] = {
         round: firstRoundName, matchNum: i,
         player1: p1, player2: p2,
         rank1: p1 ? (finalistRankMapS[p1] || 99) : null,
@@ -2203,12 +2225,31 @@ window.launchFinals = async function() {
         score1: winner ? 1 : null, score2: winner ? 0 : null, winner
       };
     }
+    const secondRoundIdsSimple = [];
     for (let r = 1; r < allRoundNames.length; r++) {
       const numMatches = bracketSize / Math.pow(2, r+1);
       for (let i = 0; i < numMatches; i++) {
-        finals[genId()] = { round: allRoundNames[r], matchNum: i, player1: null, player2: null, score1: null, score2: null, winner: null };
+        const rid = genId();
+        finals[rid] = { round: allRoundNames[r], matchNum: i, player1: null, player2: null, score1: null, score2: null, winner: null };
+        if (r === 1) secondRoundIdsSimple.push(rid);
       }
     }
+    // Les exemptions ont déjà un vainqueur connu : il faut le placer tout de suite dans
+    // le tour suivant, sinon ces places restent vides et le tableau semble bloqué.
+    // Le match pair alimente player1, l'impair player2 (cohérent avec propagateFinalWinner
+    // qui remplit ensuite le premier emplacement libre).
+    firstRoundIds.forEach((fid, i) => {
+      const m = finals[fid];
+      if (!m.winner) return;
+      const nextIdx = Math.floor(i / 2);
+      const nextId = secondRoundIdsSimple[nextIdx];
+      if (!nextId) return;
+      const slot = (i % 2 === 0) ? 'player1' : 'player2';
+      const rankSlot = (i % 2 === 0) ? 'rank1' : 'rank2';
+      finals[nextId][slot] = m.winner;
+      const wRank = (m.winner === m.player1) ? m.rank1 : m.rank2;
+      if (wRank) finals[nextId][rankSlot] = wRank;
+    });
   }
 
   // Add 3rd place match if semifinals exist
@@ -2724,7 +2765,9 @@ function renderMatches(){
 
 function matchCardHTML(g){
   const isEditing=editingMatchId===g.id;
-  const played=g.scoreWhite!==null&&g.scoreWhite!==undefined;
+  // Même raison que pour les finales : les deux scores sont écrits l'un après l'autre,
+  // exiger les deux évite d'afficher "1 — undefined" entre les deux écritures.
+  const played=g.scoreWhite!==null&&g.scoreWhite!==undefined&&g.scoreBlack!==null&&g.scoreBlack!==undefined;
   const opts=(val)=>['1','0.5','0'].map(s=>`<option value="${s}" ${played&&parseFloat(val)===parseFloat(s)?'selected':''}>${s}</option>`).join('');
   const late = !played && isMatchLate(g, false);
   const due = matchDueDate(g, false);
@@ -2773,7 +2816,9 @@ function renderFinals(){
 
 function finalCardHTML(f){
   const isEditing=editingFinalId===f.id;
-  const played=f.score1!==null&&f.score1!==undefined;
+  // Les deux scores sont exigés : ils sont écrits en plusieurs opérations successives,
+  // et sans cette double condition l'affichage montre brièvement "1 — undefined".
+  const played=f.score1!==null&&f.score1!==undefined&&f.score2!==null&&f.score2!==undefined;
   const isPresential = f.round==='Demis'||f.round==='Finale';
   const lateFinal = !played && !isPresential && f.player1 && f.player2 && isMatchLate(f, true);
   const dueF = !played && f.player1 && f.player2 ? matchDueDate(f, true) : null;

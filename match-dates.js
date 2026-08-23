@@ -48,7 +48,7 @@
 
       var df = new Date(startDate);
       if (isNaN(df.getTime())) return null;  // date de réglage invalide
-      df.setDate(df.getDate() + position * interval);
+      df.setDate(df.getDate() + (position + 1) * interval);
       return df;
     }
 
@@ -57,7 +57,7 @@
     if (!poolStart || !game.round) return null;
     var d = new Date(poolStart);
     if (isNaN(d.getTime())) return null;
-    d.setDate(d.getDate() + (game.round - 1) * poolInterval);
+    d.setDate(d.getDate() + game.round * poolInterval);
     return d;
   }
 

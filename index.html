@@ -1407,6 +1407,7 @@ let editingMatchId = null;
 let editingFinalId = null;
 let editingPlayerId = null;
 let lastAutoNotifMsg = '';
+let lastAutoWhatsAppMsg = ''; // même principe : permet de garder le champ WhatsApp à jour tant qu'il n'a pas été personnalisé
 let seedOrder = [];
 let recentlySubscribed = false; // évite un faux positif du contrôle d'orphelin juste après un nouvel abonnement
 let notifPanelPendingConfirm = false; // panneau ouvert, en attente du clic "Valider" — protège contre une fermeture accidentelle (ex: changement de langue) avant confirmation
@@ -2917,13 +2918,18 @@ function renderAdmin(){
         lastAutoNotifMsg = freshNotifMsg;
       }
     }
-    // Populate WhatsApp message preview
+    // Aperçu + champ modifiable : le champ reste synchronisé avec l'aperçu tant que l'admin
+    // ne l'a pas personnalisé. Sans ça, le champ restait figé sur sa toute première version
+    // et le bouton "Copier" transmettait un message périmé, différent de l'aperçu affiché.
     const msgPreview = document.getElementById('whatsapp-preview');
     const msgTextarea = document.getElementById('whatsapp-msg');
     if (msgPreview) {
       const generated = generateWhatsAppMsg();
       msgPreview.textContent = generated;
-      if (msgTextarea && !msgTextarea.value) msgTextarea.value = generated;
+      if (msgTextarea && (!msgTextarea.value || msgTextarea.value === lastAutoWhatsAppMsg)) {
+        msgTextarea.value = generated;
+        lastAutoWhatsAppMsg = generated;
+      }
     }
     // Show current phase and highlight active button
     const phaseLabel = document.getElementById('current-phase-label');

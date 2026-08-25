@@ -226,12 +226,12 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
       <h2 id="settings-title">Paramètres</h2>
       <div class="gap">
         <div class="form-group"><label id="set-label-name">Nom du tournoi</label><input id="set-name" type="text"></div>
-        <div class="form-group"><label id="set-label-ppg">Joueurs par groupe</label><input id="set-ppg" type="number" min="3" max="10"><div id="set-ppg-hint" style="font-size:11px;color:var(--gray);margin-top:3px"></div></div>
+        <div class="form-group"><label id="set-label-ppg">Joueurs par groupe</label><input id="set-ppg" type="number" min="3" max="10" oninput="updatePoolEndEstimate()"><div id="set-ppg-hint" style="font-size:11px;color:var(--gray);margin-top:3px"></div></div>
         <div class="form-group"><label id="set-label-fin">Nombre de finalistes</label><input id="set-fin" type="number" min="2" max="32"></div>
-        <div class="form-group"><label id="set-label-pool-start">Date de début des poules</label><input id="set-pool-start" type="date"></div>
-        <div class="form-group"><label id="set-label-pool-interval">Intervalle entre rondes de poules (jours)</label><input id="set-pool-interval" type="number" min="1" max="30" value="4"></div>
-        <div class="form-group"><label id="set-label-finals-start">Date de début des finales</label><input id="set-finals-start" type="date"></div>
-        <div class="form-group"><label id="set-label-finals-interval">Intervalle entre tours de finales (jours)</label><input id="set-finals-interval" type="number" min="1" max="30" value="4"></div>
+        <div class="form-group"><label id="set-label-pool-start">Date de début des poules</label><input id="set-pool-start" type="date" oninput="updatePoolEndEstimate()"></div>
+        <div class="form-group"><label id="set-label-pool-interval">Intervalle entre rondes de poules (jours)</label><input id="set-pool-interval" type="number" min="1" max="30" value="4" oninput="updatePoolEndEstimate()"><div id="pool-end-estimate" style="font-size:11px;color:var(--gold);margin-top:3px;font-weight:600"></div></div>
+        <div class="form-group"><label id="set-label-finals-start">Date de début des finales</label><input id="set-finals-start" type="date" oninput="updateFinalsEndEstimate()"></div>
+        <div class="form-group"><label id="set-label-finals-interval">Intervalle entre tours de finales (jours)</label><input id="set-finals-interval" type="number" min="1" max="30" value="4" oninput="updateFinalsEndEstimate()"><div id="finals-end-estimate" style="font-size:11px;color:var(--gold);margin-top:3px;font-weight:600"></div></div>
         <div class="form-group"><label id="set-label-semis">Format demi-finales</label><input id="set-semis" type="text" placeholder="20min + 10s/coup"></div>
         <div class="form-group"><label id="set-label-final">Format finale</label><input id="set-final-format" type="text" placeholder="30min + 10s/coup"></div>
 
@@ -1622,6 +1622,72 @@ window.removePlayer = async function(id) { await set(ref(db,'players/'+id),null)
 // Rafraîchit la page réellement affichée. Se baser sur isAdmin envoyait le rafraîchissement
 // dans le panneau admin même quand on cliquait depuis la page Tournoi : le crayon semblait
 // alors ne rien faire, et le formulaire s'ouvrait ailleurs.
+// Estimation de fin, calculée en direct pendant que l'admin choisit ses dates — n'écrit
+// rien dans Firebase, purement informatif. Réutilise le fichier de dates partagé plutôt
+// que de réimplémenter le calcul (voir §4.4 du HANDOFF : match-dates.js est la seule
+// source pour cette logique).
+function formatEstimate(date) {
+  return date.toLocaleDateString(lang === 'fr' ? 'fr-CH' : lang === 'de' ? 'de-CH' : lang === 'it' ? 'it-CH' : 'en-GB',
+    { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+window.updatePoolEndEstimate = function() {
+  const el = document.getElementById('pool-end-estimate');
+  if (!el) return;
+  const start = document.getElementById('set-pool-start')?.value;
+  const interval = parseInt(document.getElementById('set-pool-interval')?.value) || 4;
+  if (!start) { el.textContent = ''; return; }
+
+  // Nombre de rondes : à partir des vrais groupes s'ils existent déjà, sinon estimation
+  // depuis le nombre de joueurs inscrits et le réglage actuel.
+  let maxRound = 0;
+  const games = getGames();
+  if (games.length) {
+    maxRound = Math.max(...games.map(g => g.round || 1));
+  } else {
+    const totalPlayers = getPlayers().length;
+    const ppg = parseInt(document.getElementById('set-ppg')?.value) || 5;
+    if (totalPlayers >= 2) {
+      const numGroups = Math.ceil(totalPlayers / ppg);
+      const largestGroup = Math.ceil(totalPlayers / numGroups);
+      maxRound = (largestGroup % 2 === 0) ? largestGroup - 1 : largestGroup;
+    }
+  }
+  if (maxRound < 1) { el.textContent = ''; return; }
+
+  const due = ABCT_DATES.matchDueDate({ round: maxRound }, false, { poolStartDate: start, poolInterval: interval }, []);
+  el.textContent = due ? '📅 Fin estimée des poules : ' + formatEstimate(due) : '';
+};
+
+window.updateFinalsEndEstimate = function() {
+  const el = document.getElementById('finals-end-estimate');
+  if (!el) return;
+  const start = document.getElementById('set-finals-start')?.value;
+  const interval = parseInt(document.getElementById('set-finals-interval')?.value) || 4;
+  if (!start) { el.textContent = ''; return; }
+
+  // Nombre de tours : depuis le vrai bracket s'il existe déjà, sinon depuis le réglage
+  // "nombre de finalistes" (le bracket est déterminé rien qu'avec ce chiffre).
+  let totalRounds;
+  const finals = getFinals();
+  if (finals.length) {
+    totalRounds = [...new Set(finals.map(f => f.round))].filter(r => FINALS_ROUND_SEQUENCE.includes(r)).length;
+  } else {
+    const wanted = parseInt(document.getElementById('set-fin')?.value) || state?.settings?.finalistsCount || 8;
+    let bracketSize = 2; while (bracketSize < wanted) bracketSize *= 2;
+    totalRounds = Math.log2(bracketSize);
+  }
+  if (!totalRounds) { el.textContent = ''; return; }
+
+  // Demis + Finale se jouent en présentiel à une date convenue, sans échéance propre —
+  // mais pour cette ESTIMATION uniquement, on suppose qu'elles suivent le même rythme
+  // que les tours précédents, comme demandé.
+  const bracket = [];
+  for (let i = 0; i < totalRounds; i++) bracket.push({ round: FINALS_ROUND_SEQUENCE[FINALS_ROUND_SEQUENCE.length - totalRounds + i] });
+  const due = ABCT_DATES.matchDueDate({ round: 'Finale' }, true, { finalsStartDate: start, finalsInterval: interval }, bracket);
+  el.textContent = due ? '📅 Fin estimée des finales (si même rythme jusqu\'au bout) : ' + formatEstimate(due) : '';
+};
+
 function refreshPlayerLists() {
   if (currentPage === 'admin') renderAdmin();
   else renderHome();
@@ -2873,6 +2939,8 @@ function renderAdmin(){
   document.getElementById('set-finals-interval').value=s.finalsInterval||4;
   document.getElementById('set-semis').value=s.semisFormat||'20min + 10s/coup';
   document.getElementById('set-final-format').value=s.finalFormat||'30min + 10s/coup';
+  updatePoolEndEstimate();
+  updateFinalsEndEstimate();
 
   const players=getPlayers();
   const ppg=s.playersPerGroup||5;

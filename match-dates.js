@@ -48,7 +48,7 @@
 
       var df = new Date(startDate);
       if (isNaN(df.getTime())) return null;  // date de réglage invalide
-      df.setDate(df.getDate() + position * interval);
+      df.setDate(df.getDate() + (position + 1) * interval);
       return df;
     }
 
@@ -57,19 +57,23 @@
     if (!poolStart || !game.round) return null;
     var d = new Date(poolStart);
     if (isNaN(d.getTime())) return null;
-    d.setDate(d.getDate() + (game.round - 1) * poolInterval);
+    d.setDate(d.getDate() + game.round * poolInterval);
     return d;
   }
 
   // Un match est "en retard" quand plus d'un intervalle complet s'est écoulé
   // APRÈS sa date d'échéance (on laisse donc une marge d'un intervalle).
+  // Un match est "en retard" dès le lendemain de son échéance : la date calculée EST la
+  // date limite (le match doit être terminé et le score saisi avant la fin de ce jour-là).
+  // ⚠️ Ne pas rajouter d'intervalle de grâce ici : historiquement l'échéance marquait le
+  // DÉBUT de la fenêtre de jeu, ce qui justifiait d'attendre un intervalle de plus. Depuis
+  // que l'échéance est la vraie date limite, ce délai supplémentaire doublait l'attente.
   function isMatchLate(game, isFinal, settings, allFinals) {
-    var s = settings || {};
-    var interval = (isFinal ? s.finalsInterval : s.poolInterval) || 4;
     var due = matchDueDate(game, isFinal, settings, allFinals);
     if (!due) return false;
-    var daysPassed = (Date.now() - due.getTime()) / (1000 * 60 * 60 * 24);
-    return daysPassed > interval;
+    var dueEnd = new Date(due);
+    dueEnd.setHours(23, 59, 59, 999); // toute la journée de l'échéance reste jouable
+    return Date.now() > dueEnd.getTime();
   }
 
   var api = {

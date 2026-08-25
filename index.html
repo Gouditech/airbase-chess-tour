@@ -283,6 +283,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
     <div id="admin-actions" style="display:none">
       <div class="card">
         <h2 id="finalists-title">Finalistes qualifiés</h2>
+        <div id="bracket-warning" style="display:none;font-size:12px;line-height:1.5;padding:10px 12px;border-radius:8px;margin-bottom:10px;background:#FDECEA;color:var(--red);border-left:3px solid var(--red)"></div>
         <div id="finalists-preview"></div>
       </div>
       <div class="card">
@@ -1406,6 +1407,7 @@ let editingMatchId = null;
 let editingFinalId = null;
 let editingPlayerId = null;
 let lastAutoNotifMsg = '';
+let lastAutoWhatsAppMsg = ''; // même principe : permet de garder le champ WhatsApp à jour tant qu'il n'a pas été personnalisé
 let seedOrder = [];
 let recentlySubscribed = false; // évite un faux positif du contrôle d'orphelin juste après un nouvel abonnement
 let notifPanelPendingConfirm = false; // panneau ouvert, en attente du clic "Valider" — protège contre une fermeture accidentelle (ex: changement de langue) avant confirmation
@@ -1617,9 +1619,17 @@ window.registerPlayer = async function() {
 
 window.removePlayer = async function(id) { await set(ref(db,'players/'+id),null); };
 
+// Rafraîchit la page réellement affichée. Se baser sur isAdmin envoyait le rafraîchissement
+// dans le panneau admin même quand on cliquait depuis la page Tournoi : le crayon semblait
+// alors ne rien faire, et le formulaire s'ouvrait ailleurs.
+function refreshPlayerLists() {
+  if (currentPage === 'admin') renderAdmin();
+  else renderHome();
+}
+
 window.startEditPlayer = function(id) {
   editingPlayerId = editingPlayerId === id ? null : id;
-  if (isAdmin) renderAdmin(); else renderHome();
+  refreshPlayerLists();
 };
 
 window.saveEditPlayer = async function(id) {
@@ -1641,7 +1651,7 @@ window.saveEditPlayer = async function(id) {
 
 window.cancelEditPlayer = function() {
   editingPlayerId = null;
-  if (isAdmin) renderAdmin(); else renderHome();
+  refreshPlayerLists();
 };
 
 window.saveSeedOrder = async function() {
@@ -1960,10 +1970,128 @@ async function propagateFinalWinner(id, winner, game) {
 }
 
 // ── FINALS ──
+// Vérifie si une combinaison (groupes × nombre de finalistes) peut produire un tableau
+// qui se termine réellement. Reproduit exactement le calcul de launchFinals ci-dessous —
+// si tu modifies la construction du bracket, mets aussi cette fonction à jour.
+// Retourne { ok:true } ou { ok:false, reason, suggestions:[...] }.
+// Cherche les réglages "joueurs par groupe" qui rendraient le nombre de finalistes
+// souhaité réalisable. Le nombre de groupes découle de ce réglage exactement comme dans
+// assignGroups (ceil(joueurs / joueursParGroupe)), et de là découle le nombre de
+// vainqueurs qualifiés d'office — c'est ce qui détermine si le tableau tient debout.
+// Retourne [{ ppg, groupes }] pour les réglages compatibles.
+// Ordre de placement standard d'un tableau à élimination directe.
+// Sans ça, l'appariement naïf (1v16, 2v15, 3v14…) fait se rencontrer les têtes de série
+// 1 et 2 dès le 2e tour. Ici, à chaque tour la moitié haute et la moitié basse se
+// répondent en miroir : seed1 et seed2 ne peuvent se croiser qu'en finale.
+// Retourne par ex. pour 8 : [1,8,4,5,2,7,3,6] (lu deux par deux = les matchs).
+function standardSeedOrder(size) {
+  let order = [1];
+  while (order.length < size) {
+    const n = order.length * 2;
+    const next = [];
+    order.forEach(s => { next.push(s, n + 1 - s); });
+    order = next;
+  }
+  return order;
+}
+
+function suggestPlayersPerGroup(totalPlayers, wantedFinalists) {
+  const out = [];
+  if (!totalPlayers || !wantedFinalists || wantedFinalists < 2) return out;
+  for (let ppg = 3; ppg <= 10; ppg++) {
+    const numGroups = Math.ceil(totalPlayers / ppg);
+    if (numGroups < 1) continue;
+    if (wantedFinalists > totalPlayers) continue;
+    // Reconstitue la composition par rang telle que discoverFinalists la produirait :
+    // on prend les 1ers de chaque groupe, puis les 2èmes, etc.
+    const fakeFin = [];
+    let rank = 1;
+    while (fakeFin.length < wantedFinalists) {
+      let addedThisRank = 0;
+      for (let g = 1; g <= numGroups && fakeFin.length < wantedFinalists; g++) {
+        // un groupe ne peut fournir un joueur de rang R que s'il a au moins R joueurs
+        const sizeOfGroup = Math.floor(totalPlayers / numGroups) + ((g - 1) < (totalPlayers % numGroups) ? 1 : 0);
+        if (sizeOfGroup >= rank) { fakeFin.push({ groupRank: rank }); addedThisRank++; }
+      }
+      if (!addedThisRank) break; // plus personne à qualifier
+      rank++;
+    }
+    if (fakeFin.length < wantedFinalists) continue; // pas assez de joueurs pour ce réglage
+    if (validateBracket(fakeFin).ok) out.push({ ppg, groupes: numGroups });
+  }
+  // Les petits groupes d'abord (moins de matchs par joueur), et on s'arrête à 3 options
+  // pour rester lisible plutôt que de noyer sous les possibilités.
+  return out.slice(0, 3);
+}
+
+function validateBracket(fin) {
+  if (!fin || fin.length < 2) return { ok: false, reason: 'pas assez de finalistes', suggestions: [] };
+
+  const numWinners = fin.filter(f => f.groupRank === 1).length;
+  const numOthers = fin.filter(f => f.groupRank > 1).length;
+  let bracketSize = 2; while (bracketSize < fin.length) bracketSize *= 2;
+
+  const roundNames = { 2:'Finale', 4:'Demis', 8:'Quarts', 16:'8èmes', 32:'16èmes' };
+  const allRoundNames = []; let rs = bracketSize;
+  while (rs >= 2) { allRoundNames.push(roundNames[rs] || ('Tour ' + rs)); rs = rs / 2; }
+
+  const hasTwoSpeed = bracketSize > fin.length && allRoundNames.length > 1
+    && numWinners > 0 && numOthers > 0
+    && numWinners <= bracketSize / 2 && numOthers <= bracketSize / 2;
+
+  // Bracket simple : tout le monde entre au même tour, toujours cohérent.
+  if (!hasTwoSpeed) return { ok: true };
+
+  // Bracket à deux vitesses : les vainqueurs de groupe entrent au 2e tour.
+  // Le nombre de matchs du 2e tour doit se réduire proprement jusqu'au 3e.
+  const nbFirstRound = Math.ceil(numOthers / 2);
+  const nbSecondRound = Math.max(numWinners, nbFirstRound);
+  const nbThirdRound = bracketSize / Math.pow(2, 3);
+  if (nbSecondRound === nbThirdRound * 2) return { ok: true };
+
+  // Incohérent : on cherche les nombres de finalistes qui marcheraient vraiment.
+  const suggestions = [];
+  for (let n = 4; n <= Math.min(32, fin.length + 12); n++) {
+    if (n === fin.length) continue;
+    const sub = fin.slice(0, n);
+    if (sub.length < n) break;
+    const w = sub.filter(f => f.groupRank === 1).length;
+    const o = sub.filter(f => f.groupRank > 1).length;
+    let bs = 2; while (bs < n) bs *= 2;
+    const rn = []; let r2 = bs;
+    while (r2 >= 2) { rn.push(roundNames[r2] || 'x'); r2 = r2 / 2; }
+    const twoSpeed = bs > n && rn.length > 1 && w > 0 && o > 0 && w <= bs/2 && o <= bs/2;
+    if (!twoSpeed) { suggestions.push(n); continue; }
+    if (Math.max(w, Math.ceil(o/2)) === (bs / Math.pow(2,3)) * 2) suggestions.push(n);
+  }
+  // Les plus proches du nombre souhaité d'abord — plus utile qu'une liste croissante.
+  suggestions.sort((a, b) => Math.abs(a - fin.length) - Math.abs(b - fin.length));
+
+  return {
+    ok: false,
+    reason: `${numWinners} vainqueurs de groupe qualifiés directement → ${nbSecondRound} matchs en ${allRoundNames[1]}, mais ${allRoundNames[2]} n'offre que ${nbThirdRound * 2} places. Le tableau ne pourrait pas aller à son terme.`,
+    suggestions: suggestions.slice(0, 6)
+  };
+}
+
 window.launchFinals = async function() {
   const standings = computeStandings();
   const fin = discoverFinalists(standings, state.settings.finalistsCount || 8);
   if (fin.length < 2) { showMsg('actions-msg', t('not_enough_finalists'), false); return; }
+
+  const check = validateBracket(fin);
+  if (!check.ok) {
+    const wanted = state.settings.finalistsCount || 8;
+    const ppgOpts = suggestPlayersPerGroup(getPlayers().length, wanted);
+    const ppgTxt = ppgOpts.length
+      ? ` Pour garder ${wanted} finalistes, règle "joueurs par groupe" sur ${ppgOpts.map(o => `${o.ppg} (${o.groupes} groupes)`).join(' ou ')}.`
+      : '';
+    const sugg = check.suggestions.length
+      ? ` Ou garde tes groupes actuels et choisis ${check.suggestions.join(', ')} finalistes.`
+      : ' Essaie un autre nombre de finalistes, ou change le nombre de joueurs par groupe.';
+    showMsg('actions-msg', '⛔ Impossible de lancer : ' + check.reason + ppgTxt + sugg, false, true);
+    return;
+  }
 
   const roundNames = {2:'Finale', 4:'Demis', 8:'Quarts', 16:'8èmes', 32:'16èmes'};
   const semisName = 'Demis';
@@ -2085,14 +2213,20 @@ window.launchFinals = async function() {
     // Simple bracket: everyone enters first round
     const firstRoundName = allRoundNames[0];
     const numMatches = bracketSize / 2;
+    const firstRoundIds = [];
+    const seedOrderList = standardSeedOrder(bracketSize);
     for (let i = 0; i < numMatches; i++) {
-      const p1 = fin[i]?.player || null;
-      const p2Idx = bracketSize - 1 - i;
-      const p2 = (fin[p2Idx] && fin[p2Idx].player !== p1) ? fin[p2Idx].player : null;
+      // Placement standard : seedOrderList donne les positions 2 par 2 (1-indexées).
+      const seedA = seedOrderList[i * 2], seedB = seedOrderList[i * 2 + 1];
+      const p1 = fin[seedA - 1]?.player || null;
+      const pB = fin[seedB - 1]?.player || null;
+      const p2 = (pB && pB !== p1) ? pB : null;
       const winner = (p1 && !p2) ? p1 : null;
       const finalistRankMapS = {};
       fin.forEach((f, idx) => { finalistRankMapS[f.player] = idx + 1; });
-      finals[genId()] = {
+      const fid = genId();
+      firstRoundIds.push(fid);
+      finals[fid] = {
         round: firstRoundName, matchNum: i,
         player1: p1, player2: p2,
         rank1: p1 ? (finalistRankMapS[p1] || 99) : null,
@@ -2100,12 +2234,31 @@ window.launchFinals = async function() {
         score1: winner ? 1 : null, score2: winner ? 0 : null, winner
       };
     }
+    const secondRoundIdsSimple = [];
     for (let r = 1; r < allRoundNames.length; r++) {
       const numMatches = bracketSize / Math.pow(2, r+1);
       for (let i = 0; i < numMatches; i++) {
-        finals[genId()] = { round: allRoundNames[r], matchNum: i, player1: null, player2: null, score1: null, score2: null, winner: null };
+        const rid = genId();
+        finals[rid] = { round: allRoundNames[r], matchNum: i, player1: null, player2: null, score1: null, score2: null, winner: null };
+        if (r === 1) secondRoundIdsSimple.push(rid);
       }
     }
+    // Les exemptions ont déjà un vainqueur connu : il faut le placer tout de suite dans
+    // le tour suivant, sinon ces places restent vides et le tableau semble bloqué.
+    // Le match pair alimente player1, l'impair player2 (cohérent avec propagateFinalWinner
+    // qui remplit ensuite le premier emplacement libre).
+    firstRoundIds.forEach((fid, i) => {
+      const m = finals[fid];
+      if (!m.winner) return;
+      const nextIdx = Math.floor(i / 2);
+      const nextId = secondRoundIdsSimple[nextIdx];
+      if (!nextId) return;
+      const slot = (i % 2 === 0) ? 'player1' : 'player2';
+      const rankSlot = (i % 2 === 0) ? 'rank1' : 'rank2';
+      finals[nextId][slot] = m.winner;
+      const wRank = (m.winner === m.player1) ? m.rank1 : m.rank2;
+      if (wRank) finals[nextId][rankSlot] = wRank;
+    });
   }
 
   // Add 3rd place match if semifinals exist
@@ -2621,7 +2774,9 @@ function renderMatches(){
 
 function matchCardHTML(g){
   const isEditing=editingMatchId===g.id;
-  const played=g.scoreWhite!==null&&g.scoreWhite!==undefined;
+  // Même raison que pour les finales : les deux scores sont écrits l'un après l'autre,
+  // exiger les deux évite d'afficher "1 — undefined" entre les deux écritures.
+  const played=g.scoreWhite!==null&&g.scoreWhite!==undefined&&g.scoreBlack!==null&&g.scoreBlack!==undefined;
   const opts=(val)=>['1','0.5','0'].map(s=>`<option value="${s}" ${played&&parseFloat(val)===parseFloat(s)?'selected':''}>${s}</option>`).join('');
   const late = !played && isMatchLate(g, false);
   const due = matchDueDate(g, false);
@@ -2660,7 +2815,12 @@ function renderFinals(){
   const roundOrder=['32èmes','16èmes','8èmes','Quarts','Demis','Finale','3ème place'];
   let html='';
   roundOrder.forEach(round=>{
-    const rg=finals.filter(f=>f.round===round).sort((a,b)=>a.matchNum-b.matchNum);
+    const rg=finals.filter(f=>f.round===round)
+      // Une exemption (qualifié d'office, sans adversaire) ne doit pas s'afficher comme
+      // un match gagné 1-0 : ce match n'a jamais eu lieu. Le joueur apparaît déjà au
+      // tour suivant, là où il joue vraiment.
+      .filter(f=>!(f.winner && f.player1 && !f.player2))
+      .sort((a,b)=>a.matchNum-b.matchNum);
     if(!rg.length) return;
     html+=`<div class="section-title">${round}</div>`;
     html+=rg.map(f=>finalCardHTML(f)).join('');
@@ -2670,7 +2830,9 @@ function renderFinals(){
 
 function finalCardHTML(f){
   const isEditing=editingFinalId===f.id;
-  const played=f.score1!==null&&f.score1!==undefined;
+  // Les deux scores sont exigés : ils sont écrits en plusieurs opérations successives,
+  // et sans cette double condition l'affichage montre brièvement "1 — undefined".
+  const played=f.score1!==null&&f.score1!==undefined&&f.score2!==null&&f.score2!==undefined;
   const isPresential = f.round==='Demis'||f.round==='Finale';
   const lateFinal = !played && !isPresential && f.player1 && f.player2 && isMatchLate(f, true);
   const dueF = !played && f.player1 && f.player2 ? matchDueDate(f, true) : null;
@@ -2756,13 +2918,18 @@ function renderAdmin(){
         lastAutoNotifMsg = freshNotifMsg;
       }
     }
-    // Populate WhatsApp message preview
+    // Aperçu + champ modifiable : le champ reste synchronisé avec l'aperçu tant que l'admin
+    // ne l'a pas personnalisé. Sans ça, le champ restait figé sur sa toute première version
+    // et le bouton "Copier" transmettait un message périmé, différent de l'aperçu affiché.
     const msgPreview = document.getElementById('whatsapp-preview');
     const msgTextarea = document.getElementById('whatsapp-msg');
     if (msgPreview) {
       const generated = generateWhatsAppMsg();
       msgPreview.textContent = generated;
-      if (msgTextarea && !msgTextarea.value) msgTextarea.value = generated;
+      if (msgTextarea && (!msgTextarea.value || msgTextarea.value === lastAutoWhatsAppMsg)) {
+        msgTextarea.value = generated;
+        lastAutoWhatsAppMsg = generated;
+      }
     }
     // Show current phase and highlight active button
     const phaseLabel = document.getElementById('current-phase-label');
@@ -2791,6 +2958,25 @@ function renderAdmin(){
     }
     const standings=computeStandings();
     const fin=discoverFinalists(standings,s.finalistsCount||8);
+    // Avertissement préventif : signale une combinaison impossible AVANT le clic sur "Lancer".
+    const bw = document.getElementById('bracket-warning');
+    if (bw) {
+      const chk = fin.length >= 2 ? validateBracket(fin) : { ok: true };
+      if (!chk.ok) {
+        const wanted = s.finalistsCount || 8;
+        const ppgOpts = suggestPlayersPerGroup(getPlayers().length, wanted);
+        const ppgTxt = ppgOpts.length
+          ? `<br><br>➤ Pour garder <b>${wanted} finalistes</b>, règle "joueurs par groupe" sur : <b>${ppgOpts.map(o => `${o.ppg}</b> (${o.groupes} groupes)`).join(' ou <b>')}`
+          : '';
+        const sugg = chk.suggestions.length
+          ? `<br><br>➤ Ou garde tes groupes actuels et choisis : <b>${chk.suggestions.join(', ')}</b> finalistes.`
+          : '';
+        bw.innerHTML = '⛔ <b>Combinaison impossible</b><br>' + esc(chk.reason) + ppgTxt + sugg;
+        bw.style.display = 'block';
+      } else {
+        bw.style.display = 'none';
+      }
+    }
     const fp=document.getElementById('finalists-preview');
     if(!fin.length){fp.innerHTML=`<div style="color:var(--gray);font-size:13px">${t('no_matches')}</div>`;}
     else{const seedMapF = {};

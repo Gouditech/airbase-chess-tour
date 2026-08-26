@@ -1,13 +1,10 @@
 // Air Base Chess Tour — Service Worker
-const CACHE_NAME = 'abct-v5';
+const CACHE_NAME = 'abct-v6';
 
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      // match-dates.js est indispensable au site : il doit être en cache hors ligne.
-      return cache.addAll(['/', '/index.html', '/match-dates.js']).catch(() => {});
-    })
-  );
+  // Plus de mise en cache ici : le gestionnaire fetch ci-dessous ne la consulte plus
+  // jamais (voir plus bas) — la garder aurait été du code mort, trompeur sur ce que
+  // le service worker fait réellement.
   self.skipWaiting();
 });
 
@@ -21,9 +18,13 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request))
-  );
+  // cache:'no-store' force le navigateur à ignorer complètement son propre cache HTTP
+  // (distinct du cache du service worker) et à toujours revérifier auprès du serveur —
+  // c'est ce qui causait le "une fois sur deux" : sans ça, fetch() pouvait resservir une
+  // copie déjà téléchargée selon sa fraîcheur, même en "essayant le réseau en premier".
+  // Pas de repli sur le cache en cas d'échec : toujours la dernière version, jamais une
+  // version périmée qui se ferait passer pour la version actuelle.
+  event.respondWith(fetch(event.request, { cache: 'no-store' }));
 });
 
 self.addEventListener('push', event => {

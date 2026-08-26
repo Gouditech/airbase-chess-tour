@@ -43,11 +43,11 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
 .lang-bar{background:#111;display:flex;justify-content:center;gap:4px;padding:6px 12px;padding-top:0}
 .lang-btn{border:none;background:none;color:#666;font-size:12px;font-weight:600;cursor:pointer;padding:4px 8px;border-radius:6px;transition:all .15s}
 .lang-btn.active{background:var(--gold);color:var(--dark)}
-.badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:13px;font-weight:700}
-.badge-open{background:#E8F5E9;color:var(--green)}
-.badge-playing{background:#FFF8E1;color:#B8860B}
-.badge-finals{background:#E3F2FD;color:#1565C0}
-.badge-done{background:#F3E5F5;color:#6A1B9A}
+.badge{display:inline-block;padding:8px 18px;border-radius:20px;font-size:15px;font-weight:800;border:1.5px solid transparent;letter-spacing:.2px}
+.badge-open{background:#E8F5E9;color:var(--green);border-color:#A8D5B5}
+.badge-playing{background:#FFF8E1;color:#B8860B;border-color:#F0D98C}
+.badge-finals{background:#E3F2FD;color:#1565C0;border-color:#A8CFF0}
+.badge-done{background:#F3E5F5;color:#6A1B9A;border-color:#D3A8E0}
 .rank-table{width:100%;border-collapse:collapse;font-size:12px}
 .rank-table th{padding:5px 6px;font-weight:700;border-bottom:2px solid var(--gold-light);text-align:center}
 .rank-table th:first-child{text-align:left}
@@ -138,7 +138,8 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
   <div class="card" style="text-align:center;padding:20px 16px">
     <img id="home-logo" src="" style="width:80px;height:80px;object-fit:contain;margin-bottom:10px">
     <div id="home-player-count" style="font-size:13px;color:var(--gray)"></div>
-    <div id="home-badge" style="margin-top:8px"></div>
+    <div id="home-badge" style="margin-top:12px;margin-bottom:4px"></div>
+    <div id="home-reg-deadline" style="display:none;font-size:12px;color:var(--gray);margin-bottom:4px"></div>
     <button class="btn btn-gray btn-sm" style="display:inline-block;width:auto;margin-top:12px" onclick="openInstallModal()" id="install-btn-home">📲 Installer l'app</button>
     <button class="btn btn-gray btn-sm" style="display:inline-block;width:auto;margin-top:8px" onclick="toggleNotifications()" id="notif-toggle-btn">🔕 Activer les notifications</button>
     <button class="btn btn-gray btn-sm" style="display:none;width:auto;margin-top:8px;margin-left:6px;font-size:11px" onclick="testNotification()" id="notif-test-btn">🔔 Test</button>
@@ -226,12 +227,13 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
       <h2 id="settings-title">Paramètres</h2>
       <div class="gap">
         <div class="form-group"><label id="set-label-name">Nom du tournoi</label><input id="set-name" type="text"></div>
-        <div class="form-group"><label id="set-label-ppg">Joueurs par groupe</label><input id="set-ppg" type="number" min="3" max="10"><div id="set-ppg-hint" style="font-size:11px;color:var(--gray);margin-top:3px"></div></div>
+        <div class="form-group"><label id="set-label-reg-deadline">Date de clôture des inscriptions</label><input id="set-reg-deadline" type="date"></div>
+        <div class="form-group"><label id="set-label-ppg">Joueurs par groupe</label><input id="set-ppg" type="number" min="3" max="10" oninput="updatePoolEndEstimate()"><div id="set-ppg-hint" style="font-size:11px;color:var(--gray);margin-top:3px"></div></div>
         <div class="form-group"><label id="set-label-fin">Nombre de finalistes</label><input id="set-fin" type="number" min="2" max="32"></div>
-        <div class="form-group"><label id="set-label-pool-start">Date de début des poules</label><input id="set-pool-start" type="date"></div>
-        <div class="form-group"><label id="set-label-pool-interval">Intervalle entre rondes de poules (jours)</label><input id="set-pool-interval" type="number" min="1" max="30" value="4"></div>
-        <div class="form-group"><label id="set-label-finals-start">Date de début des finales</label><input id="set-finals-start" type="date"></div>
-        <div class="form-group"><label id="set-label-finals-interval">Intervalle entre tours de finales (jours)</label><input id="set-finals-interval" type="number" min="1" max="30" value="4"></div>
+        <div class="form-group"><label id="set-label-pool-start">Date de début des poules</label><input id="set-pool-start" type="date" oninput="updatePoolEndEstimate()"></div>
+        <div class="form-group"><label id="set-label-pool-interval">Intervalle entre rondes de poules (jours)</label><input id="set-pool-interval" type="number" min="1" max="30" value="4" oninput="updatePoolEndEstimate()"><div id="pool-end-estimate" style="font-size:11px;color:var(--gold);margin-top:3px;font-weight:600"></div></div>
+        <div class="form-group"><label id="set-label-finals-start">Date de début des finales</label><input id="set-finals-start" type="date" oninput="updateFinalsEndEstimate()"></div>
+        <div class="form-group"><label id="set-label-finals-interval">Intervalle entre tours de finales (jours)</label><input id="set-finals-interval" type="number" min="1" max="30" value="4" oninput="updateFinalsEndEstimate()"><div id="finals-end-estimate" style="font-size:11px;color:var(--gold);margin-top:3px;font-weight:600"></div></div>
         <div class="form-group"><label id="set-label-semis">Format demi-finales</label><input id="set-semis" type="text" placeholder="20min + 10s/coup"></div>
         <div class="form-group"><label id="set-label-final">Format finale</label><input id="set-final-format" type="text" placeholder="30min + 10s/coup"></div>
 
@@ -773,6 +775,7 @@ const T = {
     maint_login_btn:"Connexion admin",
     rules_title:"Règlement",
     rules:`<p>🚀 Consultez l'onglet Matchs pour voir vos parties dès que la phase de poules est lancée. Envoyez une invitation à votre adversaire sur Chess.com (pseudo visible dans l'onglet Tournoi) ou jouez sur échiquier physique. Vous pouvez jouer plusieurs parties en même temps. Inscrivez le résultat dès la fin de chaque partie directement dans l'app.</p><br>
+<p>⏰ Respectez les délais indiqués dans l'onglet Matchs : même à cadence lente, enchaînez vos coups pour que la partie se termine dans le délai imparti.</p><br>
 <p>Format : Poules round-robin, puis phases finales à élimination directe.</p><br>
 <p>Scores : 1 (victoire) · 0.5 (nul) · 0 (défaite)</p><br>
 <p>Départage dans les groupes : ① Points ② Victoires ③ Victoires avec les Noirs ④ Confrontation directe ⑤ Tête de série</p><p>Départage global (finalistes) : ① Points/match ② Victoires/match ③ Victoires Noirs/match ④ Buchholz/match ⑤ Tête de série</p><br>
@@ -841,7 +844,7 @@ const T = {
     ranking_title:"Global Ranking",
     subtab_ranking:"Classement",
     ranking_title:"Classement global",
-    settings_title:"Paramètres du tournoi",set_name:"Nom du tournoi",set_ppg:"Joueurs par groupe",set_fin:"Nombre de finalistes",set_status:"Statut",
+    settings_title:"Paramètres du tournoi",set_name:"Nom du tournoi",set_reg_deadline:"Date de clôture des inscriptions",reg_deadline_until:"Jusqu'au",set_ppg:"Joueurs par groupe",set_fin:"Nombre de finalistes",set_status:"Statut",
     set_pool_start:"Date de début des poules",set_pool_interval:"Intervalle entre rondes de poules (jours)",
     set_finals_start:"Date de début des finales",set_finals_interval:"Intervalle entre tours de finales (jours)",
     status_opt_reg:"Inscriptions ouvertes",status_opt_play:"Phase de poules",status_opt_fin:"Phases finales",status_opt_done:"Terminé",
@@ -900,6 +903,7 @@ const T = {
     maint_login_btn:"Admin-Anmeldung",
     rules_title:"Reglement",
     rules:`<p>🚀 Sieh dir deine Partien im Tab <strong>Partien</strong> an, sobald die Gruppenphase gestartet ist. Sende deinem Gegner eine Einladung auf Chess.com (Benutzername im Tab <strong>Turnier</strong>) oder spiele auf dem Brett. Du kannst mehrere Partien gleichzeitig spielen. Trage das Ergebnis direkt im Tab <strong>Partien</strong> ein.</p><br>
+<p>⏰ Haltet die im Tab Partien angegebenen Fristen ein: auch bei langsamem Tempo, zieht zügig weiter, damit die Partie fristgerecht beendet wird.</p><br>
 <p>Format: Round-Robin-Gruppen, dann K.o.-Finalrunden.</p><br>
 <p>Punkte: 1 (Sieg) · 0.5 (Remis) · 0 (Niederlage)</p><br>
 <p>Tiebreak Gruppen: ① Punkte ② Siege ③ Siege mit Schwarz ④ Direkter Vergleich ⑤ Setzrang</p><p>Globaler Tiebreak (Finalisten): ① Punkte/Partie ② Siege/Partie ③ Siege Schwarz/Partie ④ Buchholz/Partie ⑤ Setzrang</p><br>
@@ -918,7 +922,7 @@ const T = {
     subtab_settings:"Einstellungen",subtab_players:"Spieler",subtab_seeding:"Gruppen",subtab_actions:"Aktionen",
     subtab_ranking:"Rangliste",
     ranking_title:"Globale Rangliste",
-    settings_title:"Turniereinstellungen",set_name:"Turniername",set_ppg:"Spieler pro Gruppe",set_fin:"Anzahl Finalisten",set_status:"Status",
+    settings_title:"Turniereinstellungen",set_name:"Turniername",set_reg_deadline:"Anmeldeschluss",reg_deadline_until:"Bis zum",set_ppg:"Spieler pro Gruppe",set_fin:"Anzahl Finalisten",set_status:"Status",
     set_pool_start:"Startdatum Gruppenphase",set_pool_interval:"Intervall zwischen Gruppenrunden (Tage)",
     set_finals_start:"Startdatum Finalrunden",set_finals_interval:"Intervall zwischen Finalrunden (Tage)",
     status_opt_reg:"Anmeldung offen",status_opt_play:"Gruppenphase",status_opt_fin:"Finalphase",status_opt_done:"Beendet",
@@ -1023,6 +1027,7 @@ const T = {
     maint_login_btn:"Admin login",
     rules_title:"Rules",
     rules:`<p>🚀 Check the <strong>Matches</strong> tab to see your games when the group stage starts. Send an invitation to your opponent on Chess.com (username in the <strong>Tournament</strong> tab) or play on a physical board. You can play multiple games at once. Enter the result directly in the <strong>Matches</strong> tab.</p><br>
+<p>⏰ Respect the deadlines shown in the Matches tab: even at a slow pace, keep making your moves so the game finishes within the allotted time.</p><br>
 <p>Format: Round-robin groups, then knockout finals.</p><br>
 <p>Scores: 1 (win) · 0.5 (draw) · 0 (loss)</p><br>
 <p>Group tiebreak: ① Points ② Wins ③ Wins with Black ④ Head-to-head ⑤ Seed</p><p>Global tiebreak (finalists): ① Points/game ② Wins/game ③ Black wins/game ④ Buchholz/game ⑤ Seed</p><br>
@@ -1086,7 +1091,7 @@ const T = {
     admin_pin_hint:"First time? Create your PIN now.",admin_pin_err:"Incorrect PIN.",
     admin_logout:"Logout",
     subtab_settings:"Settings",subtab_players:"Players",subtab_seeding:"Groups",subtab_actions:"Actions",
-    settings_title:"Tournament settings",set_name:"Tournament name",set_ppg:"Players per group",set_fin:"Number of finalists",set_status:"Status",
+    settings_title:"Tournament settings",set_name:"Tournament name",set_reg_deadline:"Registration closing date",reg_deadline_until:"Until",set_ppg:"Players per group",set_fin:"Number of finalists",set_status:"Status",
     set_pool_start:"Pool stage start date",set_pool_interval:"Interval between pool rounds (days)",
     set_finals_start:"Finals start date",set_finals_interval:"Interval between final rounds (days)",
     status_opt_reg:"Registration open",status_opt_play:"Group stage",status_opt_fin:"Final stage",status_opt_done:"Finished",
@@ -1145,6 +1150,7 @@ const T = {
     maint_login_btn:"Accesso admin",
     rules_title:"Regolamento",
     rules:`<p>🚀 Consulta la scheda <strong>Partite</strong> per vedere le tue partite non appena inizia la fase a gironi. Invia un invito al tuo avversario su Chess.com (nome utente nella scheda <strong>Torneo</strong>) o gioca su una scacchiera. Puoi giocare più partite contemporaneamente. Inserisci il risultato nella scheda <strong>Partite</strong>.</p><br>
+<p>⏰ Rispettate le scadenze indicate nella scheda Partite: anche con un ritmo lento, continuate a muovere affinché la partita termini entro i tempi previsti.</p><br>
 <p>Formato: Gironi round-robin, poi fasi finali ad eliminazione diretta.</p><br>
 <p>Punteggi: 1 (vittoria) · 0.5 (patta) · 0 (sconfitta)</p><br>
 <p>Spareggio gironi: ① Punti ② Vittorie ③ Vittorie con il Nero ④ Scontro diretto ⑤ Testa di serie</p><p>Spareggio globale (finalisti): ① Punti/partita ② Vittorie/partita ③ Vittorie Nero/partita ④ Buchholz/partita ⑤ Testa di serie</p><br>
@@ -1210,7 +1216,7 @@ const T = {
     subtab_settings:"Impostazioni",subtab_players:"Giocatori",subtab_seeding:"Gruppi",subtab_actions:"Azioni",
     subtab_ranking:"Classifica",
     ranking_title:"Classifica globale",
-    settings_title:"Impostazioni torneo",set_name:"Nome del torneo",set_ppg:"Giocatori per gruppo",set_fin:"Numero di finalisti",set_status:"Stato",
+    settings_title:"Impostazioni torneo",set_name:"Nome del torneo",set_reg_deadline:"Data di chiusura delle iscrizioni",reg_deadline_until:"Fino al",set_ppg:"Giocatori per gruppo",set_fin:"Numero di finalisti",set_status:"Stato",
     set_pool_start:"Data di inizio dei gironi",set_pool_interval:"Intervallo tra i turni dei gironi (giorni)",
     set_finals_start:"Data di inizio delle finali",set_finals_interval:"Intervallo tra i turni finali (giorni)",
     status_opt_reg:"Iscrizioni aperte",status_opt_play:"Fase a gironi",status_opt_fin:"Fase finale",status_opt_done:"Terminato",
@@ -1289,6 +1295,7 @@ function applyTranslations() {
   document.getElementById('subtab-actions').textContent = t('subtab_actions');
   document.getElementById('settings-title').textContent = t('settings_title');
   document.getElementById('set-label-name').textContent = t('set_name');
+  document.getElementById('set-label-reg-deadline').textContent = t('set_reg_deadline');
   document.getElementById('set-label-ppg').textContent = t('set_ppg');
   document.getElementById('set-label-fin').textContent = t('set_fin');
   document.getElementById('set-label-pool-start').textContent = t('set_pool_start');
@@ -1574,6 +1581,7 @@ window.showAdminTab = function(tab) {
 
 window.saveSettings = async function() {
   const name=document.getElementById('set-name').value.trim();
+  const regDeadline=document.getElementById('set-reg-deadline').value||'';
   const ppg=parseInt(document.getElementById('set-ppg').value)||5;
   const fin=parseInt(document.getElementById('set-fin').value)||8;
   const poolStart=document.getElementById('set-pool-start').value||'';
@@ -1583,6 +1591,7 @@ window.saveSettings = async function() {
   const semisFormat=document.getElementById('set-semis').value.trim()||'20min + 10s/coup';
   const finalFormat=document.getElementById('set-final-format').value.trim()||'30min + 10s/coup';
   await set(ref(db,'settings/name'),name);
+  await set(ref(db,'settings/registrationDeadline'),regDeadline);
   await set(ref(db,'settings/playersPerGroup'),ppg);
   await set(ref(db,'settings/finalistsCount'),fin);
   await set(ref(db,'settings/poolStartDate'),poolStart);
@@ -1622,6 +1631,72 @@ window.removePlayer = async function(id) { await set(ref(db,'players/'+id),null)
 // Rafraîchit la page réellement affichée. Se baser sur isAdmin envoyait le rafraîchissement
 // dans le panneau admin même quand on cliquait depuis la page Tournoi : le crayon semblait
 // alors ne rien faire, et le formulaire s'ouvrait ailleurs.
+// Estimation de fin, calculée en direct pendant que l'admin choisit ses dates — n'écrit
+// rien dans Firebase, purement informatif. Réutilise le fichier de dates partagé plutôt
+// que de réimplémenter le calcul (voir §4.4 du HANDOFF : match-dates.js est la seule
+// source pour cette logique).
+function formatEstimate(date) {
+  return date.toLocaleDateString(lang === 'fr' ? 'fr-CH' : lang === 'de' ? 'de-CH' : lang === 'it' ? 'it-CH' : 'en-GB',
+    { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+window.updatePoolEndEstimate = function() {
+  const el = document.getElementById('pool-end-estimate');
+  if (!el) return;
+  const start = document.getElementById('set-pool-start')?.value;
+  const interval = parseInt(document.getElementById('set-pool-interval')?.value) || 4;
+  if (!start) { el.textContent = ''; return; }
+
+  // Nombre de rondes : à partir des vrais groupes s'ils existent déjà, sinon estimation
+  // depuis le nombre de joueurs inscrits et le réglage actuel.
+  let maxRound = 0;
+  const games = getGames();
+  if (games.length) {
+    maxRound = Math.max(...games.map(g => g.round || 1));
+  } else {
+    const totalPlayers = getPlayers().length;
+    const ppg = parseInt(document.getElementById('set-ppg')?.value) || 5;
+    if (totalPlayers >= 2) {
+      const numGroups = Math.ceil(totalPlayers / ppg);
+      const largestGroup = Math.ceil(totalPlayers / numGroups);
+      maxRound = (largestGroup % 2 === 0) ? largestGroup - 1 : largestGroup;
+    }
+  }
+  if (maxRound < 1) { el.textContent = ''; return; }
+
+  const due = ABCT_DATES.matchDueDate({ round: maxRound }, false, { poolStartDate: start, poolInterval: interval }, []);
+  el.textContent = due ? '📅 Fin estimée des poules : ' + formatEstimate(due) : '';
+};
+
+window.updateFinalsEndEstimate = function() {
+  const el = document.getElementById('finals-end-estimate');
+  if (!el) return;
+  const start = document.getElementById('set-finals-start')?.value;
+  const interval = parseInt(document.getElementById('set-finals-interval')?.value) || 4;
+  if (!start) { el.textContent = ''; return; }
+
+  // Nombre de tours : depuis le vrai bracket s'il existe déjà, sinon depuis le réglage
+  // "nombre de finalistes" (le bracket est déterminé rien qu'avec ce chiffre).
+  let totalRounds;
+  const finals = getFinals();
+  if (finals.length) {
+    totalRounds = [...new Set(finals.map(f => f.round))].filter(r => FINALS_ROUND_SEQUENCE.includes(r)).length;
+  } else {
+    const wanted = parseInt(document.getElementById('set-fin')?.value) || state?.settings?.finalistsCount || 8;
+    let bracketSize = 2; while (bracketSize < wanted) bracketSize *= 2;
+    totalRounds = Math.log2(bracketSize);
+  }
+  if (!totalRounds) { el.textContent = ''; return; }
+
+  // Demis + Finale se jouent en présentiel à une date convenue, sans échéance propre —
+  // mais pour cette ESTIMATION uniquement, on suppose qu'elles suivent le même rythme
+  // que les tours précédents, comme demandé.
+  const bracket = [];
+  for (let i = 0; i < totalRounds; i++) bracket.push({ round: FINALS_ROUND_SEQUENCE[FINALS_ROUND_SEQUENCE.length - totalRounds + i] });
+  const due = ABCT_DATES.matchDueDate({ round: 'Finale' }, true, { finalsStartDate: start, finalsInterval: interval }, bracket);
+  el.textContent = due ? '📅 Fin estimée des finales (si même rythme jusqu\'au bout) : ' + formatEstimate(due) : '';
+};
+
 function refreshPlayerLists() {
   if (currentPage === 'admin') renderAdmin();
   else renderHome();
@@ -2688,12 +2763,30 @@ function renderHome(){
   const players=getPlayers();
   renderAdminDeviceStatus();
   document.getElementById('header-title').textContent=s.name||'Air Base Chess Tour';
+  // Le bouton "Installer l'app" n'a plus d'utilité une fois l'app réellement installée
+  // (lancée depuis l'écran d'accueil, pas un onglet de navigateur classique).
+  const installBtn = document.getElementById('install-btn-home');
+  if (installBtn) {
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+    installBtn.style.display = isPWA ? 'none' : 'inline-block';
+  }
+  const statusIcon={registration:'📋',playing:'⚔️',finals:'🏆',finished:'✅'};
   const statusMap={registration:t('status_registration'),playing:t('status_playing'),finals:t('status_finals'),finished:t('status_finished')};
   document.getElementById('header-sub').textContent=statusMap[s.status]||'';
   const cnt=players.length;
   document.getElementById('home-player-count').textContent=cnt+' '+(cnt===1?t('players_count_1'):t('players_count_n'));
   const badgeClass={registration:'badge-open',playing:'badge-playing',finals:'badge-finals',finished:'badge-done'};
-  document.getElementById('home-badge').innerHTML=`<span class="badge ${badgeClass[s.status]||''}">${statusMap[s.status]||''}</span>`;
+  document.getElementById('home-badge').innerHTML=`<span class="badge ${badgeClass[s.status]||''}">${statusIcon[s.status]||''} ${statusMap[s.status]||''}</span>`;
+  const regDeadlineEl = document.getElementById('home-reg-deadline');
+  if (regDeadlineEl) {
+    if (s.status === 'registration' && s.registrationDeadline) {
+      const d = new Date(s.registrationDeadline);
+      regDeadlineEl.textContent = isNaN(d.getTime()) ? '' : '⏳ ' + t('reg_deadline_until') + ' ' + formatEstimate(d);
+      regDeadlineEl.style.display = isNaN(d.getTime()) ? 'none' : 'block';
+    } else {
+      regDeadlineEl.style.display = 'none';
+    }
+  }
   document.getElementById('register-card').style.display=s.status==='registration'?'block':'none';
   // Show pool reminder banner only during pool phase
   const reminder = document.getElementById('pool-reminder');
@@ -2865,6 +2958,7 @@ function renderAdmin(){
   if(!isAdmin) return;
   const s=state?.settings||{};
   document.getElementById('set-name').value=s.name||'';
+  document.getElementById('set-reg-deadline').value=s.registrationDeadline||'';
   document.getElementById('set-ppg').value=s.playersPerGroup||5;
   document.getElementById('set-fin').value=s.finalistsCount||8;
   document.getElementById('set-pool-start').value=s.poolStartDate||'';
@@ -2873,6 +2967,8 @@ function renderAdmin(){
   document.getElementById('set-finals-interval').value=s.finalsInterval||4;
   document.getElementById('set-semis').value=s.semisFormat||'20min + 10s/coup';
   document.getElementById('set-final-format').value=s.finalFormat||'30min + 10s/coup';
+  updatePoolEndEstimate();
+  updateFinalsEndEstimate();
 
   const players=getPlayers();
   const ppg=s.playersPerGroup||5;

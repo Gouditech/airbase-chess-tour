@@ -2763,6 +2763,13 @@ function renderHome(){
   const players=getPlayers();
   renderAdminDeviceStatus();
   document.getElementById('header-title').textContent=s.name||'Air Base Chess Tour';
+  // Le bouton "Installer l'app" n'a plus d'utilité une fois l'app réellement installée
+  // (lancée depuis l'écran d'accueil, pas un onglet de navigateur classique).
+  const installBtn = document.getElementById('install-btn-home');
+  if (installBtn) {
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+    installBtn.style.display = isPWA ? 'none' : 'inline-block';
+  }
   const statusIcon={registration:'📋',playing:'⚔️',finals:'🏆',finished:'✅'};
   const statusMap={registration:t('status_registration'),playing:t('status_playing'),finals:t('status_finals'),finished:t('status_finished')};
   document.getElementById('header-sub').textContent=statusMap[s.status]||'';

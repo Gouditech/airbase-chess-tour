@@ -2,9 +2,11 @@
 const CACHE_NAME = 'abct-v6';
 
 self.addEventListener('install', event => {
-  // Plus de mise en cache ici : le gestionnaire fetch ci-dessous ne la consulte plus
-  // jamais (voir plus bas) — la garder aurait été du code mort, trompeur sur ce que
-  // le service worker fait réellement.
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => {
+      return cache.addAll(['/', '/index.html', '/match-dates.js']).catch(() => {});
+    })
+  );
   self.skipWaiting();
 });
 
@@ -24,7 +26,19 @@ self.addEventListener('fetch', event => {
   // copie déjà téléchargée selon sa fraîcheur, même en "essayant le réseau en premier".
   // Pas de repli sur le cache en cas d'échec : toujours la dernière version, jamais une
   // version périmée qui se ferait passer pour la version actuelle.
-  event.respondWith(fetch(event.request, { cache: 'no-store' }));
+  //
+  // Une seule nouvelle tentative après une courte pause si le réseau échoue franchement :
+  // à l'ouverture d'une app installée, la connexion peut ne pas être encore tout à fait
+  // prête une fraction de seconde, ce qui donnait une page d'erreur du navigateur au lieu
+  // du site. Cette tentative reste, elle aussi, en no-store — jamais de repli sur une
+  // copie en cache, juste une seconde chance donnée au réseau.
+  event.respondWith(
+    fetch(event.request, { cache: 'no-store' }).catch(() =>
+      new Promise(resolve => setTimeout(resolve, 1200)).then(() =>
+        fetch(event.request, { cache: 'no-store' })
+      )
+    )
+  );
 });
 
 self.addEventListener('push', event => {

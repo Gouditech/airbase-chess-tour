@@ -229,7 +229,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
         <div class="form-group"><label id="set-label-name">Nom du tournoi</label><input id="set-name" type="text"></div>
         <div class="form-group"><label id="set-label-reg-deadline">Date de clôture des inscriptions</label><input id="set-reg-deadline" type="date"></div>
         <div class="form-group"><label id="set-label-ppg">Joueurs par groupe</label><input id="set-ppg" type="number" min="3" max="10" oninput="updatePoolEndEstimate()"><div id="set-ppg-hint" style="font-size:11px;color:var(--gray);margin-top:3px"></div></div>
-        <div class="form-group"><label id="set-label-fin">Nombre de finalistes</label><input id="set-fin" type="number" min="2" max="32"></div>
+        <div class="form-group"><label id="set-label-fin">Nombre de finalistes</label><input id="set-fin" type="number" min="2" max="32" oninput="updateFinalsEndEstimate()"></div>
         <div class="form-group"><label id="set-label-pool-start">Date de début des poules</label><input id="set-pool-start" type="date" oninput="updatePoolEndEstimate()"></div>
         <div class="form-group"><label id="set-label-pool-interval">Intervalle entre rondes de poules (jours)</label><input id="set-pool-interval" type="number" min="1" max="30" value="4" oninput="updatePoolEndEstimate()"><div id="pool-end-estimate" style="font-size:11px;color:var(--gold);margin-top:3px;font-weight:600"></div></div>
         <div class="form-group"><label id="set-label-finals-start">Date de début des finales</label><input id="set-finals-start" type="date" oninput="updateFinalsEndEstimate()"></div>
@@ -769,7 +769,7 @@ const T = {
     send_notif_btn:"📤 Envoyer à tous les abonnés",
     reset_subs_btn:"↺ Réinitialiser tous les abonnements",
     copy_whatsapp_btn:"📋 Copier le message",
-    maint_title:"Maintenance en cours",
+    maint_title:"Maintenance en cours",maint_btn:"🔧 Mode maintenance",
     maint_text:"Le site est temporairement indisponible.<br>Revenez dans quelques instants.",
     maint_admin_access:"Accès administrateur",
     maint_login_btn:"Connexion admin",
@@ -897,7 +897,7 @@ const T = {
     send_notif_btn:"📤 An alle Abonnenten senden",
     reset_subs_btn:"↺ Alle Abonnements zurücksetzen",
     copy_whatsapp_btn:"📋 Nachricht kopieren",
-    maint_title:"Wartung läuft",
+    maint_title:"Wartung läuft",maint_btn:"🔧 Wartungsmodus",
     maint_text:"Die Website ist vorübergehend nicht verfügbar.<br>Bitte versuchen Sie es in Kürze erneut.",
     maint_admin_access:"Administratorzugang",
     maint_login_btn:"Admin-Anmeldung",
@@ -1021,7 +1021,7 @@ const T = {
     send_notif_btn:"📤 Send to all subscribers",
     reset_subs_btn:"↺ Reset all subscriptions",
     copy_whatsapp_btn:"📋 Copy message",
-    maint_title:"Maintenance in progress",
+    maint_title:"Maintenance in progress",maint_btn:"🔧 Maintenance mode",
     maint_text:"The site is temporarily unavailable.<br>Please check back shortly.",
     maint_admin_access:"Administrator access",
     maint_login_btn:"Admin login",
@@ -1144,7 +1144,7 @@ const T = {
     send_notif_btn:"📤 Inviare a tutti gli iscritti",
     reset_subs_btn:"↺ Azzerare tutti gli abbonamenti",
     copy_whatsapp_btn:"📋 Copiare il messaggio",
-    maint_title:"Manutenzione in corso",
+    maint_title:"Manutenzione in corso",maint_btn:"🔧 Modalità manutenzione",
     maint_text:"Il sito è temporaneamente non disponibile.<br>Riprova tra qualche istante.",
     maint_admin_access:"Accesso amministratore",
     maint_login_btn:"Accesso admin",
@@ -1334,6 +1334,7 @@ function applyTranslations() {
   setT('notif-validate-btn', 'notif_validate_btn');
   setT('change-pin-btn', 'change_pin_btn');
   setT('check-late-btn', 'check_late_btn');
+  setT('maint-btn', 'maint_btn');
   setT('open-reg-btn', 'open_reg_btn');
   setT('start-pools-btn', 'start_pools_btn');
   setT('finish-btn', 'finish_btn');

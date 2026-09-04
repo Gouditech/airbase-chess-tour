@@ -244,21 +244,9 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
       <button class="subtab inactive" onclick="showAdminTab('settings')" id="subtab-settings">Réglages</button>
     </div>
     <div id="admin-settings" class="card">
-      <h2 id="settings-title">Paramètres</h2>
+      
       <div class="gap">
-        <div class="form-group"><label id="set-label-name">Nom du tournoi</label><input id="set-name" type="text"></div>
-        <div class="form-group"><label id="set-label-reg-deadline">Date de clôture des inscriptions</label><input id="set-reg-deadline" type="date"></div>
-        <div class="form-group"><label id="set-label-ppg">Joueurs par groupe</label><input id="set-ppg" type="number" min="3" max="10" oninput="updatePoolEndEstimate()"><div id="set-ppg-hint" style="font-size:11px;color:var(--gray);margin-top:3px"></div></div>
-        <div class="form-group"><label id="set-label-fin">Nombre de finalistes</label><input id="set-fin" type="number" min="2" max="32" oninput="updateFinalsEndEstimate()"></div>
-        <div class="form-group"><label id="set-label-pool-start">Date de début des poules</label><input id="set-pool-start" type="date" oninput="updatePoolEndEstimate()"></div>
-        <div class="form-group"><label id="set-label-pool-interval">Intervalle entre rondes de poules (jours)</label><input id="set-pool-interval" type="number" min="1" max="30" value="4" oninput="updatePoolEndEstimate()"><div id="pool-end-estimate" style="font-size:11px;color:var(--gold);margin-top:3px;font-weight:600"></div></div>
-        <div class="form-group"><label id="set-label-finals-start">Date de début des finales</label><input id="set-finals-start" type="date" oninput="updateFinalsEndEstimate()"></div>
-        <div class="form-group"><label id="set-label-finals-interval">Intervalle entre tours de finales (jours)</label><input id="set-finals-interval" type="number" min="1" max="30" value="4" oninput="updateFinalsEndEstimate()"><div id="finals-end-estimate" style="font-size:11px;color:var(--gold);margin-top:3px;font-weight:600"></div></div>
-        <div class="form-group"><label id="set-label-semis">Format demi-finales</label><input id="set-semis" type="text" placeholder="20min + 10s/coup"></div>
-        <div class="form-group"><label id="set-label-final">Format finale</label><input id="set-final-format" type="text" placeholder="30min + 10s/coup"></div>
-
-        <button class="btn btn-gold" onclick="saveSettings()" id="save-settings-btn">Enregistrer</button>
-        <div id="settings-msg"></div>
+        
         
         
       <div style="border-top:1px solid #eee;margin-top:8px;padding-top:12px">
@@ -336,6 +324,25 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
         </div>
     </div>
     <div id="admin-actions" style="display:none">
+      <div class="card">
+        <h2 id="settings-title">Paramètres</h2>
+        <div class="gap">
+        <div class="form-group"><label id="set-label-name">Nom du tournoi</label><input id="set-name" type="text"></div>
+        <div class="form-group"><label id="set-label-reg-deadline">Date de clôture des inscriptions</label><input id="set-reg-deadline" type="date"></div>
+        <div class="form-group"><label id="set-label-ppg">Joueurs par groupe</label><input id="set-ppg" type="number" min="3" max="10" oninput="updatePoolEndEstimate()"><div id="set-ppg-hint" style="font-size:11px;color:var(--gray);margin-top:3px"></div></div>
+        <div class="form-group"><label id="set-label-fin">Nombre de finalistes</label><input id="set-fin" type="number" min="2" max="32" oninput="updateFinalsEndEstimate()"></div>
+        <div class="form-group"><label id="set-label-pool-start">Date de début des poules</label><input id="set-pool-start" type="date" oninput="updatePoolEndEstimate()"></div>
+        <div class="form-group"><label id="set-label-pool-interval">Intervalle entre rondes de poules (jours)</label><input id="set-pool-interval" type="number" min="1" max="30" value="4" oninput="updatePoolEndEstimate()"><div id="pool-end-estimate" style="font-size:11px;color:var(--gold);margin-top:3px;font-weight:600"></div></div>
+        <div class="form-group"><label id="set-label-finals-start">Date de début des finales</label><input id="set-finals-start" type="date" oninput="updateFinalsEndEstimate()"></div>
+        <div class="form-group"><label id="set-label-finals-interval">Intervalle entre tours de finales (jours)</label><input id="set-finals-interval" type="number" min="1" max="30" value="4" oninput="updateFinalsEndEstimate()"><div id="finals-end-estimate" style="font-size:11px;color:var(--gold);margin-top:3px;font-weight:600"></div></div>
+        <div class="form-group"><label id="set-label-semis">Format demi-finales</label><input id="set-semis" type="text" placeholder="20min + 10s/coup"></div>
+        <div class="form-group"><label id="set-label-final">Format finale</label><input id="set-final-format" type="text" placeholder="30min + 10s/coup"></div>
+
+        <button class="btn btn-gold" onclick="saveSettings()" id="save-settings-btn">Enregistrer</button>
+        <div id="settings-msg"></div>
+        </div>
+      </div>
+
       <div class="card">
         <h2 id="finalists-title">Finalistes qualifiés</h2>
         <div id="bracket-warning" style="display:none;font-size:12px;line-height:1.5;padding:10px 12px;border-radius:8px;margin-bottom:10px;background:#FDECEA;color:var(--red);border-left:3px solid var(--red)"></div>
@@ -829,7 +836,7 @@ const T = {
     palmares_pseudo_placeholder:"Pseudo Chess.com",
     palmares_name_optional_placeholder:"Nom (optionnel)",
     palmares_bulk_placeholder:"Un joueur par ligne : pseudo-Nom, ou juste le pseudo",
-    palmares_bulk_btn:"➕ Ajouter la liste",palmares_fill_names_btn:"🔗 Retrouver les noms",palmares_search_ph:"🔎 Rechercher un joueur…",palmares_player_none:"Aucun joueur trouvé.",palmares_edition:"édition",palmares_editions:"éditions",palmares_podium:"podium",palmares_podiums:"podiums",palmares_best:"meilleur rang :",palmares_of:" sur ",palmares_stats_btn:"Statistiques des joueurs",palmares_stats_desc:"Tous les joueurs ayant participé, classés sur l'ensemble des éditions.",palmares_ongoing:"en cours",palmares_pick:"Choisis un tournoi ci-dessus.",palmares_no_result_yet:"Aucun match encore joué.",palmares_pts:"pts",palmares_m:"m",palmares_v:"V",palmares_n:"N",palmares_d:"D",palmares_white:"Blancs",palmares_black:"Noirs",palmares_total:"Total",palmares_on:"sur",palmares_names_filled:"✓ {n} nom(s) retrouvé(s) !",palmares_no_name_found:"Aucun nom à retrouver.",
+    palmares_bulk_btn:"➕ Ajouter la liste",palmares_fill_names_btn:"🔗 Retrouver les noms",palmares_search_ph:"🔎 Rechercher un joueur…",palmares_player_none:"Aucun joueur trouvé.",palmares_edition:"édition",palmares_editions:"éditions",palmares_podium:"podium",palmares_podiums:"podiums",palmares_best:"meilleur rang :",palmares_of:" sur ",palmares_stats_btn:"Statistiques des joueurs",palmares_stats_desc:"Tous les joueurs ayant participé, classés sur l'ensemble des éditions.",palmares_ongoing:"en cours",palmares_pick:"Choisis un tournoi ci-dessus.",palmares_no_result_yet:"Aucun match encore joué.",palmares_provisional:"⏳ Classement provisoire — le tournoi est en cours",palmares_qualified:"Qualifiés",palmares_virtual:"Classement virtuel",palmares_virtual_desc:"⏳ Qui serait qualifié si les poules s'arrêtaient maintenant",palmares_qualified_desc:"✅ Joueurs qualifiés pour les phases finales",palmares_grp:"groupe",palmares_pts:"pts",palmares_m:"m",palmares_v:"V",palmares_n:"N",palmares_d:"D",palmares_white:"Blancs",palmares_black:"Noirs",palmares_total:"Total",palmares_on:"sur",palmares_names_filled:"✓ {n} nom(s) retrouvé(s) !",palmares_no_name_found:"Aucun nom à retrouver.",
     rules:`<p>🚀 Consultez l'onglet Matchs pour voir vos parties dès que la phase de poules est lancée. Envoyez une invitation à votre adversaire sur Chess.com (pseudo visible dans l'onglet Tournoi) ou jouez sur échiquier physique. Inscrivez le résultat dès la fin de chaque partie directement dans l'app.</p><br>
 <p>⏰ <strong>Commencez vos parties dès le début du tournoi</strong> et terminez-les avant l'échéance affichée sur chaque match. Vous pouvez jouer plusieurs parties en parallèle, mais <strong>respectez l'ordre des rondes</strong> : traitez d'abord celles dont l'échéance est la plus proche. Même à cadence lente, enchaînez vos coups pour finir dans les délais.</p><br>
 <p>Format : Poules round-robin, puis phases finales à élimination directe.</p><br>
@@ -843,7 +850,7 @@ const T = {
     late_badge:"⏰ Retard",
     due_by:"📅 Échéance :",
     late_match:"⏰ Match en retard",
-    color_choice:"choisit sa couleur",
+    color_choice:"choisit sa couleur",color_pick:"— couleur —",color_required:"Choisis ta couleur avant de valider le score.",
     presential:"Présentiel",
     notif_disable_btn:"🔕 Désactiver les notifications",
     late_msg:"Certains matchs sont en retard, jouez rapidement !",
@@ -962,7 +969,7 @@ const T = {
     palmares_pseudo_placeholder:"Chess.com-Benutzername",
     palmares_name_optional_placeholder:"Name (optional)",
     palmares_bulk_placeholder:"Ein Spieler pro Zeile: Pseudo-Name, oder nur das Pseudo",
-    palmares_bulk_btn:"➕ Liste hinzufügen",palmares_fill_names_btn:"🔗 Namen ergänzen",palmares_search_ph:"🔎 Spieler suchen…",palmares_player_none:"Kein Spieler gefunden.",palmares_edition:"Ausgabe",palmares_editions:"Ausgaben",palmares_podium:"Podium",palmares_podiums:"Podien",palmares_best:"beste Platzierung:",palmares_of:" von ",palmares_stats_btn:"Spielerstatistiken",palmares_stats_desc:"Alle Teilnehmer, über alle Ausgaben hinweg gewertet.",palmares_ongoing:"laufend",palmares_pick:"Wähle oben ein Turnier.",palmares_no_result_yet:"Noch keine Partie gespielt.",palmares_pts:"Pkt",palmares_m:"P",palmares_v:"S",palmares_n:"R",palmares_d:"N",palmares_white:"Weiß",palmares_black:"Schwarz",palmares_total:"Gesamt",palmares_on:"von",palmares_names_filled:"✓ {n} Name(n) ergänzt!",palmares_no_name_found:"Keine Namen zu ergänzen.",
+    palmares_bulk_btn:"➕ Liste hinzufügen",palmares_fill_names_btn:"🔗 Namen ergänzen",palmares_search_ph:"🔎 Spieler suchen…",palmares_player_none:"Kein Spieler gefunden.",palmares_edition:"Ausgabe",palmares_editions:"Ausgaben",palmares_podium:"Podium",palmares_podiums:"Podien",palmares_best:"beste Platzierung:",palmares_of:" von ",palmares_stats_btn:"Spielerstatistiken",palmares_stats_desc:"Alle Teilnehmer, über alle Ausgaben hinweg gewertet.",palmares_ongoing:"laufend",palmares_pick:"Wähle oben ein Turnier.",palmares_no_result_yet:"Noch keine Partie gespielt.",palmares_provisional:"⏳ Vorläufige Rangliste — das Turnier läuft",palmares_qualified:"Qualifiziert",palmares_virtual:"Virtuelle Rangliste",palmares_virtual_desc:"⏳ Wer sich qualifizieren würde, wenn die Gruppenphase jetzt endete",palmares_qualified_desc:"✅ Für die Finalrunden qualifizierte Spieler",palmares_grp:"Gruppe",palmares_pts:"Pkt",palmares_m:"P",palmares_v:"S",palmares_n:"R",palmares_d:"N",palmares_white:"Weiß",palmares_black:"Schwarz",palmares_total:"Gesamt",palmares_on:"von",palmares_names_filled:"✓ {n} Name(n) ergänzt!",palmares_no_name_found:"Keine Namen zu ergänzen.",
     rules:`<p>🚀 Sieh dir deine Partien im Tab <strong>Partien</strong> an, sobald die Gruppenphase gestartet ist. Sende deinem Gegner eine Einladung auf Chess.com (Benutzername im Tab <strong>Turnier</strong>) oder spiele auf dem Brett. Trage das Ergebnis direkt im Tab <strong>Partien</strong> ein.</p><br>
 <p>⏰ <strong>Beginnt eure Partien gleich zu Turnierbeginn</strong> und beendet sie vor der bei jeder Partie angezeigten Frist. Ihr dürft mehrere Partien parallel spielen, aber <strong>haltet die Reihenfolge der Runden ein</strong>: spielt zuerst die Partien mit der nächstliegenden Frist. Auch bei langsamem Tempo: zieht zügig weiter, um fristgerecht fertig zu werden.</p><br>
 <p>Format: Round-Robin-Gruppen, dann K.o.-Finalrunden.</p><br>
@@ -1011,7 +1018,7 @@ const T = {
     late_badge:"⏰ Verspätet",
     due_by:"📅 Fällig bis",
     late_match:"⏰ Partie verspätet",
-    color_choice:"wählt die Farbe",
+    color_choice:"wählt die Farbe",color_pick:"— Farbe —",color_required:"Wähle deine Farbe, bevor du das Ergebnis bestätigst.",
     presential:"Präsenz",
     late_msg:"Einige Partien sind verspätet, spielen Sie schnell!",
     pending_msg:"Einige Partien sind noch ausstehend, bitte spielen Sie schnell!",
@@ -1096,7 +1103,7 @@ const T = {
     palmares_pseudo_placeholder:"Chess.com username",
     palmares_name_optional_placeholder:"Name (optional)",
     palmares_bulk_placeholder:"One player per line: username-Name, or just the username",
-    palmares_bulk_btn:"➕ Add the list",palmares_fill_names_btn:"🔗 Find names",palmares_search_ph:"🔎 Search a player…",palmares_player_none:"No player found.",palmares_edition:"edition",palmares_editions:"editions",palmares_podium:"podium",palmares_podiums:"podiums",palmares_best:"best rank:",palmares_of:" of ",palmares_stats_btn:"Player statistics",palmares_stats_desc:"Every player who took part, ranked across all editions.",palmares_ongoing:"ongoing",palmares_pick:"Pick a tournament above.",palmares_no_result_yet:"No match played yet.",palmares_pts:"pts",palmares_m:"m",palmares_v:"W",palmares_n:"D",palmares_d:"L",palmares_white:"White",palmares_black:"Black",palmares_total:"Total",palmares_on:"of",palmares_names_filled:"✓ {n} name(s) found!",palmares_no_name_found:"No names to fill in.",
+    palmares_bulk_btn:"➕ Add the list",palmares_fill_names_btn:"🔗 Find names",palmares_search_ph:"🔎 Search a player…",palmares_player_none:"No player found.",palmares_edition:"edition",palmares_editions:"editions",palmares_podium:"podium",palmares_podiums:"podiums",palmares_best:"best rank:",palmares_of:" of ",palmares_stats_btn:"Player statistics",palmares_stats_desc:"Every player who took part, ranked across all editions.",palmares_ongoing:"ongoing",palmares_pick:"Pick a tournament above.",palmares_no_result_yet:"No match played yet.",palmares_provisional:"⏳ Provisional ranking — tournament in progress",palmares_qualified:"Qualified",palmares_virtual:"Virtual ranking",palmares_virtual_desc:"⏳ Who would qualify if the group stage ended now",palmares_qualified_desc:"✅ Players qualified for the final stages",palmares_grp:"group",palmares_pts:"pts",palmares_m:"m",palmares_v:"W",palmares_n:"D",palmares_d:"L",palmares_white:"White",palmares_black:"Black",palmares_total:"Total",palmares_on:"of",palmares_names_filled:"✓ {n} name(s) found!",palmares_no_name_found:"No names to fill in.",
     rules:`<p>🚀 Check the <strong>Matches</strong> tab to see your games when the group stage starts. Send an invitation to your opponent on Chess.com (username in the <strong>Tournament</strong> tab) or play on a physical board. Enter the result directly in the <strong>Matches</strong> tab.</p><br>
 <p>⏰ <strong>Start your games as soon as the tournament begins</strong> and finish them before the deadline shown on each match. You may play several games in parallel, but <strong>respect the order of the rounds</strong>: deal first with those whose deadline is closest. Even at a slow pace, keep making your moves so you finish on time.</p><br>
 <p>Format: Round-robin groups, then knockout finals.</p><br>
@@ -1109,7 +1116,7 @@ const T = {
     late_badge:"⏰ Late",
     due_by:"📅 Due by",
     late_match:"⏰ Match overdue",
-    color_choice:"chooses color",
+    color_choice:"chooses color",color_pick:"— colour —",color_required:"Choose your colour before confirming the score.",
     presential:"In-person",
     late_msg:"Some matches are overdue, please play quickly!",
     pending_msg:"Some matches are still pending, please organize your games quickly!",
@@ -1226,7 +1233,7 @@ const T = {
     palmares_pseudo_placeholder:"Nome utente Chess.com",
     palmares_name_optional_placeholder:"Nome (facoltativo)",
     palmares_bulk_placeholder:"Un giocatore per riga: nomeutente-Nome, o solo il nome utente",
-    palmares_bulk_btn:"➕ Aggiungi la lista",palmares_fill_names_btn:"🔗 Ritrovare i nomi",palmares_search_ph:"🔎 Cercare un giocatore…",palmares_player_none:"Nessun giocatore trovato.",palmares_edition:"edizione",palmares_editions:"edizioni",palmares_podium:"podio",palmares_podiums:"podi",palmares_best:"miglior posizione:",palmares_of:" su ",palmares_stats_btn:"Statistiche giocatori",palmares_stats_desc:"Tutti i partecipanti, classificati su tutte le edizioni.",palmares_ongoing:"in corso",palmares_pick:"Scegli un torneo qui sopra.",palmares_no_result_yet:"Nessuna partita ancora giocata.",palmares_pts:"pt",palmares_m:"p",palmares_v:"V",palmares_n:"P",palmares_d:"S",palmares_white:"Bianchi",palmares_black:"Neri",palmares_total:"Totale",palmares_on:"su",palmares_names_filled:"✓ {n} nome(i) ritrovato(i)!",palmares_no_name_found:"Nessun nome da ritrovare.",
+    palmares_bulk_btn:"➕ Aggiungi la lista",palmares_fill_names_btn:"🔗 Ritrovare i nomi",palmares_search_ph:"🔎 Cercare un giocatore…",palmares_player_none:"Nessun giocatore trovato.",palmares_edition:"edizione",palmares_editions:"edizioni",palmares_podium:"podio",palmares_podiums:"podi",palmares_best:"miglior posizione:",palmares_of:" su ",palmares_stats_btn:"Statistiche giocatori",palmares_stats_desc:"Tutti i partecipanti, classificati su tutte le edizioni.",palmares_ongoing:"in corso",palmares_pick:"Scegli un torneo qui sopra.",palmares_no_result_yet:"Nessuna partita ancora giocata.",palmares_provisional:"⏳ Classifica provvisoria — torneo in corso",palmares_qualified:"Qualificati",palmares_virtual:"Classifica virtuale",palmares_virtual_desc:"⏳ Chi si qualificherebbe se i gironi finissero ora",palmares_qualified_desc:"✅ Giocatori qualificati per le fasi finali",palmares_grp:"girone",palmares_pts:"pt",palmares_m:"p",palmares_v:"V",palmares_n:"P",palmares_d:"S",palmares_white:"Bianchi",palmares_black:"Neri",palmares_total:"Totale",palmares_on:"su",palmares_names_filled:"✓ {n} nome(i) ritrovato(i)!",palmares_no_name_found:"Nessun nome da ritrovare.",
     rules:`<p>🚀 Consulta la scheda <strong>Partite</strong> per vedere le tue partite non appena inizia la fase a gironi. Invia un invito al tuo avversario su Chess.com (nome utente nella scheda <strong>Torneo</strong>) o gioca su una scacchiera. Inserisci il risultato nella scheda <strong>Partite</strong>.</p><br>
 <p>⏰ <strong>Iniziate le vostre partite fin dall'inizio del torneo</strong> e concludetele entro la scadenza indicata su ogni partita. Potete giocare più partite in parallelo, ma <strong>rispettate l'ordine dei turni</strong>: affrontate per prime quelle con la scadenza più vicina. Anche con un ritmo lento, continuate a muovere per finire nei tempi.</p><br>
 <p>Formato: Gironi round-robin, poi fasi finali ad eliminazione diretta.</p><br>
@@ -1239,7 +1246,7 @@ const T = {
     late_badge:"⏰ Ritardo",
     due_by:"📅 Scadenza:",
     late_match:"⏰ Partita in ritardo",
-    color_choice:"sceglie il colore",
+    color_choice:"sceglie il colore",color_pick:"— colore —",color_required:"Scegli il tuo colore prima di confermare il risultato.",
     presential:"Presenza",
     late_msg:"Alcune partite sono in ritardo, giocare rapidamente!",
     pending_msg:"Alcune partite sono ancora in attesa, organizzate le vostre partite rapidamente!",
@@ -1605,7 +1612,8 @@ function classementEnCours() {
   // Le détail par couleur est calculé depuis les vrais matchs : ils portent playerWhite
   // et playerBlack, donc rien n'est estimé.
   const d = {};
-  const init = n => { if (!d[n]) d[n] = { pseudo:n, vB:0,nB:0,dB:0, vN:0,nN:0,dN:0 }; };
+  // mF/vF/nF : matchs, victoires et nulles des phases finales (sans couleur connue)
+  const init = n => { if (!d[n]) d[n] = { pseudo:n, vB:0,nB:0,dB:0, vN:0,nN:0,dN:0, mF:0,vF:0,nF:0 }; };
   getGames().forEach(g => {
     const joue = g.scoreWhite !== null && g.scoreWhite !== undefined
               && g.scoreBlack !== null && g.scoreBlack !== undefined;
@@ -1615,12 +1623,40 @@ function classementEnCours() {
     else if (g.scoreBlack === 1) { d[g.playerBlack].vN++; d[g.playerWhite].dB++; }
     else { d[g.playerWhite].nB++; d[g.playerBlack].nN++; }
   });
+  // Les phases finales comptent aussi dans le classement en direct. Elles n'enregistrent
+  // pas les couleurs (seul le choix de couleur est indiqué, pas la couleur jouée) : elles
+  // s'ajoutent donc aux matchs/victoires/points, mais pas au détail Blancs/Noirs.
+  getFinals().forEach(f => {
+    const joue = f.score1 !== null && f.score1 !== undefined
+              && f.score2 !== null && f.score2 !== undefined;
+    if (!joue || !f.player1 || !f.player2) return; // exemptions et matchs à venir exclus
+    init(f.player1); init(f.player2);
+    if (f.colorP1 === 'white' || f.colorP1 === 'black') {
+      // Couleur renseignée : le match alimente le détail Blancs/Noirs comme une poule.
+      const blanc = f.colorP1 === 'white' ? f.player1 : f.player2;
+      const noir  = f.colorP1 === 'white' ? f.player2 : f.player1;
+      const scoreBlanc = f.colorP1 === 'white' ? f.score1 : f.score2;
+      const scoreNoir  = f.colorP1 === 'white' ? f.score2 : f.score1;
+      if (scoreBlanc > scoreNoir) { d[blanc].vB++; d[noir].dN++; }
+      else if (scoreNoir > scoreBlanc) { d[noir].vN++; d[blanc].dB++; }
+      else { d[blanc].nB++; d[noir].nN++; }
+    } else {
+      // Couleur inconnue : compte dans les totaux, pas dans le détail.
+      d[f.player1].mF++; d[f.player2].mF++;
+      if (f.score1 > f.score2) { d[f.player1].vF++; }
+      else if (f.score2 > f.score1) { d[f.player2].vF++; }
+      else { d[f.player1].nF++; d[f.player2].nF++; }
+    }
+  });
+
   const noms = {};
   getPlayers().forEach(p => { noms[p.nickname] = p.name || null; });
   const joueurs = Object.values(d).map(x => {
-    const m = x.vB+x.nB+x.dB+x.vN+x.nN+x.dN;
+    const mCouleurs = x.vB+x.nB+x.dB+x.vN+x.nN+x.dN;
+    const m = mCouleurs + x.mF;
     return { ...x, name: noms[x.pseudo] || null, m,
-             v: x.vB + x.vN, pts: x.vB + x.vN + 0.5*(x.nB + x.nN) };
+             v: x.vB + x.vN + x.vF,
+             pts: x.vB + x.vN + x.vF + 0.5*(x.nB + x.nN + x.nF) };
   });
   joueurs.sort((a,b) => (b.pts-a.pts) || (b.v-a.v) || (b.vN-a.vN));
   return joueurs.map((j,i) => ({ ...j, rank: i+1 }));
@@ -1654,7 +1690,9 @@ function statsCumulees() {
     const entries = Object.values(ed.entries || {});
     entries.forEach(e => {
       if (!e?.pseudo) return;
-      const st = (e.m || e.pts || e.v) ? { pts:e.pts, m:e.m, v:e.v, vN:e.vN } : null;
+      const st = (e.m || e.pts || e.v || e.vB !== undefined || e.dB !== undefined)
+        ? { pts:e.pts, m:e.m, v:e.v, vB:e.vB, nB:e.nB, dB:e.dB, vN:e.vN, nN:e.nN, dN:e.dN }
+        : null;
       ajouter(e.pseudo, e.name, e.rank || 999, entries.length, st);
     });
   });
@@ -1675,22 +1713,35 @@ window.togglePalmaresSection = function(cle) {
   renderPalmares();
 };
 
-window.onPalmaresSearch = function() { renderPalmares(); };
+// Joueur choisi en cliquant une ligne. Séparé du champ de recherche pour ne pas y
+// laisser un nom qui resterait affiché ensuite. Purement local à cet appareil.
+let joueurSelectionne = null;
 
-// Cliquer un joueur dans un classement revient à le chercher : sa fiche s'affiche en haut.
+window.onPalmaresSearch = function() {
+  joueurSelectionne = null; // taper une recherche annule la sélection par clic
+  renderPalmares();
+};
+
 window.voirJoueurPalmares = function(pseudo) {
-  const champ = document.getElementById('palmares-search');
-  if (!champ) return;
-  champ.value = pseudo;
+  joueurSelectionne = pseudo;
   renderPalmares();
   const fiche = document.getElementById('palmares-player-card');
   if (fiche && fiche.scrollIntoView) fiche.scrollIntoView({ behavior: 'smooth', block: 'center' });
 };
 
+window.fermerFichePalmares = function() {
+  joueurSelectionne = null;
+  const champ = document.getElementById('palmares-search');
+  if (champ) champ.value = '';
+  renderPalmares();
+};
+
 // Une ligne de classement, avec les statistiques quand elles existent.
-function lignePalmares(e, surligne) {
-  const gagnant = e.rank === 1;
-  const medaille = e.rank === 1 ? '🏆' : e.rank === 2 ? '🥈' : e.rank === 3 ? '🥉' : '';
+// medailles=false pour un tournoi en cours : un classement provisoire ne doit pas
+// afficher de coupe ni de podium, ce serait trompeur.
+function lignePalmares(e, surligne, medailles = true) {
+  const gagnant = medailles && e.rank === 1;
+  const medaille = !medailles ? '' : e.rank === 1 ? '🏆' : e.rank === 2 ? '🥈' : e.rank === 3 ? '🥉' : '';
   const affichage = e.name
     ? `${esc(e.name)} <span style="color:#bbb">(${esc(e.pseudo)})</span>`
     : esc(e.pseudo);
@@ -1710,7 +1761,7 @@ function renderPalmares() {
   const boutons = document.getElementById('palmares-buttons');
   const el = document.getElementById('palmares-content');
   if (!boutons || !el) return;
-  const recherche = (document.getElementById('palmares-search')?.value || '').trim().toLowerCase();
+  const recherche = (joueurSelectionne || document.getElementById('palmares-search')?.value || '').trim().toLowerCase();
   renderPalmaresPlayerCard(recherche);
 
   const palmares = state?.palmares || {};
@@ -1722,6 +1773,12 @@ function renderPalmares() {
     `<button class="btn ${actif ? 'btn-gold' : 'btn-gray'}" style="text-align:left;padding:10px 14px;font-size:13px" onclick="togglePalmaresSection('${cle}')">${libelle}</button>`;
 
   let html = btn('stats', '📊 ' + t('palmares_stats_btn'), palmaresSection === 'stats');
+  // Classement des qualifiés : virtuel tant que les finales ne sont pas lancées.
+  const finalesLancees = ['finals','finished'].includes(state?.settings?.status);
+  if (getGames().length) {
+    html += btn('qualifies', '🎯 ' + t(finalesLancees ? 'palmares_qualified' : 'palmares_virtual'),
+                palmaresSection === 'qualifies');
+  }
   // Toujours affiché : s'il n'y a pas encore de résultat, la section l'indique.
   {
     const nomT = state?.settings?.name || 'Air Base Chess Tour';
@@ -1768,9 +1825,34 @@ function renderPalmares() {
     return;
   }
 
+  if (palmaresSection === 'qualifies') {
+    const standings = computeStandings();
+    const fin = discoverFinalists(standings, state?.settings?.finalistsCount || 8);
+    const noms = {};
+    getPlayers().forEach(p => { noms[p.nickname] = p.name || null; });
+    const entete = `<div style="font-size:11px;color:var(--gray);text-align:center;padding:4px 0 8px">${t(finalesLancees ? 'palmares_qualified_desc' : 'palmares_virtual_desc')}</div>`;
+    el.innerHTML = fin.length
+      ? entete + fin.map((f,i) => {
+          const surligne = correspond({pseudo:f.player, name:noms[f.player]});
+          const aff = noms[f.player]
+            ? `${esc(noms[f.player])} <span style="color:#bbb">(${esc(f.player)})</span>`
+            : esc(f.player);
+          return `<div onclick="voirJoueurPalmares('${esc(f.player).replace(/'/g,"\\'")}')" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:5px 8px;${surligne?'background:#E8F5E9;border-radius:8px;':''}margin-bottom:2px;border-bottom:1px solid #f5f5f5">
+            <span style="width:24px;text-align:center;font-weight:700;color:var(--gold);font-size:12px">${i+1}</span>
+            <span style="flex:1;min-width:0;font-size:12px">${aff}</span>
+            <span style="font-size:10px;color:var(--gray);white-space:nowrap">${esc(f.group||'')} · ${f.groupRank}${t('palmares_of')}${t('palmares_grp')}</span>
+          </div>`;
+        }).join('')
+      : `<div style="color:var(--gray);font-size:12px;text-align:center;padding:8px">${t('palmares_no_result_yet')}</div>`;
+    return;
+  }
+
   if (palmaresSection === 'current') {
+    const termine = state?.settings?.status === 'finished';
+    const entete = termine ? '' :
+      `<div style="font-size:11px;color:var(--gray);text-align:center;padding:4px 0 8px">${t('palmares_provisional')}</div>`;
     el.innerHTML = enCours.length
-      ? enCours.map(e => lignePalmares(e, correspond(e))).join('')
+      ? entete + enCours.map(e => lignePalmares(e, correspond(e), termine)).join('')
       : `<div style="color:var(--gray);font-size:12px;text-align:center;padding:8px">${t('palmares_no_result_yet')}</div>`;
     return;
   }
@@ -1832,8 +1914,8 @@ function renderPalmaresPlayerCard(recherche) {
   }).join('');
 
   // Bilan par couleur, repris du classement cumulé (qui agrège éditions + tournoi en cours).
-  const cumul = statsCumulees().find(a => a.pseudo.toLowerCase() === (parcours.pseudoRef || '').toLowerCase())
-             || statsCumulees().find(a => a.pseudo.toLowerCase().includes(q) || (a.name && a.name.toLowerCase().includes(q)));
+  const cumul = statsCumulees().find(a =>
+    a.pseudo.toLowerCase() === q || a.pseudo.toLowerCase().includes(q) || (a.name && a.name.toLowerCase().includes(q)));
   const bilan = (cumul && cumul.aCouleurs) ? `<div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(0,0,0,0.08);font-size:11px;color:#7a6a3a">
       <div>⬜ ${t('palmares_white')} : <b>${cumul.vB}</b>${t('palmares_v')} · ${cumul.nB}${t('palmares_n')} · ${cumul.dB}${t('palmares_d')}</div>
       <div>⬛ ${t('palmares_black')} : <b>${cumul.vN}</b>${t('palmares_v')} · ${cumul.nN}${t('palmares_n')} · ${cumul.dN}${t('palmares_d')}</div>
@@ -1841,7 +1923,10 @@ function renderPalmaresPlayerCard(recherche) {
     </div>` : '';
 
   box.innerHTML = `<div style="background:var(--gold-light);border-radius:10px;padding:12px">
-    <div style="font-size:15px;font-weight:800;margin-bottom:2px">${esc(nom)}</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
+      <div style="flex:1;font-size:15px;font-weight:800">${esc(nom)}</div>
+      <button onclick="fermerFichePalmares()" style="border:none;background:none;color:#8a7a4a;font-size:16px;cursor:pointer;padding:0 4px">✕</button>
+    </div>
     <div style="font-size:11px;color:#7a6a3a;margin-bottom:10px">
       ${parcours.length} ${t(parcours.length > 1 ? 'palmares_editions' : 'palmares_edition')}
       ${victoires ? ' · 🏆 ' + victoires : ''}
@@ -2080,6 +2165,10 @@ function renderPalmaresAdmin() {
         <input id="ped-year-${id}" value="${esc(ed.year||'')}" onchange="updatePalmaresEditionMeta('${id}')" placeholder="${t('palmares_year_placeholder')}" style="flex:1;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px">
         <button class="seed-btn" style="color:var(--red)" onclick="deletePalmaresEdition('${id}')" title="${t('palmares_delete_edition')}">🗑️</button>
       </div>
+      ${entries.length ? `<div style="display:flex;align-items:center;gap:3px;padding:0 0 3px 24px;font-size:9px;color:#aaa">
+        <span>⬜</span><span style="width:30px;text-align:center">${t('palmares_v')}</span><span style="width:30px;text-align:center">${t('palmares_n')}</span><span style="width:30px;text-align:center">${t('palmares_d')}</span>
+        <span style="margin-left:6px">⬛</span><span style="width:30px;text-align:center">${t('palmares_v')}</span><span style="width:30px;text-align:center">${t('palmares_n')}</span><span style="width:30px;text-align:center">${t('palmares_d')}</span>
+      </div>` : ''}
       ${entryRows || `<div style="color:var(--gray);font-size:11px;margin-bottom:6px">${t('palmares_empty_edition')}</div>`}
       <div style="display:flex;gap:6px;margin-top:8px">
         <input id="new-entry-pseudo-${id}" placeholder="${t('palmares_pseudo_placeholder')}" style="flex:1;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px">
@@ -2569,6 +2658,13 @@ window.submitFinalScore = async function(id) {
   const s2=parseFloat(document.getElementById('fs2-'+id)?.value);
   if(isNaN(s1)||isNaN(s2)) return;
   const game=state.finals?.[id]; if(!game) return;
+  // La couleur est obligatoire : sans elle, ce match ne pourrait pas alimenter le détail
+  // Blancs/Noirs, et l'information serait définitivement perdue.
+  const couleurP1 = document.getElementById('fc-'+id)?.value;
+  if (couleurP1 !== 'white' && couleurP1 !== 'black') {
+    showToast(t('color_required'), false);
+    return;
+  }
   const wasPlayed = game.score1!==null && game.score1!==undefined;
   const oldWinner=game.winner;
   const newWinner=s1>s2?game.player1:s2>s1?game.player2:null;
@@ -2578,6 +2674,7 @@ window.submitFinalScore = async function(id) {
   if(oldWinner && oldWinner!==newWinner) {
     await removePropagatedWinner(id, oldWinner, game);
   }
+  await set(ref(db,'finals/'+id+'/colorP1'),couleurP1);
   await set(ref(db,'finals/'+id+'/score1'),s1);
   await set(ref(db,'finals/'+id+'/score2'),s2);
   await set(ref(db,'finals/'+id+'/winner'),newWinner);
@@ -3650,7 +3747,16 @@ function finalCardHTML(f){
     </div>
     ${f.winner?`<div style="text-align:center;margin-top:8px;font-size:12px;color:var(--green);font-weight:700">${t('winner')}: ${esc(f.winner)}</div>`:''}
     ${canPlay&&!played&&!isEditing?`<button class="btn btn-gold" style="margin-top:10px;font-size:13px;padding:9px" onclick="openFinalEdit('${f.id}')">${t('enter_score')}</button>`:''}
-    ${isEditing?`<div class="score-row">
+    ${played&&!isEditing&&(f.colorP1==='white'||f.colorP1==='black')?`<div style="font-size:10px;color:var(--gray);text-align:center;margin-top:4px">${f.colorP1==='white'?'⬜':'⬛'} ${esc(f.player1||'')} &nbsp;·&nbsp; ${f.colorP1==='white'?'⬛':'⬜'} ${esc(f.player2||'')}</div>`:''}
+    ${isEditing?`<div style="display:flex;align-items:center;gap:6px;justify-content:center;margin-top:8px;font-size:11px;color:var(--gray)">
+      <span>${esc(f.player1||'')}</span>
+      <select class="score-select" id="fc-${f.id}" style="width:auto;padding:6px 8px;font-size:12px">
+        <option value=""${f.colorP1?'':' selected'}>${t('color_pick')}</option>
+        <option value="white"${f.colorP1==='white'?' selected':''}>⬜ ${t('whites')}</option>
+        <option value="black"${f.colorP1==='black'?' selected':''}>⬛ ${t('blacks')}</option>
+      </select>
+    </div>
+    <div class="score-row">
       <select class="score-select" id="fs1-${f.id}" onchange="autoFinalScore('${f.id}','p1')"><option value="">—</option>${opts(f.score1)}</select>
       <span style="font-weight:700;color:#ccc">—</span>
       <select class="score-select" id="fs2-${f.id}" onchange="autoFinalScore('${f.id}','p2')"><option value="">—</option>${opts(f.score2)}</select>

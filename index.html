@@ -148,6 +148,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
       <label style="display:flex;align-items:center;gap:6px;font-size:12px;margin-bottom:5px;cursor:pointer"><input type="checkbox" id="pref-officiel" onchange="updateNotifPrefs()"><span id="pref-officiel-label"></span></label>
       <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;margin-bottom:8px"><input type="checkbox" id="pref-match" onchange="updateNotifPrefs()"><span id="pref-match-label"></span></label>
       <button class="btn btn-gold btn-sm" style="display:none;width:auto" onclick="confirmNotifSubscribe()" id="notif-validate-btn">✅ Valider et activer</button>
+      <button class="btn btn-sm" style="display:none;width:auto;background:#FDECEA;color:var(--red);font-size:11px" onclick="unsubscribeFromNotifications()" id="notif-disable-btn">🔕 Désactiver les notifications</button>
     </div>
     <div id="notif-msg" style="font-size:12px;margin-top:4px"></div>
     <div id="home-admin-device-status" style="display:none;font-size:11px;color:var(--gray);margin-top:6px;padding:5px 10px;background:#f8f8f8;border-radius:6px"></div>
@@ -178,10 +179,6 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
     <h2 id="players-title">Joueurs inscrits (<span id="player-list-count">0</span>)</h2>
     <div id="player-list"></div>
   </div>
-  <div class="card">
-    <h2 id="rules-title">Règlement</h2>
-    <div id="rules-content" style="font-size:12px;color:#555;line-height:1.7"></div>
-  </div>
 </div>
 
 <!-- GROUPES -->
@@ -203,6 +200,28 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
 <div class="page" id="page-finals">
   <div id="finals-container"></div>
   <div id="finals-empty" class="card" style="text-align:center;color:var(--gray)"></div>
+</div>
+
+<!-- INFOS -->
+<div class="page" id="page-info">
+  <div class="card">
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-gray" style="flex:1" onclick="toggleInfoSection('rules')" id="info-rules-btn">📜 Règlement</button>
+      <button class="btn btn-gray" style="flex:1" onclick="toggleInfoSection('palmares')" id="info-palmares-btn">🏅 Palmarès</button>
+    </div>
+    <div id="notif-invite-text" style="font-size:11px;color:var(--gray);text-align:center;margin-top:10px;line-height:1.5"></div>
+  </div>
+  <div class="card" id="info-rules-section" style="display:none">
+    <h2 id="info-rules-title">Règlement</h2>
+    <div id="rules-content" style="font-size:12px;color:#555;line-height:1.7"></div>
+  </div>
+  <div class="card" id="info-palmares-section" style="display:none">
+    <h2 id="info-palmares-title">Palmarès</h2>
+    <div id="palmares-content"></div>
+  </div>
+  <div style="text-align:center;margin-top:4px">
+    <button class="btn btn-gray btn-sm" style="display:inline-block;width:auto" onclick="showPage('admin')" id="info-admin-btn">⚙️ Admin</button>
+  </div>
 </div>
 
 <!-- ADMIN -->
@@ -356,7 +375,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
   <button class="tab-btn" onclick="showPage('groups')" id="tab-groups"><span class="tab-icon">📊</span><span id="tab-label-groups">Groupes</span></button>
   <button class="tab-btn" onclick="showPage('matches')" id="tab-matches"><span class="tab-icon">⚔️</span><span id="tab-label-matches">Matchs</span></button>
   <button class="tab-btn" onclick="showPage('finals')" id="tab-finals"><span class="tab-icon">🏆</span><span id="tab-label-finals">Finales</span></button>
-  <button class="tab-btn" onclick="showPage('admin')" id="tab-admin"><span class="tab-icon">⚙️</span><span id="tab-label-admin">Admin</span></button>
+  <button class="tab-btn" onclick="showPage('info')" id="tab-info"><span class="tab-icon">ℹ️</span><span id="tab-label-info">Infos</span></button>
 </div>
 
 <!-- CONFIRM -->
@@ -469,7 +488,7 @@ async function subscribeToNotifications() {
   }
 }
 
-async function unsubscribeFromNotifications() {
+window.unsubscribeFromNotifications = async function unsubscribeFromNotifications() {
   try {
     const reg = await navigator.serviceWorker.ready;
     const sub = await reg.pushManager.getSubscription();
@@ -509,6 +528,8 @@ function updateNotifBtn() {
     btn.style.border = on ? '1px solid #A8D5B5' : 'none';
   }
   if (testBtn) testBtn.style.display = on ? 'inline-block' : 'none';
+  const disableBtn = document.getElementById('notif-disable-btn');
+  if (disableBtn) disableBtn.style.display = on ? 'block' : 'none';
   const prefsLink = document.getElementById('notif-prefs-link');
   if (prefsLink) prefsLink.style.display = on ? 'inline-block' : 'none';
   const prefsBox = document.getElementById('notif-prefs');
@@ -697,7 +718,10 @@ function showNotifConfirmPanel() {
 window.toggleNotifications = async function() {
   const on = localStorage.getItem('abct-notif') === 'on';
   if (on) {
-    await unsubscribeFromNotifications();
+    // Le bouton n'est plus un interrupteur : il indique le statut. Un clic ouvre les
+    // préférences (où se trouve la désactivation), pour qu'un clic accidentel ne
+    // désabonne pas quelqu'un sans confirmation.
+    toggleNotifPrefsPanel();
   } else {
     // Vérifier la compatibilité AVANT de montrer le panneau — sinon sur iPhone (onglet
     // normal, app pas installée) on afficherait des cases à cocher qui ne mèneraient
@@ -749,6 +773,7 @@ const T = {
   fr:{
     loading:"Chargement...",offline:"⚠️ Hors ligne — données non synchronisées",
     tab_home:"Tournoi",tab_groups:"Groupes",tab_matches:"Matchs",tab_finals:"Finales",tab_admin:"Admin",
+    tab_info:"Infos",info_rules_btn:"📜 Règlement",info_palmares_btn:"🏅 Palmarès",info_admin_btn:"⚙️ Admin",info_rules_title:"Règlement",info_palmares_title:"Palmarès",
     status_registration:"Inscriptions ouvertes",status_playing:"Phase de poules",status_finals:"Phases finales",status_finished:"Terminé",
     players_count_1:"joueur inscrit",players_count_n:"joueurs inscrits",
     reg_title:"S'inscrire au tournoi",reg_nick:"Pseudo Chess.com *",
@@ -805,12 +830,13 @@ const T = {
     color_choice:"choisit sa couleur",
     presential:"Présentiel",
     current_phase:"Phase actuelle : ",
+    notif_disable_btn:"🔕 Désactiver les notifications",
     late_msg:"Certains matchs sont en retard, jouez rapidement !",
     pending_msg:"Certains matchs sont encore en attente, pensez à organiser vos parties rapidement !",
     notif_unsupported:"Notifications non supportées sur ce navigateur.",
     notif_denied:"Permission refusée. Ouvre les réglages du site (🔒 dans la barre d'adresse) → Autorisations → Notifications → Autoriser, puis recharge la page.",
     notif_denied_pwa:"Permission refusée. Va dans Paramètres de ton téléphone → Applications → ton navigateur → Notifications, et autorise ce site. Puis réouvre l'app.",
-    notif_on:"🔔 Désactiver les notifications",
+    notif_on:"🔔 Notifications activées",
     notif_off:"🔕 Activer les notifications",
     pref_officiel:"📢 Annonces officielles",
     pref_match:"⚔️ Résultats de matchs",
@@ -888,6 +914,7 @@ const T = {
   de:{
     loading:"Wird geladen...",offline:"⚠️ Offline — Daten werden nicht synchronisiert",
     tab_home:"Turnier",tab_groups:"Gruppen",tab_matches:"Partien",tab_finals:"Finale",tab_admin:"Admin",
+    tab_info:"Infos",info_rules_btn:"📜 Reglement",info_palmares_btn:"🏅 Siegerliste",info_admin_btn:"⚙️ Admin",info_rules_title:"Reglement",info_palmares_title:"Siegerliste",
     status_registration:"Anmeldung offen",status_playing:"Gruppenphase",status_finals:"Finalphase",status_finished:"Beendet",
     players_count_1:"Spieler angemeldet",players_count_n:"Spieler angemeldet",
     reg_title:"Zum Turnier anmelden",reg_nick:"Chess.com-Benutzername *",
@@ -985,7 +1012,8 @@ const T = {
     notif_unsupported:"Benachrichtigungen nicht unterstützt.",
     notif_denied:"Berechtigung verweigert. Öffne die Website-Einstellungen (🔒 in der Adressleiste) → Berechtigungen → Benachrichtigungen → Zulassen, dann lade die Seite neu.",
     notif_denied_pwa:"Berechtigung verweigert. Gehe zu Einstellungen → Apps → dein Browser → Benachrichtigungen, und erlaube diese Seite. Dann öffne die App erneut.",
-    notif_on:"🔔 Benachrichtigungen deaktivieren",
+    notif_on:"🔔 Benachrichtigungen aktiviert",
+    notif_disable_btn:"🔕 Benachrichtigungen deaktivieren",
     notif_off:"🔕 Benachrichtigungen aktivieren",
     pref_officiel:"📢 Offizielle Ankündigungen",
     pref_match:"⚔️ Spielergebnisse",
@@ -1026,6 +1054,7 @@ const T = {
   en:{
     loading:"Loading...",offline:"⚠️ Offline — data not syncing",
     tab_home:"Tournament",tab_groups:"Groups",tab_matches:"Matches",tab_finals:"Finals",tab_admin:"Admin",
+    tab_info:"Info",info_rules_btn:"📜 Rules",info_palmares_btn:"🏅 Hall of fame",info_admin_btn:"⚙️ Admin",info_rules_title:"Rules",info_palmares_title:"Hall of fame",
     status_registration:"Registration open",status_playing:"Group stage",status_finals:"Final stage",status_finished:"Finished",
     players_count_1:"player registered",players_count_n:"players registered",
     reg_title:"Register for the tournament",reg_nick:"Chess.com username *",
@@ -1088,7 +1117,8 @@ const T = {
     notif_unsupported:"Notifications not supported on this browser.",
     notif_denied:"Permission denied. Open site settings (🔒 in address bar) → Permissions → Notifications → Allow, then reload the page.",
     notif_denied_pwa:"Permission denied. Go to your phone's Settings → Apps → your browser → Notifications, and allow this site. Then reopen the app.",
-    notif_on:"🔔 Disable notifications",
+    notif_on:"🔔 Notifications enabled",
+    notif_disable_btn:"🔕 Disable notifications",
     notif_off:"🔕 Enable notifications",
     pref_officiel:"📢 Official announcements",
     pref_match:"⚔️ Match results",
@@ -1164,6 +1194,7 @@ const T = {
   it:{
     loading:"Caricamento...",offline:"⚠️ Offline — dati non sincronizzati",
     tab_home:"Torneo",tab_groups:"Gruppi",tab_matches:"Partite",tab_finals:"Finali",tab_admin:"Admin",
+    tab_info:"Info",info_rules_btn:"📜 Regolamento",info_palmares_btn:"🏅 Albo d'oro",info_admin_btn:"⚙️ Admin",info_rules_title:"Regolamento",info_palmares_title:"Albo d'oro",
     status_registration:"Iscrizioni aperte",status_playing:"Fase a gironi",status_finals:"Fase finale",status_finished:"Terminato",
     players_count_1:"giocatore iscritto",players_count_n:"giocatori iscritti",
     reg_title:"Iscriversi al torneo",reg_nick:"Nome utente Chess.com *",
@@ -1224,7 +1255,8 @@ const T = {
     notif_unsupported:"Notifiche non supportate su questo browser.",
     notif_denied:"Autorizzazione negata. Apri le impostazioni del sito (🔒 nella barra degli indirizzi) → Autorizzazioni → Notifiche → Consenti, poi ricarica la pagina.",
     notif_denied_pwa:"Autorizzazione negata. Vai nelle Impostazioni del telefono → App → il tuo browser → Notifiche, e consenti questo sito. Poi riapri l'app.",
-    notif_on:"🔔 Disattivare le notifiche",
+    notif_on:"🔔 Notifiche attivate",
+    notif_disable_btn:"🔕 Disattivare le notifiche",
     notif_off:"🔕 Attivare le notifiche",
     pref_officiel:"📢 Annunci ufficiali",
     pref_match:"⚔️ Risultati delle partite",
@@ -1325,7 +1357,7 @@ function applyTranslations() {
   document.getElementById('tab-label-groups').textContent = t('tab_groups');
   document.getElementById('tab-label-matches').textContent = t('tab_matches');
   document.getElementById('tab-label-finals').textContent = t('tab_finals');
-  document.getElementById('tab-label-admin').textContent = t('tab_admin');
+  document.getElementById('tab-label-info').textContent = t('tab_info');
   document.getElementById('reg-title').textContent = t('reg_title');
   document.getElementById('reg-label-nick').textContent = t('reg_nick');
   const nickHint = document.getElementById('reg-nick-hint');
@@ -1338,7 +1370,6 @@ function applyTranslations() {
   document.getElementById('reg-nick').placeholder = '';
   document.getElementById('reg-name').placeholder = '';
   document.getElementById('reg-sector').placeholder = '';
-  document.getElementById('rules-title').textContent = t('rules_title');
   document.getElementById('admin-login-title').textContent = t('admin_title');
   document.getElementById('admin-pin-label').textContent = t('admin_pin');
   document.getElementById('admin-login-btn').textContent = t('admin_login_btn');
@@ -1385,7 +1416,13 @@ function applyTranslations() {
 
   // Textes précédemment codés en dur, jamais traduits (trouvés par balayage systématique).
   const setT = (id, key) => { const el = document.getElementById(id); if (el) el.textContent = t(key); };
+  setT('info-rules-btn', 'info_rules_btn');
+  setT('info-palmares-btn', 'info_palmares_btn');
+  setT('info-admin-btn', 'info_admin_btn');
+  setT('info-rules-title', 'info_rules_title');
+  setT('info-palmares-title', 'info_palmares_title');
   setT('notif-prefs-link', 'notif_prefs_link');
+  setT('notif-disable-btn', 'notif_disable_btn');
   setT('notif-validate-btn', 'notif_validate_btn');
   setT('change-pin-btn', 'change_pin_btn');
   setT('check-late-btn', 'check_late_btn');
@@ -1501,11 +1538,74 @@ window.showPage = function(page) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
-  document.getElementById('tab-'+page).classList.add('active');
+  // Admin n'a plus son propre onglet (on y accède depuis Infos) : on garde "Infos" en
+  // surbrillance plutôt que de planter en cherchant un onglet qui n'existe plus.
+  const tabId = (page === 'admin') ? 'tab-info' : 'tab-' + page;
+  const tabEl = document.getElementById(tabId);
+  if (tabEl) tabEl.classList.add('active');
   currentPage = page;
   applyMaintenanceOverlay();
   renderPage(page);
 };
+
+// ── PAGE INFOS ──
+window.toggleInfoSection = function(section) {
+  const rulesSec = document.getElementById('info-rules-section');
+  const palmaresSec = document.getElementById('info-palmares-section');
+  if (!rulesSec || !palmaresSec) return;
+  const showRules = section === 'rules';
+  const target = showRules ? rulesSec : palmaresSec;
+  // Un second clic sur le même bouton referme la section (accordéon).
+  const alreadyOpen = target.style.display !== 'none';
+  rulesSec.style.display = 'none';
+  palmaresSec.style.display = 'none';
+  if (!alreadyOpen) target.style.display = 'block';
+};
+
+function renderInfo() {
+  const s = state?.settings || {};
+  const rulesEl = document.getElementById('rules-content');
+  if (rulesEl) {
+    rulesEl.innerHTML = t('rules');
+    // Les formats de cadence sont injectés dans le texte du règlement s'il les prévoit.
+    const semisSpan = document.getElementById('home-semis-format');
+    const finalSpan = document.getElementById('home-final-format');
+    if (semisSpan) semisSpan.textContent = s.semisFormat || '20min + 10s/coup';
+    if (finalSpan) finalSpan.textContent = s.finalFormat || '30min + 10s/coup';
+  }
+  const inviteEl = document.getElementById('notif-invite-text');
+  if (inviteEl) inviteEl.textContent = t('notif_invite_info');
+  renderPalmares();
+}
+
+function renderPalmares() {
+  const el = document.getElementById('palmares-content');
+  if (!el) return;
+  const palmares = state?.palmares || {};
+  const editions = Object.entries(palmares).sort((a, b) => (a[1].order || 0) - (b[1].order || 0));
+  if (!editions.length) {
+    el.innerHTML = `<div style="color:var(--gray);font-size:13px;text-align:center">${t('palmares_empty')}</div>`;
+    return;
+  }
+  el.innerHTML = editions.map(([id, ed]) => {
+    const entries = Object.entries(ed.entries || {}).sort((a, b) => (a[1].rank || 999) - (b[1].rank || 999));
+    const rows = entries.map(([eid, e]) => {
+      const isWinner = e.rank === 1;
+      const medal = e.rank === 1 ? '🏆' : e.rank === 2 ? '🥈' : e.rank === 3 ? '🥉' : '';
+      const displayName = e.name
+        ? `${esc(e.name)} <span style="color:#bbb">(${esc(e.pseudo)})</span>`
+        : esc(e.pseudo);
+      return `<div style="display:flex;align-items:center;gap:8px;padding:${isWinner ? '8px' : '5px'} 8px;${isWinner ? 'background:var(--gold-light);border-radius:8px' : ''};margin-bottom:2px">
+        <span style="width:24px;text-align:center;font-weight:${isWinner ? '800' : '600'};font-size:${isWinner ? '15px' : '12px'}">${medal || e.rank}</span>
+        <span style="flex:1;font-size:${isWinner ? '14px' : '12px'};font-weight:${isWinner ? '700' : '500'}">${displayName}</span>
+      </div>`;
+    }).join('');
+    return `<div style="margin-bottom:18px">
+      <h3 style="margin-bottom:8px">${esc(ed.name || '')}${ed.year ? ' (' + esc(String(ed.year)) + ')' : ''}</h3>
+      ${rows || `<div style="color:var(--gray);font-size:12px">${t('palmares_empty_edition')}</div>`}
+    </div>`;
+  }).join('');
+}
 
 function renderPage(page) {
   if (!state) return;
@@ -1514,6 +1614,7 @@ function renderPage(page) {
   if (page==='matches') renderMatches();
   if (page==='finals') renderFinals();
   if (page==='admin') renderAdmin();
+  if (page==='info') renderInfo();
 }
 
 // ── ADMIN ──
@@ -2847,18 +2948,6 @@ function renderHome(){
   // Show pool reminder banner only during pool phase
   const reminder = document.getElementById('pool-reminder');
   if (reminder) reminder.style.display = s.status==='playing' ? 'block' : 'none';
-  // Render rules with dynamic format values
-  const semisF = s.semisFormat || '20min + 10s/coup';
-  const finalF = s.finalFormat || '30min + 10s/coup';
-  const rulesEl = document.getElementById('rules-content');
-  if (rulesEl) {
-    let rulesHtml = t('rules');
-    rulesEl.innerHTML = rulesHtml;
-    const semisSpan = document.getElementById('home-semis-format');
-    const finalSpan = document.getElementById('home-final-format');
-    if (semisSpan) semisSpan.textContent = semisF;
-    if (finalSpan) finalSpan.textContent = finalF;
-  }
   document.getElementById('player-list-count').textContent=cnt;
   const pl=document.getElementById('player-list');
   if(!cnt){pl.innerHTML=`<div style="color:var(--gray);font-size:13px">${t('reg_err_fields').split('.')[0]}...</div>`;return;}

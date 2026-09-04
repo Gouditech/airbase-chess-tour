@@ -204,23 +204,24 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
 
 <!-- INFOS -->
 <div class="page" id="page-info">
-  <div class="card">
-    <div style="display:flex;gap:8px">
-      <button class="btn btn-gray" style="flex:1" onclick="toggleInfoSection('rules')" id="info-rules-btn">📜 Règlement</button>
-      <button class="btn btn-gray" style="flex:1" onclick="toggleInfoSection('palmares')" id="info-palmares-btn">🏅 Palmarès</button>
-    </div>
-    <button class="btn btn-gray" style="margin-top:8px" onclick="showPage('admin')" id="info-admin-btn">⚙️ Admin</button>
-    <div id="notif-invite-text" style="font-size:11px;color:var(--gray);text-align:center;margin-top:10px;line-height:1.5"></div>
+  <div style="display:flex;gap:10px;margin-bottom:12px">
+    <button class="btn btn-gold" style="flex:1;padding:20px 12px;font-size:15px;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,0.08);line-height:1.5" onclick="toggleInfoSection('rules')" id="info-rules-btn">📜<br>Règlement</button>
+    <button class="btn btn-gold" style="flex:1;padding:20px 12px;font-size:15px;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,0.08);line-height:1.5" onclick="toggleInfoSection('palmares')" id="info-palmares-btn">🏅<br>Palmarès</button>
   </div>
+  <div id="notif-invite-text" style="font-size:11px;color:var(--gray);text-align:center;margin-bottom:12px;line-height:1.5"></div>
   <div class="card" id="info-rules-section" style="display:none">
     <h2 id="info-rules-title">Règlement</h2>
     <div id="rules-content" style="font-size:12px;color:#555;line-height:1.7"></div>
   </div>
   <div class="card" id="info-palmares-section" style="display:none">
     <h2 id="info-palmares-title">Palmarès</h2>
-    <input id="palmares-search" oninput="renderPalmares()" placeholder="🔎 Rechercher un joueur…" style="margin-bottom:12px">
+    <input id="palmares-search" oninput="onPalmaresSearch()" placeholder="🔎 Rechercher un joueur…" style="margin-bottom:12px">
     <div id="palmares-player-card" style="display:none;margin-bottom:14px"></div>
+    <div id="palmares-buttons" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px"></div>
     <div id="palmares-content"></div>
+  </div>
+  <div style="text-align:center;margin-top:20px;margin-bottom:8px">
+    <button onclick="showPage('admin')" id="info-admin-btn" style="border:none;background:none;color:#bbb;font-size:11px;cursor:pointer;padding:6px 12px;text-decoration:underline">⚙️ Admin</button>
   </div>
 </div>
 
@@ -827,7 +828,7 @@ const T = {
     palmares_pseudo_placeholder:"Pseudo Chess.com",
     palmares_name_optional_placeholder:"Nom (optionnel)",
     palmares_bulk_placeholder:"Un joueur par ligne : pseudo-Nom, ou juste le pseudo",
-    palmares_bulk_btn:"➕ Ajouter la liste",palmares_fill_names_btn:"🔗 Retrouver les noms",palmares_search_ph:"🔎 Rechercher un joueur…",palmares_player_none:"Aucun joueur trouvé.",palmares_edition:"édition",palmares_editions:"éditions",palmares_podium:"podium",palmares_podiums:"podiums",palmares_best:"meilleur rang :",palmares_of:" sur ",palmares_names_filled:"✓ {n} nom(s) retrouvé(s) !",palmares_no_name_found:"Aucun nom à retrouver.",
+    palmares_bulk_btn:"➕ Ajouter la liste",palmares_fill_names_btn:"🔗 Retrouver les noms",palmares_search_ph:"🔎 Rechercher un joueur…",palmares_player_none:"Aucun joueur trouvé.",palmares_edition:"édition",palmares_editions:"éditions",palmares_podium:"podium",palmares_podiums:"podiums",palmares_best:"meilleur rang :",palmares_of:" sur ",palmares_stats_btn:"Statistiques des joueurs",palmares_stats_desc:"Tous les joueurs ayant participé, classés sur l'ensemble des éditions.",palmares_ongoing:"en cours",palmares_pick:"Choisis un tournoi ci-dessus.",palmares_pts:"pts",palmares_m:"m",palmares_v:"V",palmares_names_filled:"✓ {n} nom(s) retrouvé(s) !",palmares_no_name_found:"Aucun nom à retrouver.",
     rules:`<p>🚀 Consultez l'onglet Matchs pour voir vos parties dès que la phase de poules est lancée. Envoyez une invitation à votre adversaire sur Chess.com (pseudo visible dans l'onglet Tournoi) ou jouez sur échiquier physique. Inscrivez le résultat dès la fin de chaque partie directement dans l'app.</p><br>
 <p>⏰ <strong>Commencez vos parties dès le début du tournoi</strong> et terminez-les avant l'échéance affichée sur chaque match. Vous pouvez jouer plusieurs parties en parallèle, mais <strong>respectez l'ordre des rondes</strong> : traitez d'abord celles dont l'échéance est la plus proche. Même à cadence lente, enchaînez vos coups pour finir dans les délais.</p><br>
 <p>Format : Poules round-robin, puis phases finales à élimination directe.</p><br>
@@ -968,7 +969,7 @@ const T = {
     palmares_pseudo_placeholder:"Chess.com-Benutzername",
     palmares_name_optional_placeholder:"Name (optional)",
     palmares_bulk_placeholder:"Ein Spieler pro Zeile: Pseudo-Name, oder nur das Pseudo",
-    palmares_bulk_btn:"➕ Liste hinzufügen",palmares_fill_names_btn:"🔗 Namen ergänzen",palmares_search_ph:"🔎 Spieler suchen…",palmares_player_none:"Kein Spieler gefunden.",palmares_edition:"Ausgabe",palmares_editions:"Ausgaben",palmares_podium:"Podium",palmares_podiums:"Podien",palmares_best:"beste Platzierung:",palmares_of:" von ",palmares_names_filled:"✓ {n} Name(n) ergänzt!",palmares_no_name_found:"Keine Namen zu ergänzen.",
+    palmares_bulk_btn:"➕ Liste hinzufügen",palmares_fill_names_btn:"🔗 Namen ergänzen",palmares_search_ph:"🔎 Spieler suchen…",palmares_player_none:"Kein Spieler gefunden.",palmares_edition:"Ausgabe",palmares_editions:"Ausgaben",palmares_podium:"Podium",palmares_podiums:"Podien",palmares_best:"beste Platzierung:",palmares_of:" von ",palmares_stats_btn:"Spielerstatistiken",palmares_stats_desc:"Alle Teilnehmer, über alle Ausgaben hinweg gewertet.",palmares_ongoing:"laufend",palmares_pick:"Wähle oben ein Turnier.",palmares_pts:"Pkt",palmares_m:"P",palmares_v:"S",palmares_names_filled:"✓ {n} Name(n) ergänzt!",palmares_no_name_found:"Keine Namen zu ergänzen.",
     rules:`<p>🚀 Sieh dir deine Partien im Tab <strong>Partien</strong> an, sobald die Gruppenphase gestartet ist. Sende deinem Gegner eine Einladung auf Chess.com (Benutzername im Tab <strong>Turnier</strong>) oder spiele auf dem Brett. Trage das Ergebnis direkt im Tab <strong>Partien</strong> ein.</p><br>
 <p>⏰ <strong>Beginnt eure Partien gleich zu Turnierbeginn</strong> und beendet sie vor der bei jeder Partie angezeigten Frist. Ihr dürft mehrere Partien parallel spielen, aber <strong>haltet die Reihenfolge der Runden ein</strong>: spielt zuerst die Partien mit der nächstliegenden Frist. Auch bei langsamem Tempo: zieht zügig weiter, um fristgerecht fertig zu werden.</p><br>
 <p>Format: Round-Robin-Gruppen, dann K.o.-Finalrunden.</p><br>
@@ -1110,7 +1111,7 @@ const T = {
     palmares_pseudo_placeholder:"Chess.com username",
     palmares_name_optional_placeholder:"Name (optional)",
     palmares_bulk_placeholder:"One player per line: username-Name, or just the username",
-    palmares_bulk_btn:"➕ Add the list",palmares_fill_names_btn:"🔗 Find names",palmares_search_ph:"🔎 Search a player…",palmares_player_none:"No player found.",palmares_edition:"edition",palmares_editions:"editions",palmares_podium:"podium",palmares_podiums:"podiums",palmares_best:"best rank:",palmares_of:" of ",palmares_names_filled:"✓ {n} name(s) found!",palmares_no_name_found:"No names to fill in.",
+    palmares_bulk_btn:"➕ Add the list",palmares_fill_names_btn:"🔗 Find names",palmares_search_ph:"🔎 Search a player…",palmares_player_none:"No player found.",palmares_edition:"edition",palmares_editions:"editions",palmares_podium:"podium",palmares_podiums:"podiums",palmares_best:"best rank:",palmares_of:" of ",palmares_stats_btn:"Player statistics",palmares_stats_desc:"Every player who took part, ranked across all editions.",palmares_ongoing:"ongoing",palmares_pick:"Pick a tournament above.",palmares_pts:"pts",palmares_m:"m",palmares_v:"W",palmares_names_filled:"✓ {n} name(s) found!",palmares_no_name_found:"No names to fill in.",
     rules:`<p>🚀 Check the <strong>Matches</strong> tab to see your games when the group stage starts. Send an invitation to your opponent on Chess.com (username in the <strong>Tournament</strong> tab) or play on a physical board. Enter the result directly in the <strong>Matches</strong> tab.</p><br>
 <p>⏰ <strong>Start your games as soon as the tournament begins</strong> and finish them before the deadline shown on each match. You may play several games in parallel, but <strong>respect the order of the rounds</strong>: deal first with those whose deadline is closest. Even at a slow pace, keep making your moves so you finish on time.</p><br>
 <p>Format: Round-robin groups, then knockout finals.</p><br>
@@ -1248,7 +1249,7 @@ const T = {
     palmares_pseudo_placeholder:"Nome utente Chess.com",
     palmares_name_optional_placeholder:"Nome (facoltativo)",
     palmares_bulk_placeholder:"Un giocatore per riga: nomeutente-Nome, o solo il nome utente",
-    palmares_bulk_btn:"➕ Aggiungi la lista",palmares_fill_names_btn:"🔗 Ritrovare i nomi",palmares_search_ph:"🔎 Cercare un giocatore…",palmares_player_none:"Nessun giocatore trovato.",palmares_edition:"edizione",palmares_editions:"edizioni",palmares_podium:"podio",palmares_podiums:"podi",palmares_best:"miglior posizione:",palmares_of:" su ",palmares_names_filled:"✓ {n} nome(i) ritrovato(i)!",palmares_no_name_found:"Nessun nome da ritrovare.",
+    palmares_bulk_btn:"➕ Aggiungi la lista",palmares_fill_names_btn:"🔗 Ritrovare i nomi",palmares_search_ph:"🔎 Cercare un giocatore…",palmares_player_none:"Nessun giocatore trovato.",palmares_edition:"edizione",palmares_editions:"edizioni",palmares_podium:"podio",palmares_podiums:"podi",palmares_best:"miglior posizione:",palmares_of:" su ",palmares_stats_btn:"Statistiche giocatori",palmares_stats_desc:"Tutti i partecipanti, classificati su tutte le edizioni.",palmares_ongoing:"in corso",palmares_pick:"Scegli un torneo qui sopra.",palmares_pts:"pt",palmares_m:"p",palmares_v:"V",palmares_names_filled:"✓ {n} nome(i) ritrovato(i)!",palmares_no_name_found:"Nessun nome da ritrovare.",
     rules:`<p>🚀 Consulta la scheda <strong>Partite</strong> per vedere le tue partite non appena inizia la fase a gironi. Invia un invito al tuo avversario su Chess.com (nome utente nella scheda <strong>Torneo</strong>) o gioca su una scacchiera. Inserisci il risultato nella scheda <strong>Partite</strong>.</p><br>
 <p>⏰ <strong>Iniziate le vostre partite fin dall'inizio del torneo</strong> e concludetele entro la scadenza indicata su ogni partita. Potete giocare più partite in parallelo, ma <strong>rispettate l'ordine dei turni</strong>: affrontate per prime quelle con la scadenza più vicina. Anche con un ritmo lento, continuate a muovere per finire nei tempi.</p><br>
 <p>Formato: Gironi round-robin, poi fasi finali ad eliminazione diretta.</p><br>
@@ -1539,8 +1540,24 @@ function defaultData() {
 
 function genId() { return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function objToArr(obj) { return obj ? Object.entries(obj).map(([id,v])=>({...v,id})) : []; }
+// Mémorise le dernier bouton cliqué, pour pouvoir afficher le message juste à côté.
+// Les boutons de la fenêtre de confirmation sont ignorés : on garde celui qui l'a ouverte.
+let dernierBouton = null;
+document.addEventListener('click', e => {
+  const b = e.target && e.target.closest ? e.target.closest('button') : null;
+  if (b && !b.closest('#confirm-box')) dernierBouton = b;
+}, true);
+
 function showMsg(id, text, ok=true, persist=false) {
   const el = document.getElementById(id); if(!el) return;
+  // Déplace le message sous le bouton qui vient d'être cliqué, s'ils sont dans la même
+  // zone : sinon il s'affiche tout en bas de page et l'utilisateur ne voit rien se passer.
+  if (dernierBouton && el.parentElement && dernierBouton.parentElement) {
+    const zone = el.closest('#admin-actions, #admin-notifs, #admin-settings, #admin-players');
+    if (zone && zone.contains(dernierBouton) && dernierBouton.nextSibling !== el) {
+      dernierBouton.parentElement.insertBefore(el, dernierBouton.nextSibling);
+    }
+  }
   el.className='msg '+(ok?'ok':'err');
   if (persist) {
     el.innerHTML = '<span style="flex:1">' + esc(text) + '</span><span class="msg-close" onclick="this.parentElement.textContent=\'\';this.parentElement.className=\'msg\';" style="cursor:pointer;margin-left:8px;font-size:16px;font-weight:700;opacity:0.7">✕</span>';
@@ -1599,8 +1616,155 @@ function renderInfo() {
   renderPalmares();
 }
 
-// Parcours d'un joueur à travers toutes les éditions : une ligne par participation,
-// plus un récapitulatif (nombre de participations, victoires, podiums, meilleur rang).
+// ── PALMARÈS — affichage ──
+// Un bouton par édition (le tournoi en cours d'abord), plus un bouton statistiques.
+// Cliquer ouvre la section correspondante ; recliquer la referme.
+let palmaresSection = null; // 'stats' | 'current' | id d'édition
+
+// Classement du tournoi EN COURS, avec les statistiques réelles calculées en direct.
+function classementEnCours() {
+  const standings = computeStandings();
+  const joueurs = [];
+  Object.values(standings).forEach(grp => {
+    Object.entries(grp).forEach(([nick, st]) => joueurs.push({
+      pseudo: nick, pts: st.points || 0, m: st.matches || 0,
+      v: st.totalWins || 0, vN: st.blackWins || 0
+    }));
+  });
+  const noms = {};
+  getPlayers().forEach(p => { noms[p.nickname] = p.name || null; });
+  joueurs.sort((a,b) => (b.pts-a.pts) || (b.v-a.v) || (b.vN-a.vN));
+  return joueurs.map((j,i) => ({ ...j, name: noms[j.pseudo] || null, rank: i+1 }));
+}
+
+// Cumul de tous les joueurs, toutes éditions confondues (tournoi en cours inclus).
+function statsCumulees() {
+  const acc = {};
+  const cle = p => p.trim().toLowerCase();
+  function ajouter(pseudo, nom, rang, total, st) {
+    const k = cle(pseudo);
+    if (!acc[k]) acc[k] = { pseudo, name: nom || null, editions: 0, victoires: 0, podiums: 0,
+                            meilleur: 999, pts: 0, m: 0, v: 0, vN: 0, aStats: false };
+    const a = acc[k];
+    if (!a.name && nom) a.name = nom;
+    a.editions++;
+    if (rang === 1) a.victoires++;
+    if (rang <= 3) a.podiums++;
+    if (rang < a.meilleur) a.meilleur = rang;
+    if (st) { a.pts += st.pts||0; a.m += st.m||0; a.v += st.v||0; a.vN += st.vN||0; if ((st.m||0) > 0) a.aStats = true; }
+  }
+  const palmares = state?.palmares || {};
+  Object.values(palmares).forEach(ed => {
+    const entries = Object.values(ed.entries || {});
+    entries.forEach(e => {
+      if (!e?.pseudo) return;
+      const st = (e.m || e.pts || e.v) ? { pts:e.pts, m:e.m, v:e.v, vN:e.vN } : null;
+      ajouter(e.pseudo, e.name, e.rank || 999, entries.length, st);
+    });
+  });
+  // Le tournoi en cours ne compte que s'il a réellement commencé (des matchs joués).
+  const enCours = classementEnCours().filter(j => j.m > 0);
+  enCours.forEach(j => ajouter(j.pseudo, j.name, j.rank, enCours.length, {pts:j.pts,m:j.m,v:j.v,vN:j.vN}));
+
+  return Object.values(acc).sort((a,b) =>
+    (b.victoires - a.victoires) || (b.podiums - a.podiums) ||
+    (a.meilleur - b.meilleur) || (b.editions - a.editions) || (b.pts - a.pts));
+}
+
+window.togglePalmaresSection = function(cle) {
+  palmaresSection = (palmaresSection === cle) ? null : cle;
+  renderPalmares();
+};
+
+window.onPalmaresSearch = function() { renderPalmares(); };
+
+// Une ligne de classement, avec les statistiques quand elles existent.
+function lignePalmares(e, surligne) {
+  const gagnant = e.rank === 1;
+  const medaille = e.rank === 1 ? '🏆' : e.rank === 2 ? '🥈' : e.rank === 3 ? '🥉' : '';
+  const affichage = e.name
+    ? `${esc(e.name)} <span style="color:#bbb">(${esc(e.pseudo)})</span>`
+    : esc(e.pseudo);
+  const stats = (e.m || e.pts || e.v)
+    ? `<span style="font-size:10px;color:var(--gray);white-space:nowrap">${e.pts??0} ${t('palmares_pts')} · ${e.m??0} ${t('palmares_m')} · ${e.v??0}${t('palmares_v')}</span>`
+    : '';
+  const fond = gagnant ? 'background:var(--gold-light);border-radius:8px'
+    : surligne ? 'background:#E8F5E9;border-radius:8px' : '';
+  return `<div style="display:flex;align-items:center;gap:8px;padding:${gagnant||surligne?'8px':'5px'} 8px;${fond};margin-bottom:2px">
+    <span style="width:24px;text-align:center;font-weight:${gagnant?'800':'600'};font-size:${gagnant?'15px':'12px'}">${medaille || e.rank}</span>
+    <span style="flex:1;min-width:0;font-size:${gagnant?'14px':'12px'};font-weight:${gagnant||surligne?'700':'500'}">${affichage}</span>
+    ${stats}
+  </div>`;
+}
+
+function renderPalmares() {
+  const boutons = document.getElementById('palmares-buttons');
+  const el = document.getElementById('palmares-content');
+  if (!boutons || !el) return;
+  const recherche = (document.getElementById('palmares-search')?.value || '').trim().toLowerCase();
+  renderPalmaresPlayerCard(recherche);
+
+  const palmares = state?.palmares || {};
+  // Éditions de la plus récente à la plus ancienne (l'ordre de saisie est chronologique).
+  const editions = Object.entries(palmares).sort((a,b) => (b[1].order||0) - (a[1].order||0));
+  const enCours = classementEnCours().filter(j => j.m > 0);
+
+  const btn = (cle, libelle, actif) =>
+    `<button class="btn ${actif ? 'btn-gold' : 'btn-gray'}" style="text-align:left;padding:10px 14px;font-size:13px" onclick="togglePalmaresSection('${cle}')">${libelle}</button>`;
+
+  let html = btn('stats', '📊 ' + t('palmares_stats_btn'), palmaresSection === 'stats');
+  if (enCours.length) {
+    const nomT = state?.settings?.name || 'Air Base Chess Tour';
+    html += btn('current', '⚔️ ' + esc(nomT) + ' — ' + t('palmares_ongoing'), palmaresSection === 'current');
+  }
+  editions.forEach(([id, ed]) => {
+    html += btn(id, '🏅 ' + esc(ed.name || '') + (ed.year ? ' (' + esc(String(ed.year)) + ')' : ''), palmaresSection === id);
+  });
+  boutons.innerHTML = html;
+
+  if (!palmaresSection) {
+    el.innerHTML = (!editions.length && !enCours.length)
+      ? `<div style="color:var(--gray);font-size:13px;text-align:center">${t('palmares_empty')}</div>`
+      : `<div style="color:var(--gray);font-size:12px;text-align:center;padding:8px">${t('palmares_pick')}</div>`;
+    return;
+  }
+
+  const correspond = e => recherche && ((e.pseudo && e.pseudo.toLowerCase().includes(recherche))
+    || (e.name && e.name.toLowerCase().includes(recherche)));
+
+  if (palmaresSection === 'stats') {
+    const s = statsCumulees();
+    if (!s.length) { el.innerHTML = `<div style="color:var(--gray);font-size:13px;text-align:center">${t('palmares_empty')}</div>`; return; }
+    el.innerHTML = `<div style="font-size:11px;color:var(--gray);margin-bottom:8px">${t('palmares_stats_desc')}</div>` +
+      s.map((a,i) => {
+        const affichage = a.name ? `${esc(a.name)} <span style="color:#bbb">(${esc(a.pseudo)})</span>` : esc(a.pseudo);
+        const surligne = correspond(a);
+        const detail = a.aStats ? ` · ${a.pts} ${t('palmares_pts')} · ${a.v}${t('palmares_v')}` : '';
+        return `<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;${surligne?'background:#E8F5E9;border-radius:8px;':''}border-bottom:1px solid #f0f0f0">
+          <span style="width:24px;text-align:center;font-weight:700;color:var(--gold);font-size:12px">${i+1}</span>
+          <span style="flex:1;min-width:0;font-size:12px;font-weight:${surligne?'700':'500'}">${affichage}</span>
+          <span style="font-size:10px;color:var(--gray);white-space:nowrap;text-align:right">
+            ${a.editions} ${t(a.editions>1?'palmares_editions':'palmares_edition')}${a.victoires?' · 🏆'+a.victoires:''}${detail}
+          </span>
+        </div>`;
+      }).join('');
+    return;
+  }
+
+  if (palmaresSection === 'current') {
+    el.innerHTML = enCours.map(e => lignePalmares(e, correspond(e))).join('');
+    return;
+  }
+
+  const ed = palmares[palmaresSection];
+  if (!ed) { el.innerHTML = ''; return; }
+  const entries = Object.values(ed.entries || {}).sort((a,b) => (a.rank||999)-(b.rank||999));
+  el.innerHTML = entries.length
+    ? entries.map(e => lignePalmares(e, correspond(e))).join('')
+    : `<div style="color:var(--gray);font-size:12px">${t('palmares_empty_edition')}</div>`;
+}
+
+// Fiche d'un joueur : son parcours à travers toutes les éditions, avec récapitulatif.
 function renderPalmaresPlayerCard(recherche) {
   const box = document.getElementById('palmares-player-card');
   if (!box) return;
@@ -1613,15 +1777,21 @@ function renderPalmaresPlayerCard(recherche) {
   let nom = null;
   editions.forEach(([id, ed]) => {
     const entries = Object.values(ed.entries || {});
-    const total = entries.length;
     const e = entries.find(x => x?.pseudo && (
       x.pseudo.toLowerCase().includes(q) || (x.name && x.name.toLowerCase().includes(q))
     ));
     if (e) {
       if (!nom) nom = e.name || e.pseudo;
-      parcours.push({ edition: ed.name || '', annee: ed.year || '', rang: e.rank, total, pseudo: e.pseudo });
+      parcours.push({ edition: ed.name || '', annee: ed.year || '', rang: e.rank, total: entries.length });
     }
   });
+  // Inclut aussi le tournoi en cours s'il a démarré.
+  const enCours = classementEnCours().filter(j => j.m > 0);
+  const moi = enCours.find(j => j.pseudo.toLowerCase().includes(q) || (j.name && j.name.toLowerCase().includes(q)));
+  if (moi) {
+    if (!nom) nom = moi.name || moi.pseudo;
+    parcours.push({ edition: state?.settings?.name || '', annee: t('palmares_ongoing'), rang: moi.rank, total: enCours.length });
+  }
 
   if (!parcours.length) {
     box.innerHTML = `<div style="background:#f8f8f8;border-radius:10px;padding:12px;font-size:12px;color:var(--gray);text-align:center">${t('palmares_player_none')}</div>`;
@@ -1637,8 +1807,8 @@ function renderPalmaresPlayerCard(recherche) {
     const medaille = p.rang === 1 ? '🏆' : p.rang === 2 ? '🥈' : p.rang === 3 ? '🥉' : '';
     return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #eee;font-size:12px">
       <span style="width:26px;text-align:center;font-weight:700">${medaille || p.rang}</span>
-      <span style="flex:1">${esc(p.edition)}${p.annee ? ' <span style="color:#bbb">(' + esc(String(p.annee)) + ')</span>' : ''}</span>
-      <span style="color:var(--gray);font-size:11px">${p.rang}${t('palmares_of')}${p.total}</span>
+      <span style="flex:1;min-width:0">${esc(p.edition)}${p.annee ? ' <span style="color:#bbb">(' + esc(String(p.annee)) + ')</span>' : ''}</span>
+      <span style="color:var(--gray);font-size:11px;white-space:nowrap">${p.rang}${t('palmares_of')}${p.total}</span>
     </div>`;
   }).join('');
 
@@ -1653,42 +1823,6 @@ function renderPalmaresPlayerCard(recherche) {
     ${lignes}
   </div>`;
   box.style.display = 'block';
-}
-
-function renderPalmares() {
-  const el = document.getElementById('palmares-content');
-  if (!el) return;
-  const recherche = (document.getElementById('palmares-search')?.value || '').trim().toLowerCase();
-  renderPalmaresPlayerCard(recherche);
-  const palmares = state?.palmares || {};
-  const editions = Object.entries(palmares).sort((a, b) => (a[1].order || 0) - (b[1].order || 0));
-  if (!editions.length) {
-    el.innerHTML = `<div style="color:var(--gray);font-size:13px;text-align:center">${t('palmares_empty')}</div>`;
-    return;
-  }
-  el.innerHTML = editions.map(([id, ed]) => {
-    const entries = Object.entries(ed.entries || {}).sort((a, b) => (a[1].rank || 999) - (b[1].rank || 999));
-    const rows = entries.map(([eid, e]) => {
-      const isWinner = e.rank === 1;
-      // Surligne le joueur recherché pour le repérer d'un coup d'œil dans chaque édition.
-      const trouve = recherche && ((e.pseudo && e.pseudo.toLowerCase().includes(recherche))
-        || (e.name && e.name.toLowerCase().includes(recherche)));
-      const medal = e.rank === 1 ? '🏆' : e.rank === 2 ? '🥈' : e.rank === 3 ? '🥉' : '';
-      const displayName = e.name
-        ? `${esc(e.name)} <span style="color:#bbb">(${esc(e.pseudo)})</span>`
-        : esc(e.pseudo);
-      const fond = isWinner ? 'background:var(--gold-light);border-radius:8px'
-        : trouve ? 'background:#E8F5E9;border-radius:8px' : '';
-      return `<div style="display:flex;align-items:center;gap:8px;padding:${isWinner||trouve ? '8px' : '5px'} 8px;${fond};margin-bottom:2px">
-        <span style="width:24px;text-align:center;font-weight:${isWinner ? '800' : '600'};font-size:${isWinner ? '15px' : '12px'}">${medal || e.rank}</span>
-        <span style="flex:1;font-size:${isWinner ? '14px' : '12px'};font-weight:${isWinner||trouve ? '700' : '500'}">${displayName}</span>
-      </div>`;
-    }).join('');
-    return `<div style="margin-bottom:18px">
-      <h3 style="margin-bottom:8px">${esc(ed.name || '')}${ed.year ? ' (' + esc(String(ed.year)) + ')' : ''}</h3>
-      ${rows || `<div style="color:var(--gray);font-size:12px">${t('palmares_empty_edition')}</div>`}
-    </div>`;
-  }).join('');
 }
 
 // ── PALMARÈS — administration ──
@@ -1707,11 +1841,19 @@ function parsePalmaresBulkText(text) {
       let name = rest.join('\t').trim();
       pseudo = pseudo.trim().replace(/-+$/, '').trim();
       name = name.replace(/^-+/, '').trim();
-      return { pseudo, name: name || null };
+      return { pseudo, name: name || null, stats: null };
+    }
+    // Statistiques optionnelles : "pseudo-Nom;points;matchs;victoires;victoiresNoirs"
+    let stats = null;
+    if (clean.includes(';')) {
+      const bouts = clean.split(';');
+      clean = bouts[0].trim();
+      const n = bouts.slice(1).map(x => parseFloat(String(x).replace(',', '.')));
+      if (n.length && n.every(x => !isNaN(x))) stats = { pts:n[0]||0, m:n[1]||0, v:n[2]||0, vN:n[3]||0 };
     }
     const dashMatch = clean.match(/^(.+?)-([A-ZÀ-Ý].*)$/);
-    if (dashMatch) return { pseudo: dashMatch[1].trim(), name: dashMatch[2].trim() };
-    return { pseudo: clean, name: null };
+    if (dashMatch) return { pseudo: dashMatch[1].trim(), name: dashMatch[2].trim(), stats };
+    return { pseudo: clean, name: null, stats };
   }).filter(Boolean);
 }
 
@@ -1790,7 +1932,9 @@ window.bulkAddPalmaresEntries = async function(editionId) {
     // Pseudo seul dans la liste collée : on récupère le nom si ce joueur est déjà
     // connu d'une autre édition (ou du tournoi en cours).
     const nom = p.name || findKnownName(p.pseudo, editionId) || null;
-    updated['e_' + Date.now() + '_' + i] = { pseudo: p.pseudo, name: nom, rank: existingCount + i + 1 };
+    const ent = { pseudo: p.pseudo, name: nom, rank: existingCount + i + 1 };
+    if (p.stats) Object.assign(ent, p.stats);
+    updated['e_' + Date.now() + '_' + i] = ent;
   });
   await set(ref(db, `palmares/${editionId}/entries`), updated);
   if (textEl) textEl.value = '';

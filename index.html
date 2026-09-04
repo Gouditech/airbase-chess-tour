@@ -502,9 +502,11 @@ function updateNotifBtn() {
   }
   if (btn) {
     btn.textContent = on ? t('notif_on') : t('notif_off');
-    btn.style.background = on ? 'var(--green)' : '#EBEBEB';
-    btn.style.color = on ? '#fff' : '#555';
-    btn.style.fontWeight = on ? '700' : '600';
+    // Actif = discret (rien à faire) ; inactif = visible, c'est une invitation à cliquer.
+    btn.style.background = on ? 'transparent' : '#EBEBEB';
+    btn.style.color = on ? 'var(--green)' : '#555';
+    btn.style.fontWeight = '600';
+    btn.style.border = on ? '1px solid #A8D5B5' : 'none';
   }
   if (testBtn) testBtn.style.display = on ? 'inline-block' : 'none';
   const prefsLink = document.getElementById('notif-prefs-link');
@@ -774,6 +776,19 @@ const T = {
     maint_admin_access:"Accès administrateur",
     maint_login_btn:"Connexion admin",
     rules_title:"Règlement",
+    notif_invite_info:"💡 Pense à activer les notifications sur la page Tournoi pour ne rien manquer.",
+    palmares_empty:"Aucune édition enregistrée pour l'instant.",
+    palmares_empty_edition:"Aucun classement pour cette édition.",
+    palmares_name_required:"Le nom de l'édition est requis.",
+    palmares_edition_added:"✓ Édition ajoutée !",
+    palmares_confirm_delete_edition:"Supprimer cette édition et tout son classement ?",
+    palmares_bulk_added:"✓ {n} joueurs ajoutés !",
+    palmares_year_placeholder:"Année",
+    palmares_delete_edition:"Supprimer l'édition",
+    palmares_pseudo_placeholder:"Pseudo Chess.com",
+    palmares_name_optional_placeholder:"Nom (optionnel)",
+    palmares_bulk_placeholder:"Un joueur par ligne : pseudo-Nom, ou juste le pseudo",
+    palmares_bulk_btn:"➕ Ajouter la liste",
     rules:`<p>🚀 Consultez l'onglet Matchs pour voir vos parties dès que la phase de poules est lancée. Envoyez une invitation à votre adversaire sur Chess.com (pseudo visible dans l'onglet Tournoi) ou jouez sur échiquier physique. Vous pouvez jouer plusieurs parties en même temps. Inscrivez le résultat dès la fin de chaque partie directement dans l'app.</p><br>
 <p>⏰ Respectez les délais indiqués dans l'onglet Matchs : même à cadence lente, enchaînez vos coups pour que la partie se termine dans le délai imparti.</p><br>
 <p>Format : Poules round-robin, puis phases finales à élimination directe.</p><br>
@@ -840,8 +855,6 @@ const T = {
     admin_pin_hint:"Première utilisation ? Créez votre PIN maintenant.",admin_pin_err:"PIN incorrect.",
     admin_logout:"Déconnexion",
     subtab_settings:"Réglages",subtab_players:"Joueurs",subtab_seeding:"Groupes",subtab_actions:"Actions",
-    subtab_ranking:"Ranking",
-    ranking_title:"Global Ranking",
     subtab_ranking:"Classement",
     ranking_title:"Classement global",
     settings_title:"Paramètres du tournoi",set_name:"Nom du tournoi",set_reg_deadline:"Date de clôture des inscriptions",reg_deadline_until:"Jusqu'au",set_ppg:"Joueurs par groupe",set_fin:"Nombre de finalistes",set_status:"Statut",
@@ -902,6 +915,19 @@ const T = {
     maint_admin_access:"Administratorzugang",
     maint_login_btn:"Admin-Anmeldung",
     rules_title:"Reglement",
+    notif_invite_info:"💡 Aktiviere die Benachrichtigungen auf der Turnier-Seite, um nichts zu verpassen.",
+    palmares_empty:"Noch keine Ausgabe erfasst.",
+    palmares_empty_edition:"Keine Rangliste für diese Ausgabe.",
+    palmares_name_required:"Der Name der Ausgabe ist erforderlich.",
+    palmares_edition_added:"✓ Ausgabe hinzugefügt!",
+    palmares_confirm_delete_edition:"Diese Ausgabe und ihre gesamte Rangliste löschen?",
+    palmares_bulk_added:"✓ {n} Spieler hinzugefügt!",
+    palmares_year_placeholder:"Jahr",
+    palmares_delete_edition:"Ausgabe löschen",
+    palmares_pseudo_placeholder:"Chess.com-Benutzername",
+    palmares_name_optional_placeholder:"Name (optional)",
+    palmares_bulk_placeholder:"Ein Spieler pro Zeile: Pseudo-Name, oder nur das Pseudo",
+    palmares_bulk_btn:"➕ Liste hinzufügen",
     rules:`<p>🚀 Sieh dir deine Partien im Tab <strong>Partien</strong> an, sobald die Gruppenphase gestartet ist. Sende deinem Gegner eine Einladung auf Chess.com (Benutzername im Tab <strong>Turnier</strong>) oder spiele auf dem Brett. Du kannst mehrere Partien gleichzeitig spielen. Trage das Ergebnis direkt im Tab <strong>Partien</strong> ein.</p><br>
 <p>⏰ Haltet die im Tab Partien angegebenen Fristen ein: auch bei langsamem Tempo, zieht zügig weiter, damit die Partie fristgerecht beendet wird.</p><br>
 <p>Format: Round-Robin-Gruppen, dann K.o.-Finalrunden.</p><br>
@@ -983,6 +1009,7 @@ const T = {
     finals_reset:"Finalrunden zurückgesetzt.",
     scores_reset_ok:"Ergebnisse zurückgesetzt.",
     tournament_reset:"Turnier zurückgesetzt.",
+    tournament_reset_ok:"Turnier zurückgesetzt.",
     saved_ok:"Gespeichert!",
     seed_saved:"✓ Reihenfolge gespeichert",
     groups_created:" Gruppen erstellt, ",
@@ -1026,6 +1053,21 @@ const T = {
     maint_admin_access:"Administrator access",
     maint_login_btn:"Admin login",
     rules_title:"Rules",
+    subtab_ranking:"Ranking",
+    ranking_title:"Global ranking",
+    notif_invite_info:"💡 Remember to turn on notifications on the Tournament page so you don't miss anything.",
+    palmares_empty:"No edition recorded yet.",
+    palmares_empty_edition:"No ranking for this edition.",
+    palmares_name_required:"The edition name is required.",
+    palmares_edition_added:"✓ Edition added!",
+    palmares_confirm_delete_edition:"Delete this edition and its whole ranking?",
+    palmares_bulk_added:"✓ {n} players added!",
+    palmares_year_placeholder:"Year",
+    palmares_delete_edition:"Delete edition",
+    palmares_pseudo_placeholder:"Chess.com username",
+    palmares_name_optional_placeholder:"Name (optional)",
+    palmares_bulk_placeholder:"One player per line: username-Name, or just the username",
+    palmares_bulk_btn:"➕ Add the list",
     rules:`<p>🚀 Check the <strong>Matches</strong> tab to see your games when the group stage starts. Send an invitation to your opponent on Chess.com (username in the <strong>Tournament</strong> tab) or play on a physical board. You can play multiple games at once. Enter the result directly in the <strong>Matches</strong> tab.</p><br>
 <p>⏰ Respect the deadlines shown in the Matches tab: even at a slow pace, keep making your moves so the game finishes within the allotted time.</p><br>
 <p>Format: Round-robin groups, then knockout finals.</p><br>
@@ -1149,6 +1191,19 @@ const T = {
     maint_admin_access:"Accesso amministratore",
     maint_login_btn:"Accesso admin",
     rules_title:"Regolamento",
+    notif_invite_info:"💡 Ricordati di attivare le notifiche nella pagina Torneo per non perdere nulla.",
+    palmares_empty:"Nessuna edizione registrata per ora.",
+    palmares_empty_edition:"Nessuna classifica per questa edizione.",
+    palmares_name_required:"Il nome dell'edizione è obbligatorio.",
+    palmares_edition_added:"✓ Edizione aggiunta!",
+    palmares_confirm_delete_edition:"Eliminare questa edizione e tutta la sua classifica?",
+    palmares_bulk_added:"✓ {n} giocatori aggiunti!",
+    palmares_year_placeholder:"Anno",
+    palmares_delete_edition:"Eliminare l'edizione",
+    palmares_pseudo_placeholder:"Nome utente Chess.com",
+    palmares_name_optional_placeholder:"Nome (facoltativo)",
+    palmares_bulk_placeholder:"Un giocatore per riga: nomeutente-Nome, o solo il nome utente",
+    palmares_bulk_btn:"➕ Aggiungi la lista",
     rules:`<p>🚀 Consulta la scheda <strong>Partite</strong> per vedere le tue partite non appena inizia la fase a gironi. Invia un invito al tuo avversario su Chess.com (nome utente nella scheda <strong>Torneo</strong>) o gioca su una scacchiera. Puoi giocare più partite contemporaneamente. Inserisci il risultato nella scheda <strong>Partite</strong>.</p><br>
 <p>⏰ Rispettate le scadenze indicate nella scheda Partite: anche con un ritmo lento, continuate a muovere affinché la partita termini entro i tempi previsti.</p><br>
 <p>Formato: Gironi round-robin, poi fasi finali ad eliminazione diretta.</p><br>

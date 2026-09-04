@@ -284,6 +284,16 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
           <button class="btn btn-gray" onclick="checkLateNow()" id="check-late-btn">🔍 Vérifier les retards maintenant</button>
           <div id="check-late-result" style="font-size:12px;margin-top:6px"></div>
         </div>
+        <div style="border-top:1px solid #eee;margin-top:8px;padding-top:12px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:10px" id="palmares-admin-title">🏅 Palmarès</div>
+          <div id="palmares-admin-content"></div>
+          <div style="display:flex;gap:6px;margin-top:10px">
+            <input id="new-edition-name" placeholder="Nom de l'édition" style="flex:2;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:12px">
+            <input id="new-edition-year" placeholder="Année" style="flex:1;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:12px">
+            <button class="btn btn-gold btn-sm" style="width:auto" onclick="addPalmaresEdition()">+</button>
+          </div>
+          <div id="palmares-admin-msg" style="font-size:12px;margin-top:6px"></div>
+        </div>
       </div>
     </div>
     <div id="admin-players" class="card" style="display:none">
@@ -773,7 +783,7 @@ const T = {
   fr:{
     loading:"Chargement...",offline:"⚠️ Hors ligne — données non synchronisées",
     tab_home:"Tournoi",tab_groups:"Groupes",tab_matches:"Matchs",tab_finals:"Finales",tab_admin:"Admin",
-    tab_info:"Infos",info_rules_btn:"📜 Règlement",info_palmares_btn:"🏅 Palmarès",info_admin_btn:"⚙️ Admin",info_rules_title:"Règlement",info_palmares_title:"Palmarès",
+    tab_info:"Infos",palmares_admin_title:"🏅 Palmarès",palmares_edition_name_placeholder:"Nom de l'édition",info_rules_btn:"📜 Règlement",info_palmares_btn:"🏅 Palmarès",info_admin_btn:"⚙️ Admin",info_rules_title:"Règlement",info_palmares_title:"Palmarès",
     status_registration:"Inscriptions ouvertes",status_playing:"Phase de poules",status_finals:"Phases finales",status_finished:"Terminé",
     players_count_1:"joueur inscrit",players_count_n:"joueurs inscrits",
     reg_title:"S'inscrire au tournoi",reg_nick:"Pseudo Chess.com *",
@@ -814,8 +824,8 @@ const T = {
     palmares_name_optional_placeholder:"Nom (optionnel)",
     palmares_bulk_placeholder:"Un joueur par ligne : pseudo-Nom, ou juste le pseudo",
     palmares_bulk_btn:"➕ Ajouter la liste",
-    rules:`<p>🚀 Consultez l'onglet Matchs pour voir vos parties dès que la phase de poules est lancée. Envoyez une invitation à votre adversaire sur Chess.com (pseudo visible dans l'onglet Tournoi) ou jouez sur échiquier physique. Vous pouvez jouer plusieurs parties en même temps. Inscrivez le résultat dès la fin de chaque partie directement dans l'app.</p><br>
-<p>⏰ Respectez les délais indiqués dans l'onglet Matchs : même à cadence lente, enchaînez vos coups pour que la partie se termine dans le délai imparti.</p><br>
+    rules:`<p>🚀 Consultez l'onglet Matchs pour voir vos parties dès que la phase de poules est lancée. Envoyez une invitation à votre adversaire sur Chess.com (pseudo visible dans l'onglet Tournoi) ou jouez sur échiquier physique. Inscrivez le résultat dès la fin de chaque partie directement dans l'app.</p><br>
+<p>⏰ <strong>Commencez vos parties dès le début du tournoi</strong> et terminez-les avant l'échéance affichée sur chaque match. Vous pouvez jouer plusieurs parties en parallèle, mais <strong>respectez l'ordre des rondes</strong> : traitez d'abord celles dont l'échéance est la plus proche. Même à cadence lente, enchaînez vos coups pour finir dans les délais.</p><br>
 <p>Format : Poules round-robin, puis phases finales à élimination directe.</p><br>
 <p>Scores : 1 (victoire) · 0.5 (nul) · 0 (défaite)</p><br>
 <p>Départage dans les groupes : ① Points ② Victoires ③ Victoires avec les Noirs ④ Confrontation directe ⑤ Tête de série</p><p>Départage global (finalistes) : ① Points/match ② Victoires/match ③ Victoires Noirs/match ④ Buchholz/match ⑤ Tête de série</p><br>
@@ -914,7 +924,7 @@ const T = {
   de:{
     loading:"Wird geladen...",offline:"⚠️ Offline — Daten werden nicht synchronisiert",
     tab_home:"Turnier",tab_groups:"Gruppen",tab_matches:"Partien",tab_finals:"Finale",tab_admin:"Admin",
-    tab_info:"Infos",info_rules_btn:"📜 Reglement",info_palmares_btn:"🏅 Siegerliste",info_admin_btn:"⚙️ Admin",info_rules_title:"Reglement",info_palmares_title:"Siegerliste",
+    tab_info:"Infos",palmares_admin_title:"🏅 Siegerliste",palmares_edition_name_placeholder:"Name der Ausgabe",info_rules_btn:"📜 Reglement",info_palmares_btn:"🏅 Siegerliste",info_admin_btn:"⚙️ Admin",info_rules_title:"Reglement",info_palmares_title:"Siegerliste",
     status_registration:"Anmeldung offen",status_playing:"Gruppenphase",status_finals:"Finalphase",status_finished:"Beendet",
     players_count_1:"Spieler angemeldet",players_count_n:"Spieler angemeldet",
     reg_title:"Zum Turnier anmelden",reg_nick:"Chess.com-Benutzername *",
@@ -955,8 +965,8 @@ const T = {
     palmares_name_optional_placeholder:"Name (optional)",
     palmares_bulk_placeholder:"Ein Spieler pro Zeile: Pseudo-Name, oder nur das Pseudo",
     palmares_bulk_btn:"➕ Liste hinzufügen",
-    rules:`<p>🚀 Sieh dir deine Partien im Tab <strong>Partien</strong> an, sobald die Gruppenphase gestartet ist. Sende deinem Gegner eine Einladung auf Chess.com (Benutzername im Tab <strong>Turnier</strong>) oder spiele auf dem Brett. Du kannst mehrere Partien gleichzeitig spielen. Trage das Ergebnis direkt im Tab <strong>Partien</strong> ein.</p><br>
-<p>⏰ Haltet die im Tab Partien angegebenen Fristen ein: auch bei langsamem Tempo, zieht zügig weiter, damit die Partie fristgerecht beendet wird.</p><br>
+    rules:`<p>🚀 Sieh dir deine Partien im Tab <strong>Partien</strong> an, sobald die Gruppenphase gestartet ist. Sende deinem Gegner eine Einladung auf Chess.com (Benutzername im Tab <strong>Turnier</strong>) oder spiele auf dem Brett. Trage das Ergebnis direkt im Tab <strong>Partien</strong> ein.</p><br>
+<p>⏰ <strong>Beginnt eure Partien gleich zu Turnierbeginn</strong> und beendet sie vor der bei jeder Partie angezeigten Frist. Ihr dürft mehrere Partien parallel spielen, aber <strong>haltet die Reihenfolge der Runden ein</strong>: spielt zuerst die Partien mit der nächstliegenden Frist. Auch bei langsamem Tempo: zieht zügig weiter, um fristgerecht fertig zu werden.</p><br>
 <p>Format: Round-Robin-Gruppen, dann K.o.-Finalrunden.</p><br>
 <p>Punkte: 1 (Sieg) · 0.5 (Remis) · 0 (Niederlage)</p><br>
 <p>Tiebreak Gruppen: ① Punkte ② Siege ③ Siege mit Schwarz ④ Direkter Vergleich ⑤ Setzrang</p><p>Globaler Tiebreak (Finalisten): ① Punkte/Partie ② Siege/Partie ③ Siege Schwarz/Partie ④ Buchholz/Partie ⑤ Setzrang</p><br>
@@ -1054,7 +1064,7 @@ const T = {
   en:{
     loading:"Loading...",offline:"⚠️ Offline — data not syncing",
     tab_home:"Tournament",tab_groups:"Groups",tab_matches:"Matches",tab_finals:"Finals",tab_admin:"Admin",
-    tab_info:"Info",info_rules_btn:"📜 Rules",info_palmares_btn:"🏅 Hall of fame",info_admin_btn:"⚙️ Admin",info_rules_title:"Rules",info_palmares_title:"Hall of fame",
+    tab_info:"Info",palmares_admin_title:"🏅 Hall of fame",palmares_edition_name_placeholder:"Edition name",info_rules_btn:"📜 Rules",info_palmares_btn:"🏅 Hall of fame",info_admin_btn:"⚙️ Admin",info_rules_title:"Rules",info_palmares_title:"Hall of fame",
     status_registration:"Registration open",status_playing:"Group stage",status_finals:"Final stage",status_finished:"Finished",
     players_count_1:"player registered",players_count_n:"players registered",
     reg_title:"Register for the tournament",reg_nick:"Chess.com username *",
@@ -1097,8 +1107,8 @@ const T = {
     palmares_name_optional_placeholder:"Name (optional)",
     palmares_bulk_placeholder:"One player per line: username-Name, or just the username",
     palmares_bulk_btn:"➕ Add the list",
-    rules:`<p>🚀 Check the <strong>Matches</strong> tab to see your games when the group stage starts. Send an invitation to your opponent on Chess.com (username in the <strong>Tournament</strong> tab) or play on a physical board. You can play multiple games at once. Enter the result directly in the <strong>Matches</strong> tab.</p><br>
-<p>⏰ Respect the deadlines shown in the Matches tab: even at a slow pace, keep making your moves so the game finishes within the allotted time.</p><br>
+    rules:`<p>🚀 Check the <strong>Matches</strong> tab to see your games when the group stage starts. Send an invitation to your opponent on Chess.com (username in the <strong>Tournament</strong> tab) or play on a physical board. Enter the result directly in the <strong>Matches</strong> tab.</p><br>
+<p>⏰ <strong>Start your games as soon as the tournament begins</strong> and finish them before the deadline shown on each match. You may play several games in parallel, but <strong>respect the order of the rounds</strong>: deal first with those whose deadline is closest. Even at a slow pace, keep making your moves so you finish on time.</p><br>
 <p>Format: Round-robin groups, then knockout finals.</p><br>
 <p>Scores: 1 (win) · 0.5 (draw) · 0 (loss)</p><br>
 <p>Group tiebreak: ① Points ② Wins ③ Wins with Black ④ Head-to-head ⑤ Seed</p><p>Global tiebreak (finalists): ① Points/game ② Wins/game ③ Black wins/game ④ Buchholz/game ⑤ Seed</p><br>
@@ -1194,7 +1204,7 @@ const T = {
   it:{
     loading:"Caricamento...",offline:"⚠️ Offline — dati non sincronizzati",
     tab_home:"Torneo",tab_groups:"Gruppi",tab_matches:"Partite",tab_finals:"Finali",tab_admin:"Admin",
-    tab_info:"Info",info_rules_btn:"📜 Regolamento",info_palmares_btn:"🏅 Albo d'oro",info_admin_btn:"⚙️ Admin",info_rules_title:"Regolamento",info_palmares_title:"Albo d'oro",
+    tab_info:"Info",palmares_admin_title:"🏅 Albo d'oro",palmares_edition_name_placeholder:"Nome dell'edizione",info_rules_btn:"📜 Regolamento",info_palmares_btn:"🏅 Albo d'oro",info_admin_btn:"⚙️ Admin",info_rules_title:"Regolamento",info_palmares_title:"Albo d'oro",
     status_registration:"Iscrizioni aperte",status_playing:"Fase a gironi",status_finals:"Fase finale",status_finished:"Terminato",
     players_count_1:"giocatore iscritto",players_count_n:"giocatori iscritti",
     reg_title:"Iscriversi al torneo",reg_nick:"Nome utente Chess.com *",
@@ -1235,8 +1245,8 @@ const T = {
     palmares_name_optional_placeholder:"Nome (facoltativo)",
     palmares_bulk_placeholder:"Un giocatore per riga: nomeutente-Nome, o solo il nome utente",
     palmares_bulk_btn:"➕ Aggiungi la lista",
-    rules:`<p>🚀 Consulta la scheda <strong>Partite</strong> per vedere le tue partite non appena inizia la fase a gironi. Invia un invito al tuo avversario su Chess.com (nome utente nella scheda <strong>Torneo</strong>) o gioca su una scacchiera. Puoi giocare più partite contemporaneamente. Inserisci il risultato nella scheda <strong>Partite</strong>.</p><br>
-<p>⏰ Rispettate le scadenze indicate nella scheda Partite: anche con un ritmo lento, continuate a muovere affinché la partita termini entro i tempi previsti.</p><br>
+    rules:`<p>🚀 Consulta la scheda <strong>Partite</strong> per vedere le tue partite non appena inizia la fase a gironi. Invia un invito al tuo avversario su Chess.com (nome utente nella scheda <strong>Torneo</strong>) o gioca su una scacchiera. Inserisci il risultato nella scheda <strong>Partite</strong>.</p><br>
+<p>⏰ <strong>Iniziate le vostre partite fin dall'inizio del torneo</strong> e concludetele entro la scadenza indicata su ogni partita. Potete giocare più partite in parallelo, ma <strong>rispettate l'ordine dei turni</strong>: affrontate per prime quelle con la scadenza più vicina. Anche con un ritmo lento, continuate a muovere per finire nei tempi.</p><br>
 <p>Formato: Gironi round-robin, poi fasi finali ad eliminazione diretta.</p><br>
 <p>Punteggi: 1 (vittoria) · 0.5 (patta) · 0 (sconfitta)</p><br>
 <p>Spareggio gironi: ① Punti ② Vittorie ③ Vittorie con il Nero ④ Scontro diretto ⑤ Testa di serie</p><p>Spareggio globale (finalisti): ① Punti/partita ② Vittorie/partita ③ Vittorie Nero/partita ④ Buchholz/partita ⑤ Testa di serie</p><br>
@@ -1421,6 +1431,11 @@ function applyTranslations() {
   setT('info-admin-btn', 'info_admin_btn');
   setT('info-rules-title', 'info_rules_title');
   setT('info-palmares-title', 'info_palmares_title');
+  setT('palmares-admin-title', 'palmares_admin_title');
+  const edNameEl = document.getElementById('new-edition-name');
+  if (edNameEl) edNameEl.placeholder = t('palmares_edition_name_placeholder');
+  const edYearEl = document.getElementById('new-edition-year');
+  if (edYearEl) edYearEl.placeholder = t('palmares_year_placeholder');
   setT('notif-prefs-link', 'notif_prefs_link');
   setT('notif-disable-btn', 'notif_disable_btn');
   setT('notif-validate-btn', 'notif_validate_btn');
@@ -1513,7 +1528,7 @@ let recentlySubscribed = false; // évite un faux positif du contrôle d'orpheli
 let notifPanelPendingConfirm = false; // panneau ouvert, en attente du clic "Valider" — protège contre une fermeture accidentelle (ex: changement de langue) avant confirmation
 
 function defaultData() {
-  return { settings:{ name:"Air Base Chess Tour", playersPerGroup:5, finalistsCount:8, status:"registration" }, players:{}, games:{}, finals:{} };
+  return { settings:{ name:"Air Base Chess Tour", playersPerGroup:5, finalistsCount:8, status:"registration" }, players:{}, games:{}, finals:{}, palmares:{} };
 }
 
 function genId() { return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
@@ -1603,6 +1618,155 @@ function renderPalmares() {
     return `<div style="margin-bottom:18px">
       <h3 style="margin-bottom:8px">${esc(ed.name || '')}${ed.year ? ' (' + esc(String(ed.year)) + ')' : ''}</h3>
       ${rows || `<div style="color:var(--gray);font-size:12px">${t('palmares_empty_edition')}</div>`}
+    </div>`;
+  }).join('');
+}
+
+// ── PALMARÈS — administration ──
+
+// Analyse un collage en vrac ("pseudo [tab] nom", "pseudo-Nom", ou juste "pseudo").
+// Un tiret n'est traité comme séparateur QUE s'il est suivi d'une majuscule (un nom
+// commence toujours par une majuscule) — un tiret suivi d'un chiffre ou d'une minuscule
+// fait partie du pseudo (ex. "NoNo-25" reste un seul pseudo). Limite connue : un pseudo
+// comme "Jean-François" sera coupé à tort ; c'est ambigu par nature, corrigeable à la main.
+function parsePalmaresBulkText(text) {
+  return text.split('\n').map(line => {
+    let clean = line.trim().replace(/[,;]+$/, '').trim();
+    if (!clean) return null;
+    if (clean.includes('\t')) {
+      let [pseudo, ...rest] = clean.split('\t');
+      let name = rest.join('\t').trim();
+      pseudo = pseudo.trim().replace(/-+$/, '').trim();
+      name = name.replace(/^-+/, '').trim();
+      return { pseudo, name: name || null };
+    }
+    const dashMatch = clean.match(/^(.+?)-([A-ZÀ-Ý].*)$/);
+    if (dashMatch) return { pseudo: dashMatch[1].trim(), name: dashMatch[2].trim() };
+    return { pseudo: clean, name: null };
+  }).filter(Boolean);
+}
+
+window.addPalmaresEdition = async function() {
+  if (!isAdmin) return;
+  const nameEl = document.getElementById('new-edition-name');
+  const yearEl = document.getElementById('new-edition-year');
+  const name = nameEl?.value?.trim();
+  if (!name) { showMsg('palmares-admin-msg', t('palmares_name_required'), false); return; }
+  const year = yearEl?.value?.trim() || null;
+  const existing = Object.keys(state?.palmares || {}).length;
+  const id = 'ed_' + Date.now();
+  await set(ref(db, 'palmares/' + id), { name, year, order: existing, entries: {} });
+  if (nameEl) nameEl.value = '';
+  if (yearEl) yearEl.value = '';
+  showMsg('palmares-admin-msg', t('palmares_edition_added'));
+};
+
+window.deletePalmaresEdition = async function(editionId) {
+  if (!isAdmin) return;
+  if (!confirm(t('palmares_confirm_delete_edition'))) return;
+  await set(ref(db, 'palmares/' + editionId), null);
+};
+
+window.updatePalmaresEditionMeta = async function(editionId) {
+  if (!isAdmin) return;
+  const name = document.getElementById('ped-name-' + editionId)?.value?.trim();
+  if (!name) return;
+  const year = document.getElementById('ped-year-' + editionId)?.value?.trim() || null;
+  await set(ref(db, 'palmares/' + editionId + '/name'), name);
+  await set(ref(db, 'palmares/' + editionId + '/year'), year);
+};
+
+window.addPalmaresEntry = async function(editionId) {
+  if (!isAdmin) return;
+  const pseudoEl = document.getElementById('new-entry-pseudo-' + editionId);
+  const nameEl = document.getElementById('new-entry-name-' + editionId);
+  const pseudo = pseudoEl?.value?.trim();
+  if (!pseudo) return;
+  const name = nameEl?.value?.trim() || null;
+  const entries = state?.palmares?.[editionId]?.entries || {};
+  const nextRank = Object.keys(entries).length + 1;
+  await set(ref(db, `palmares/${editionId}/entries/e_${Date.now()}`), { pseudo, name, rank: nextRank });
+  if (pseudoEl) pseudoEl.value = '';
+  if (nameEl) nameEl.value = '';
+};
+
+window.bulkAddPalmaresEntries = async function(editionId) {
+  if (!isAdmin) return;
+  const textEl = document.getElementById('bulk-entries-' + editionId);
+  const parsed = parsePalmaresBulkText(textEl?.value || '');
+  if (!parsed.length) return;
+  const existingEntries = state?.palmares?.[editionId]?.entries || {};
+  const existingCount = Object.keys(existingEntries).length;
+  const updated = { ...existingEntries };
+  parsed.forEach((p, i) => {
+    updated['e_' + Date.now() + '_' + i] = { pseudo: p.pseudo, name: p.name, rank: existingCount + i + 1 };
+  });
+  await set(ref(db, `palmares/${editionId}/entries`), updated);
+  if (textEl) textEl.value = '';
+  showMsg('palmares-admin-msg', t('palmares_bulk_added').replace('{n}', parsed.length));
+};
+
+window.deletePalmaresEntry = async function(editionId, entryId) {
+  if (!isAdmin) return;
+  await set(ref(db, `palmares/${editionId}/entries/${entryId}`), null);
+  await renumberPalmaresEntries(editionId);
+};
+
+window.movePalmaresEntry = async function(editionId, entryId, direction) {
+  if (!isAdmin) return;
+  const entries = Object.entries(state?.palmares?.[editionId]?.entries || {}).sort((a,b)=>(a[1].rank||999)-(b[1].rank||999));
+  const idx = entries.findIndex(([id]) => id === entryId);
+  const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+  if (idx < 0 || swapIdx < 0 || swapIdx >= entries.length) return;
+  const [id1, e1] = entries[idx];
+  const [id2, e2] = entries[swapIdx];
+  await set(ref(db, `palmares/${editionId}/entries/${id1}/rank`), e2.rank);
+  await set(ref(db, `palmares/${editionId}/entries/${id2}/rank`), e1.rank);
+};
+
+async function renumberPalmaresEntries(editionId) {
+  const entries = Object.entries(state?.palmares?.[editionId]?.entries || {}).sort((a,b)=>(a[1].rank||999)-(b[1].rank||999));
+  for (let i = 0; i < entries.length; i++) {
+    const [id, e] = entries[i];
+    if (e.rank !== i + 1) await set(ref(db, `palmares/${editionId}/entries/${id}/rank`), i + 1);
+  }
+}
+
+function renderPalmaresAdmin() {
+  const el = document.getElementById('palmares-admin-content');
+  if (!el) return;
+  const palmares = state?.palmares || {};
+  const editions = Object.entries(palmares).sort((a,b) => (a[1].order||0)-(b[1].order||0));
+  if (!editions.length) {
+    el.innerHTML = `<div style="color:var(--gray);font-size:12px">${t('palmares_empty')}</div>`;
+    return;
+  }
+  el.innerHTML = editions.map(([id, ed]) => {
+    const entries = Object.entries(ed.entries||{}).sort((a,b)=>(a[1].rank||999)-(b[1].rank||999));
+    const entryRows = entries.map(([eid, e], i) => `
+      <div style="display:flex;align-items:center;gap:4px;padding:3px 0;border-bottom:1px solid #f0f0f0">
+        <span style="width:20px;font-size:11px;font-weight:700;color:var(--gold);text-align:center">${e.rank}</span>
+        <span style="flex:1;font-size:12px">${esc(e.pseudo)}${e.name?` <span style="color:#bbb">(${esc(e.name)})</span>`:''}</span>
+        <button class="seed-btn" style="font-size:14px" onclick="movePalmaresEntry('${id}','${eid}','up')" ${i===0?'disabled':''}>▲</button>
+        <button class="seed-btn" style="font-size:14px" onclick="movePalmaresEntry('${id}','${eid}','down')" ${i>=entries.length-1?'disabled':''}>▼</button>
+        <button class="seed-btn" style="color:var(--red)" onclick="deletePalmaresEntry('${id}','${eid}')">✕</button>
+      </div>`).join('');
+    return `<div style="border:1px solid #eee;border-radius:8px;padding:10px;margin-bottom:10px">
+      <div style="display:flex;gap:6px;margin-bottom:8px">
+        <input id="ped-name-${id}" value="${esc(ed.name||'')}" onchange="updatePalmaresEditionMeta('${id}')" style="flex:2;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;font-weight:700">
+        <input id="ped-year-${id}" value="${esc(ed.year||'')}" onchange="updatePalmaresEditionMeta('${id}')" placeholder="${t('palmares_year_placeholder')}" style="flex:1;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px">
+        <button class="seed-btn" style="color:var(--red)" onclick="deletePalmaresEdition('${id}')" title="${t('palmares_delete_edition')}">🗑️</button>
+      </div>
+      ${entryRows || `<div style="color:var(--gray);font-size:11px;margin-bottom:6px">${t('palmares_empty_edition')}</div>`}
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <input id="new-entry-pseudo-${id}" placeholder="${t('palmares_pseudo_placeholder')}" style="flex:1;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px">
+        <input id="new-entry-name-${id}" placeholder="${t('palmares_name_optional_placeholder')}" style="flex:1;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px">
+        <button class="btn btn-gray btn-sm" style="width:auto" onclick="addPalmaresEntry('${id}')">+</button>
+      </div>
+      <div style="margin-top:8px">
+        <textarea id="bulk-entries-${id}" placeholder="${t('palmares_bulk_placeholder')}" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:11px;min-height:60px"></textarea>
+        <button class="btn btn-gray btn-sm" style="margin-top:4px" onclick="bulkAddPalmaresEntries('${id}')">${t('palmares_bulk_btn')}</button>
+      </div>
     </div>`;
   }).join('');
 }
@@ -3114,6 +3278,7 @@ function renderAdmin(){
   document.getElementById('set-final-format').value=s.finalFormat||'30min + 10s/coup';
   updatePoolEndEstimate();
   updateFinalsEndEstimate();
+  renderPalmaresAdmin();
 
   const players=getPlayers();
   const ppg=s.playersPerGroup||5;

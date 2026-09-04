@@ -3591,7 +3591,10 @@ function discoverFinalists(standings,total){
       ||(norm(b.stats,'totalWins')-norm(a.stats,'totalWins'))
       ||(norm(b.stats,'blackWins')-norm(a.stats,'blackWins'))
       ||(norm(b.stats,'tieBreak')-norm(a.stats,'tieBreak'))
-      ||((seedMap3[a.player]||999)-(seedMap3[b.player]||999));
+      // ⚠️ Piège : en JavaScript, 0 || 999 vaut 999. La tête de série n°1 est enregistrée
+      // en interne comme 0 — avec `||` elle devenait la PIRE au lieu de la meilleure.
+      ||((typeof seedMap3[a.player] === 'number' ? seedMap3[a.player] : 999)
+        -(typeof seedMap3[b.player] === 'number' ? seedMap3[b.player] : 999));
   });
   return finalists;
 }

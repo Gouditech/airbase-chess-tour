@@ -204,14 +204,19 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
 
 <!-- INFOS -->
 <div class="page" id="page-info">
-  <div style="display:flex;gap:10px;margin-bottom:12px">
-    <button class="btn btn-gold" style="flex:1;padding:20px 12px;font-size:15px;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,0.08);line-height:1.5" onclick="toggleInfoSection('palmares')" id="info-palmares-btn">🏅<br>Palmarès</button>
-    <button class="btn btn-gold" style="flex:1;padding:20px 12px;font-size:15px;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,0.08);line-height:1.5" onclick="toggleInfoSection('rules')" id="info-rules-btn">📜<br>Règlement</button>
+  <div style="display:flex;gap:8px;margin-bottom:12px">
+    <button class="btn btn-gold" style="flex:1;padding:18px 6px;font-size:13px;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,0.08);line-height:1.5" onclick="toggleInfoSection('palmares')" id="info-palmares-btn">🏅<br>Palmarès</button>
+    <button class="btn btn-gold" style="flex:1;padding:18px 6px;font-size:13px;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,0.08);line-height:1.5" onclick="toggleInfoSection('ranking')" id="info-ranking-btn">📊<br>Classement</button>
+    <button class="btn btn-gold" style="flex:1;padding:18px 6px;font-size:13px;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,0.08);line-height:1.5" onclick="toggleInfoSection('rules')" id="info-rules-btn">📜<br>Règlement</button>
   </div>
   <div id="notif-invite-text" style="font-size:11px;color:var(--gray);text-align:center;margin-bottom:12px;line-height:1.5"></div>
   <div class="card" id="info-rules-section" style="display:none">
     <h2 id="info-rules-title">Règlement</h2>
     <div id="rules-content" style="font-size:12px;color:#555;line-height:1.7"></div>
+  </div>
+  <div class="card" id="info-ranking-section" style="display:none">
+    <h2 id="info-ranking-title">Classement général en direct</h2>
+    <div id="live-ranking-content"></div>
   </div>
   <div class="card" id="info-palmares-section" style="display:none">
     <h2 id="info-palmares-title">Palmarès</h2>
@@ -797,7 +802,7 @@ const T = {
   fr:{
     loading:"Chargement...",offline:"⚠️ Hors ligne — données non synchronisées",
     tab_home:"Tournoi",tab_groups:"Groupes",tab_matches:"Matchs",tab_finals:"Finales",
-    tab_info:"Infos",confirm_archive_before_reset:"Archiver le classement actuel dans le palmarès avant de réinitialiser ?\n\nOK = archiver puis réinitialiser\nAnnuler = réinitialiser sans archiver",palmares_admin_title:"🏅 Palmarès",palmares_edition_name_placeholder:"Nom de l'édition",info_rules_btn:"📜 Règlement",info_palmares_btn:"🏅 Palmarès",info_admin_btn:"⚙️ Admin",info_rules_title:"Règlement",info_palmares_title:"Palmarès",
+    tab_info:"Infos",confirm_archive_before_reset:"Archiver le classement actuel dans le palmarès avant de réinitialiser ?\n\nOK = archiver puis réinitialiser\nAnnuler = réinitialiser sans archiver",palmares_admin_title:"🏅 Palmarès",palmares_edition_name_placeholder:"Nom de l'édition",info_rules_btn:"📜 Règlement",info_palmares_btn:"🏅 Palmarès",info_ranking_btn:"📊 Classement",live_rank_title:"Classement général en direct",live_rank_qualified_title:"Joueurs qualifiés",info_admin_btn:"⚙️ Admin",info_rules_title:"Règlement",info_palmares_title:"Palmarès",
     status_registration:"Inscriptions ouvertes",status_playing:"Phase de poules",status_finals:"Phases finales",status_finished:"Terminé",
     players_count_1:"joueur inscrit",players_count_n:"joueurs inscrits",
     reg_title:"S'inscrire au tournoi",reg_nick:"Pseudo Chess.com *",
@@ -930,7 +935,7 @@ const T = {
   de:{
     loading:"Wird geladen...",offline:"⚠️ Offline — Daten werden nicht synchronisiert",
     tab_home:"Turnier",tab_groups:"Gruppen",tab_matches:"Partien",tab_finals:"Finale",
-    tab_info:"Infos",confirm_archive_before_reset:"Aktuelle Rangliste vor dem Zurücksetzen in der Siegerliste archivieren?\n\nOK = archivieren und zurücksetzen\nAbbrechen = ohne Archivierung zurücksetzen",palmares_admin_title:"🏅 Siegerliste",palmares_edition_name_placeholder:"Name der Ausgabe",info_rules_btn:"📜 Reglement",info_palmares_btn:"🏅 Siegerliste",info_admin_btn:"⚙️ Admin",info_rules_title:"Reglement",info_palmares_title:"Siegerliste",
+    tab_info:"Infos",confirm_archive_before_reset:"Aktuelle Rangliste vor dem Zurücksetzen in der Siegerliste archivieren?\n\nOK = archivieren und zurücksetzen\nAbbrechen = ohne Archivierung zurücksetzen",palmares_admin_title:"🏅 Siegerliste",palmares_edition_name_placeholder:"Name der Ausgabe",info_rules_btn:"📜 Reglement",info_palmares_btn:"🏅 Siegerliste",info_ranking_btn:"📊 Rangliste",live_rank_title:"Gesamtrangliste live",live_rank_qualified_title:"Qualifizierte Spieler",info_admin_btn:"⚙️ Admin",info_rules_title:"Reglement",info_palmares_title:"Siegerliste",
     status_registration:"Anmeldung offen",status_playing:"Gruppenphase",status_finals:"Finalphase",status_finished:"Beendet",
     players_count_1:"Spieler angemeldet",players_count_n:"Spieler angemeldet",
     reg_title:"Zum Turnier anmelden",reg_nick:"Chess.com-Benutzername *",
@@ -1062,7 +1067,7 @@ const T = {
   en:{
     loading:"Loading...",offline:"⚠️ Offline — data not syncing",
     tab_home:"Tournament",tab_groups:"Groups",tab_matches:"Matches",tab_finals:"Finals",
-    tab_info:"Info",confirm_archive_before_reset:"Archive the current ranking to the hall of fame before resetting?\n\nOK = archive then reset\nCancel = reset without archiving",palmares_admin_title:"🏅 Hall of fame",palmares_edition_name_placeholder:"Edition name",info_rules_btn:"📜 Rules",info_palmares_btn:"🏅 Hall of fame",info_admin_btn:"⚙️ Admin",info_rules_title:"Rules",info_palmares_title:"Hall of fame",
+    tab_info:"Info",confirm_archive_before_reset:"Archive the current ranking to the hall of fame before resetting?\n\nOK = archive then reset\nCancel = reset without archiving",palmares_admin_title:"🏅 Hall of fame",palmares_edition_name_placeholder:"Edition name",info_rules_btn:"📜 Rules",info_palmares_btn:"🏅 Hall of fame",info_ranking_btn:"📊 Ranking",live_rank_title:"Live overall ranking",live_rank_qualified_title:"Qualified players",info_admin_btn:"⚙️ Admin",info_rules_title:"Rules",info_palmares_title:"Hall of fame",
     status_registration:"Registration open",status_playing:"Group stage",status_finals:"Final stage",status_finished:"Finished",
     players_count_1:"player registered",players_count_n:"players registered",
     reg_title:"Register for the tournament",reg_nick:"Chess.com username *",
@@ -1194,7 +1199,7 @@ const T = {
   it:{
     loading:"Caricamento...",offline:"⚠️ Offline — dati non sincronizzati",
     tab_home:"Torneo",tab_groups:"Gruppi",tab_matches:"Partite",tab_finals:"Finali",
-    tab_info:"Info",confirm_archive_before_reset:"Archiviare la classifica attuale nell'albo d'oro prima di azzerare?\n\nOK = archiviare e azzerare\nAnnulla = azzerare senza archiviare",palmares_admin_title:"🏅 Albo d'oro",palmares_edition_name_placeholder:"Nome dell'edizione",info_rules_btn:"📜 Regolamento",info_palmares_btn:"🏅 Albo d'oro",info_admin_btn:"⚙️ Admin",info_rules_title:"Regolamento",info_palmares_title:"Albo d'oro",
+    tab_info:"Info",confirm_archive_before_reset:"Archiviare la classifica attuale nell'albo d'oro prima di azzerare?\n\nOK = archiviare e azzerare\nAnnulla = azzerare senza archiviare",palmares_admin_title:"🏅 Albo d'oro",palmares_edition_name_placeholder:"Nome dell'edizione",info_rules_btn:"📜 Regolamento",info_palmares_btn:"🏅 Albo d'oro",info_ranking_btn:"📊 Classifica",live_rank_title:"Classifica generale in diretta",live_rank_qualified_title:"Giocatori qualificati",info_admin_btn:"⚙️ Admin",info_rules_title:"Regolamento",info_palmares_title:"Albo d'oro",
     status_registration:"Iscrizioni aperte",status_playing:"Fase a gironi",status_finals:"Fase finale",status_finished:"Terminato",
     players_count_1:"giocatore iscritto",players_count_n:"giocatori iscritti",
     reg_title:"Iscriversi al torneo",reg_nick:"Nome utente Chess.com *",
@@ -1410,6 +1415,13 @@ function applyTranslations() {
   const setT = (id, key) => { const el = document.getElementById(id); if (el) el.textContent = t(key); };
   setT('info-rules-btn', 'info_rules_btn');
   setT('info-palmares-btn', 'info_palmares_btn');
+  const brBtn = (id, key, icone) => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = icone + '<br>' + esc(t(key).replace(/^[^\s]+\s/, ''));
+  };
+  brBtn('info-palmares-btn', 'info_palmares_btn', '🏅');
+  brBtn('info-ranking-btn', 'info_ranking_btn', '📊');
+  brBtn('info-rules-btn', 'info_rules_btn', '📜');
   setT('info-admin-btn', 'info_admin_btn');
   setT('info-rules-title', 'info_rules_title');
   setT('info-palmares-title', 'info_palmares_title');
@@ -1574,16 +1586,18 @@ window.showPage = function(page) {
 
 // ── PAGE INFOS ──
 window.toggleInfoSection = function(section) {
-  const rulesSec = document.getElementById('info-rules-section');
-  const palmaresSec = document.getElementById('info-palmares-section');
-  if (!rulesSec || !palmaresSec) return;
-  const showRules = section === 'rules';
-  const target = showRules ? rulesSec : palmaresSec;
-  // Un second clic sur le même bouton referme la section (accordéon).
-  const alreadyOpen = target.style.display !== 'none';
-  rulesSec.style.display = 'none';
-  palmaresSec.style.display = 'none';
-  if (!alreadyOpen) target.style.display = 'block';
+  const sections = { rules: 'info-rules-section', palmares: 'info-palmares-section', ranking: 'info-ranking-section' };
+  const cible = document.getElementById(sections[section]);
+  if (!cible) return;
+  // Un second clic sur le même bouton referme la section (accordéon, une seule ouverte).
+  const dejaOuverte = cible.style.display !== 'none';
+  Object.values(sections).forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
+  if (!dejaOuverte) {
+    cible.style.display = 'block';
+    if (section === 'ranking') renderLiveRanking();
+  }
 };
 
 function renderInfo() {
@@ -1600,6 +1614,10 @@ function renderInfo() {
   const inviteEl = document.getElementById('notif-invite-text');
   if (inviteEl) inviteEl.textContent = t('notif_invite_info');
   renderPalmares();
+  // Le classement en direct doit suivre les scores en temps réel, pas seulement
+  // au moment où on ouvre sa section.
+  const sec = document.getElementById('info-ranking-section');
+  if (sec && sec.style.display !== 'none') renderLiveRanking();
 }
 
 // ── PALMARÈS — affichage ──
@@ -1757,6 +1775,60 @@ function lignePalmares(e, surligne, medailles = true) {
   </div>`;
 }
 
+// ── CLASSEMENT GÉNÉRAL EN DIRECT ──
+// Section propre dans l'onglet Infos, indépendante du palmarès : il s'agit du tournoi
+// en cours, pas d'un historique.
+function renderLiveRanking() {
+  const el = document.getElementById('live-ranking-content');
+  if (!el) return;
+  const finalesLancees = ['finals','finished'].includes(state?.settings?.status);
+  const recherche = '';
+  const correspond = () => false;
+  const titre = document.getElementById('info-ranking-title');
+  if (titre) titre.textContent = t(finalesLancees ? 'live_rank_qualified_title' : 'live_rank_title');
+  if (!getGames().length) {
+    el.innerHTML = `<div style="color:var(--gray);font-size:12px;text-align:center;padding:8px">${t('palmares_no_result_yet')}</div>`;
+    return;
+  }
+    const standings = computeStandings();
+    const fin = discoverFinalists(standings, state?.settings?.finalistsCount || 8);
+    const noms = {}, seedMap = {};
+    getPlayers().forEach(p => {
+      noms[p.nickname] = p.name || null;
+      seedMap[p.nickname] = typeof p.seed === 'number' ? p.seed + 1 : null;
+    });
+    const entete = `<div style="font-size:11px;color:var(--gray);text-align:center;padding:4px 0 8px">${t(finalesLancees ? 'palmares_qualified_desc' : 'palmares_virtual_desc')}</div>`;
+    // Mêmes colonnes que la vue admin : en cas de repêchage d'un 3e ou 4e, chacun doit
+    // pouvoir refaire le calcul du départage lui-même.
+    el.innerHTML = fin.length
+      ? entete + `<div class="scroll-x"><table class="rank-table">
+        <thead><tr>
+          <th>#</th><th>${t('rank_player')}</th><th>${t('qual_rg')}</th><th>${t('qual_grp')}</th>
+          <th>${t('qual_ptsm')}</th><th>${t('rank_mj')}</th><th>${t('qual_vm')}</th><th>${t('qual_vnm')}</th><th>${t('qual_tbm')}</th><th>${t('qual_seed')}</th>
+        </tr></thead>
+        <tbody>${fin.map((f,i) => {
+          const s = f.stats;
+          // Même normalisation que le tri : sans match joué, la moyenne vaut 0.
+          // (Avec `matches || 1` on affichait une valeur que le tri n'utilisait pas.)
+          const nrm = v => s.matches > 0 ? v / s.matches : 0;
+          const surligne = correspond({pseudo:f.player, name:noms[f.player]});
+          const aff = noms[f.player] ? esc(noms[f.player]) : esc(f.player);
+          return `<tr onclick="voirJoueurPalmares('${esc(f.player).replace(/'/g,"\\'")}')" style="cursor:pointer;${surligne?'background:#E8F5E9':''}">
+            <td><strong style="color:var(--gold)">${i+1}</strong></td>
+            <td>${aff}</td>
+            <td style="color:var(--gray)">${f.groupRank}</td>
+            <td style="color:var(--gray);font-size:11px">${esc((f.group||'').replace('Groupe ','G'))}</td>
+            <td>${nrm(s.points).toFixed(2)}</td><td>${s.matches}</td>
+            <td>${nrm(s.totalWins).toFixed(2)}</td><td>${nrm(s.blackWins).toFixed(2)}</td>
+            <td>${nrm(s.tieBreak).toFixed(2)}</td>
+            <td style="color:var(--gray)">${seedMap[f.player] ?? '—'}</td>
+          </tr>`;
+        }).join('')}</tbody></table></div>
+        <div style="font-size:10px;color:var(--gray);margin-top:8px;line-height:1.5">${t('qual_legend')}</div>`
+      : `<div style="color:var(--gray);font-size:12px;text-align:center;padding:8px">${t('palmares_no_result_yet')}</div>`;
+
+}
+
 function renderPalmares() {
   const boutons = document.getElementById('palmares-buttons');
   const el = document.getElementById('palmares-content');
@@ -1773,12 +1845,6 @@ function renderPalmares() {
     `<button class="btn ${actif ? 'btn-gold' : 'btn-gray'}" style="text-align:left;padding:10px 14px;font-size:13px" onclick="togglePalmaresSection('${cle}')">${libelle}</button>`;
 
   let html = btn('stats', '📊 ' + t('palmares_stats_btn'), palmaresSection === 'stats');
-  // Classement des qualifiés : virtuel tant que les finales ne sont pas lancées.
-  const finalesLancees = ['finals','finished'].includes(state?.settings?.status);
-  if (getGames().length) {
-    html += btn('qualifies', '🎯 ' + t(finalesLancees ? 'palmares_qualified' : 'palmares_virtual'),
-                palmaresSection === 'qualifies');
-  }
   // Toujours affiché : s'il n'y a pas encore de résultat, la section l'indique.
   {
     const nomT = state?.settings?.name || 'Air Base Chess Tour';
@@ -1822,43 +1888,6 @@ function renderPalmares() {
           ${couleurs ? '<div style="padding-left:32px">' + couleurs + '</div>' : ''}
         </div>`;
       }).join('');
-    return;
-  }
-
-  if (palmaresSection === 'qualifies') {
-    const standings = computeStandings();
-    const fin = discoverFinalists(standings, state?.settings?.finalistsCount || 8);
-    const noms = {}, seedMap = {};
-    getPlayers().forEach(p => {
-      noms[p.nickname] = p.name || null;
-      seedMap[p.nickname] = typeof p.seed === 'number' ? p.seed + 1 : null;
-    });
-    const entete = `<div style="font-size:11px;color:var(--gray);text-align:center;padding:4px 0 8px">${t(finalesLancees ? 'palmares_qualified_desc' : 'palmares_virtual_desc')}</div>`;
-    // Mêmes colonnes que la vue admin : en cas de repêchage d'un 3e ou 4e, chacun doit
-    // pouvoir refaire le calcul du départage lui-même.
-    el.innerHTML = fin.length
-      ? entete + `<div class="scroll-x"><table class="rank-table">
-        <thead><tr>
-          <th>#</th><th>${t('rank_player')}</th><th>${t('qual_rg')}</th><th>${t('qual_grp')}</th>
-          <th>${t('qual_ptsm')}</th><th>${t('rank_mj')}</th><th>${t('qual_vm')}</th><th>${t('qual_vnm')}</th><th>${t('qual_tbm')}</th><th>${t('qual_seed')}</th>
-        </tr></thead>
-        <tbody>${fin.map((f,i) => {
-          const s = f.stats, m = s.matches || 1;
-          const surligne = correspond({pseudo:f.player, name:noms[f.player]});
-          const aff = noms[f.player] ? esc(noms[f.player]) : esc(f.player);
-          return `<tr onclick="voirJoueurPalmares('${esc(f.player).replace(/'/g,"\\'")}')" style="cursor:pointer;${surligne?'background:#E8F5E9':''}">
-            <td><strong style="color:var(--gold)">${i+1}</strong></td>
-            <td>${aff}</td>
-            <td style="color:var(--gray)">${f.groupRank}</td>
-            <td style="color:var(--gray);font-size:11px">${esc((f.group||'').replace('Groupe ','G'))}</td>
-            <td>${(s.points/m).toFixed(2)}</td><td>${s.matches}</td>
-            <td>${(s.totalWins/m).toFixed(2)}</td><td>${(s.blackWins/m).toFixed(2)}</td>
-            <td>${(s.tieBreak/m).toFixed(2)}</td>
-            <td style="color:var(--gray)">${seedMap[f.player] ?? '—'}</td>
-          </tr>`;
-        }).join('')}</tbody></table></div>
-        <div style="font-size:10px;color:var(--gray);margin-top:8px;line-height:1.5">${t('qual_legend')}</div>`
-      : `<div style="color:var(--gray);font-size:12px;text-align:center;padding:8px">${t('palmares_no_result_yet')}</div>`;
     return;
   }
 
@@ -3526,7 +3555,14 @@ function computeStandings(){
   for(const grp of Object.keys(groups)){
     const g=groups[grp];
     for(const player of Object.keys(g)){
-      g[player].tieBreak=games.filter(m=>m.group===grp&&(m.playerWhite===player||m.playerBlack===player)).reduce((sum,m)=>{
+      // Buchholz = somme des points des adversaires DÉJÀ AFFRONTÉS. Les matchs non
+      // encore joués sont exclus : sinon un joueur n'ayant disputé aucune partie
+      // récoltait déjà du Buchholz grâce aux résultats de ses futurs adversaires.
+      // Même critère de "match joué" que plus haut (les deux scores doivent être des nombres).
+      g[player].tieBreak=games.filter(m=>m.group===grp
+          &&(m.playerWhite===player||m.playerBlack===player)
+          &&!isNaN(parseFloat(m.scoreWhite))&&!isNaN(parseFloat(m.scoreBlack))
+        ).reduce((sum,m)=>{
         const opp=m.playerWhite===player?m.playerBlack:m.playerWhite;
         return sum+(g[opp]?.points||0);
       },0);
@@ -3941,7 +3977,8 @@ function renderAdmin(){
         <th>Pts/M</th><th>MJ</th><th>V/M</th><th>VN/M</th><th>TB/M</th><th>H2H</th><th>Seed</th>
       </tr></thead>
       <tbody>${fin.map((f,i)=>{
-        const s=f.stats; const m=s.matches||1;
+        const s=f.stats;
+        const nrm = v => s.matches > 0 ? v / s.matches : 0;
         const h2h=s.headToHead||{};
         const h2hStr=Object.keys(h2h).length?Object.keys(h2h).map(o=>esc(o)+':'+h2h[o]).join(', '):'—';
         return `<tr>
@@ -3949,9 +3986,9 @@ function renderAdmin(){
           <td>${esc(f.player)}</td>
           <td style="color:var(--gray)">${f.groupRank}</td>
           <td style="color:var(--gray);font-size:11px">${esc(f.group.replace('Groupe ','G'))}</td>
-          <td>${(s.points/m).toFixed(2)}</td><td>${s.matches}</td>
-          <td>${(s.totalWins/m).toFixed(2)}</td><td>${(s.blackWins/m).toFixed(2)}</td>
-          <td>${(s.tieBreak/m).toFixed(2)}</td>
+          <td>${nrm(s.points).toFixed(2)}</td><td>${s.matches}</td>
+          <td>${nrm(s.totalWins).toFixed(2)}</td><td>${nrm(s.blackWins).toFixed(2)}</td>
+          <td>${nrm(s.tieBreak).toFixed(2)}</td>
           <td style="font-size:10px;color:var(--gray)">${h2hStr}</td>
           <td style="color:var(--gray)">${seedMapF[f.player] !== null && seedMapF[f.player] !== undefined ? seedMapF[f.player] : '—'}</td>
         </tr>`;

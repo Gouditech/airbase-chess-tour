@@ -88,6 +88,13 @@ async function runLateCheck(siteUrl) {
   }
 
   if (!total) {
+    // La preuve de vie hebdomadaire n'a de sens QUE si un match pourrait etre en retard.
+    // Hors phase de jeu (inscriptions ouvertes, tournoi termine), elle n'apporte rien et
+    // devient du bruit. Les vraies alertes de retard, elles, ne sont jamais bridees.
+    const enJeu = settings.status === 'playing' || settings.status === 'finals';
+    if (!enJeu) {
+      return { sent: false, total: 0, reason: 'Tournoi hors phase de jeu (statut: ' + (settings.status || 'inconnu') + ') — preuve de vie inutile' };
+    }
     const lastPing = await fbRead('settings/lastLateAlertPing').catch(() => 0);
     const daysSincePing = (Date.now() - (lastPing || 0)) / (1000 * 60 * 60 * 24);
     if (daysSincePing >= 7) {

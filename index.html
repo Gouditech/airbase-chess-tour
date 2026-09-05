@@ -148,13 +148,14 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
       <label style="display:flex;align-items:center;gap:6px;font-size:12px;margin-bottom:5px;cursor:pointer"><input type="checkbox" id="pref-officiel" onchange="updateNotifPrefs()"><span id="pref-officiel-label"></span></label>
       <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;margin-bottom:8px"><input type="checkbox" id="pref-match" onchange="updateNotifPrefs()"><span id="pref-match-label"></span></label>
       <button class="btn btn-gold btn-sm" style="display:none;width:auto" onclick="confirmNotifSubscribe()" id="notif-validate-btn">✅ Valider et activer</button>
+      <button class="btn btn-sm" style="display:none;width:auto;background:#FDECEA;color:var(--red);font-size:11px" onclick="unsubscribeFromNotifications()" id="notif-disable-btn">🔕 Désactiver les notifications</button>
     </div>
     <div id="notif-msg" style="font-size:12px;margin-top:4px"></div>
     <div id="home-admin-device-status" style="display:none;font-size:11px;color:var(--gray);margin-top:6px;padding:5px 10px;background:#f8f8f8;border-radius:6px"></div>
   </div>
   <div id="pool-reminder" style="display:none;background:var(--gold-light);border-left:4px solid var(--gold);border-radius:10px;padding:14px 16px;margin-bottom:12px;font-size:13px;color:var(--dark);line-height:1.6">
     <strong id="pool-reminder-title"></strong><br>
-    <span id="pool-reminder-text"></span>
+    <span id="pool-reminder-text" style="white-space:pre-line"></span>
   </div>
   <div class="card" id="register-card">
     <h2 id="reg-title">S'inscrire</h2>
@@ -177,10 +178,6 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
   <div class="card">
     <h2 id="players-title">Joueurs inscrits (<span id="player-list-count">0</span>)</h2>
     <div id="player-list"></div>
-  </div>
-  <div class="card">
-    <h2 id="rules-title">Règlement</h2>
-    <div id="rules-content" style="font-size:12px;color:#555;line-height:1.7"></div>
   </div>
 </div>
 
@@ -205,6 +202,34 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
   <div id="finals-empty" class="card" style="text-align:center;color:var(--gray)"></div>
 </div>
 
+<!-- INFOS -->
+<div class="page" id="page-info">
+  <div style="display:flex;gap:8px;margin-bottom:12px">
+    <button class="btn btn-gold" style="flex:1;padding:18px 4px;font-size:12px;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,0.08);line-height:1.4" onclick="toggleInfoSection('ranking')" id="info-ranking-btn">📊<br>Classement général</button>
+    <button class="btn btn-gold" style="flex:1;padding:18px 4px;font-size:12px;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,0.08);line-height:1.4" onclick="toggleInfoSection('palmares')" id="info-palmares-btn">🏅<br>Palmarès</button>
+    <button class="btn btn-gold" style="flex:1;padding:18px 4px;font-size:12px;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,0.08);line-height:1.4" onclick="toggleInfoSection('rules')" id="info-rules-btn">📜<br>Règlement</button>
+  </div>
+  <div id="notif-invite-text" style="font-size:11px;color:var(--gray);text-align:center;margin-bottom:12px;line-height:1.5"></div>
+  <div class="card" id="info-ranking-section" style="display:none">
+    <h2 id="info-ranking-title">Classement général en direct</h2>
+    <div id="live-ranking-content"></div>
+  </div>
+  <div class="card" id="info-palmares-section" style="display:none">
+    <h2 id="info-palmares-title">Palmarès</h2>
+    <input id="palmares-search" oninput="onPalmaresSearch()" placeholder="🔎 Rechercher un joueur…" style="margin-bottom:12px">
+    <div id="palmares-player-card" style="display:none;margin-bottom:14px"></div>
+    <div id="palmares-buttons" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px"></div>
+    <div id="palmares-content"></div>
+  </div>
+  <div class="card" id="info-rules-section" style="display:none">
+    <h2 id="info-rules-title">Règlement</h2>
+    <div id="rules-content" style="font-size:12px;color:#555;line-height:1.7"></div>
+  </div>
+  <div style="text-align:center;margin-top:60px;margin-bottom:16px">
+    <button onclick="showPage('admin')" id="info-admin-btn" style="border:1px solid #e0e0e0;background:#fafafa;color:#999;font-size:13px;cursor:pointer;padding:10px 22px;border-radius:10px">⚙️ Admin</button>
+  </div>
+</div>
+
 <!-- ADMIN -->
 <div class="page" id="page-admin">
   <div id="admin-login" class="card">
@@ -218,28 +243,18 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
   </div>
   <div id="admin-dashboard" style="display:none">
     <div class="subtabs" id="admin-subtabs">
-      <button class="subtab active" onclick="showAdminTab('actions')" id="subtab-actions">Actions</button>
-      <button class="subtab inactive" onclick="showAdminTab('settings')" id="subtab-settings">Réglages</button>
+      <button class="subtab active" onclick="showAdminTab('actions')" id="subtab-actions">Tournoi</button>
       <button class="subtab inactive" onclick="showAdminTab('players')" id="subtab-players">Joueurs</button>
-      <button class="subtab inactive" onclick="showAdminTab('seeding')" id="subtab-seeding">Groupes</button>
+      <button class="subtab inactive" onclick="showAdminTab('notifs')" id="subtab-notifs">Notifs</button>
+      <button class="subtab inactive" onclick="showAdminTab('settings')" id="subtab-settings">Réglages</button>
     </div>
     <div id="admin-settings" class="card">
-      <h2 id="settings-title">Paramètres</h2>
+      
       <div class="gap">
-        <div class="form-group"><label id="set-label-name">Nom du tournoi</label><input id="set-name" type="text"></div>
-        <div class="form-group"><label id="set-label-reg-deadline">Date de clôture des inscriptions</label><input id="set-reg-deadline" type="date"></div>
-        <div class="form-group"><label id="set-label-ppg">Joueurs par groupe</label><input id="set-ppg" type="number" min="3" max="10" oninput="updatePoolEndEstimate()"><div id="set-ppg-hint" style="font-size:11px;color:var(--gray);margin-top:3px"></div></div>
-        <div class="form-group"><label id="set-label-fin">Nombre de finalistes</label><input id="set-fin" type="number" min="2" max="32"></div>
-        <div class="form-group"><label id="set-label-pool-start">Date de début des poules</label><input id="set-pool-start" type="date" oninput="updatePoolEndEstimate()"></div>
-        <div class="form-group"><label id="set-label-pool-interval">Intervalle entre rondes de poules (jours)</label><input id="set-pool-interval" type="number" min="1" max="30" value="4" oninput="updatePoolEndEstimate()"><div id="pool-end-estimate" style="font-size:11px;color:var(--gold);margin-top:3px;font-weight:600"></div></div>
-        <div class="form-group"><label id="set-label-finals-start">Date de début des finales</label><input id="set-finals-start" type="date" oninput="updateFinalsEndEstimate()"></div>
-        <div class="form-group"><label id="set-label-finals-interval">Intervalle entre tours de finales (jours)</label><input id="set-finals-interval" type="number" min="1" max="30" value="4" oninput="updateFinalsEndEstimate()"><div id="finals-end-estimate" style="font-size:11px;color:var(--gold);margin-top:3px;font-weight:600"></div></div>
-        <div class="form-group"><label id="set-label-semis">Format demi-finales</label><input id="set-semis" type="text" placeholder="20min + 10s/coup"></div>
-        <div class="form-group"><label id="set-label-final">Format finale</label><input id="set-final-format" type="text" placeholder="30min + 10s/coup"></div>
-
-        <button class="btn btn-gold" onclick="saveSettings()" id="save-settings-btn">Enregistrer</button>
-        <div id="settings-msg"></div>
-        <div style="border-top:1px solid #eee;margin-top:8px;padding-top:12px">
+        
+        
+        
+      <div style="border-top:1px solid #eee;margin-top:8px;padding-top:12px">
           <div style="font-size:13px;font-weight:700;margin-bottom:10px" id="pin-change-title">Modifier le PIN</div>
           <div class="form-group"><label id="pin-current-label">PIN actuel</label><input id="pin-current" type="text" inputmode="numeric" autocomplete="off" style="-webkit-text-security:disc;text-security:disc"></div>
           <div class="form-group"><label id="pin-new-label">Nouveau PIN</label><input id="pin-new" type="text" inputmode="numeric" autocomplete="off" style="-webkit-text-security:disc;text-security:disc"></div>
@@ -247,6 +262,10 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
           <button class="btn btn-gray" onclick="changePin()" id="change-pin-btn">Modifier le PIN</button>
           <div id="pin-msg"></div>
         </div>
+      </div>
+    </div>
+    <div id="admin-notifs" style="display:none">
+      <div class="card">
         <div style="border-top:1px solid #eee;margin-top:8px;padding-top:12px">
           <div style="font-size:13px;font-weight:700;margin-bottom:10px">🔔 Notifications automatiques</div>
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;padding:10px 12px;background:#f8f8f8;border-radius:8px">
@@ -266,23 +285,51 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
           <div id="check-late-result" style="font-size:12px;margin-top:6px"></div>
         </div>
       </div>
+      <div class="card" style="margin-top:0">
+        <h2 id="notif-admin-title">🔔 Envoyer une notification</h2>
+        <div style="margin-bottom:12px">
+          <textarea id="notif-admin-msg" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;min-height:80px;resize:vertical" placeholder="Message de notification..."></textarea>
+          <button class="btn btn-gray" style="margin-top:6px" onclick="confirmAction('sendPushToAll')" id="send-notif-btn">📤 Envoyer à tous les abonnés</button>
+          <div id="notif-admin-msg-result" style="font-size:12px;margin-top:4px"></div>
+          <div id="notif-subscribers-count" style="font-size:11px;color:var(--gray);margin-top:4px"></div>
+          <a href="#" onclick="toggleSubsDetail();return false;" style="font-size:11px;color:var(--gold);text-decoration:underline">🔍 Voir le détail des dates d'abonnement</a>
+          <div id="notif-subs-detail" style="display:none;font-size:11px;color:var(--gray);margin-top:6px;max-height:180px;overflow-y:auto;background:#f8f8f8;border-radius:6px;padding:8px"></div>
+          <button class="btn btn-gray" style="margin-top:8px;font-size:12px" onclick="confirmAction('resetSubscriptions','','',false)" id="reset-subs-btn">↺ Réinitialiser tous les abonnements</button>
+        </div>
+        <h2 id="whatsapp-title">📲 Rappel WhatsApp</h2>
+        <div id="whatsapp-preview" style="font-size:12px;color:#555;background:#f8f8f8;border-radius:8px;padding:10px;margin-bottom:10px;white-space:pre-wrap;min-height:60px;line-height:1.6"></div>
+        <textarea id="whatsapp-msg" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:12px;line-height:1.6;min-height:120px;resize:vertical" placeholder="Message personnalisé..."></textarea>
+        <button class="btn btn-green" style="margin-top:8px" onclick="copyWhatsApp()" id="copy-whatsapp-btn">📋 Copier le message</button>
+        <div id="whatsapp-msg-result"></div>
+      </div>
     </div>
     <div id="admin-players" class="card" style="display:none">
       <h2 id="admin-players-title">Joueurs (<span id="admin-player-count">0</span>)</h2>
       <div id="admin-player-list"></div>
-    </div>
-    <div id="admin-seeding" class="card" style="display:none">
-      <h2 id="seeding-title">Têtes de série</h2>
-      <p id="seeding-desc" style="font-size:12px;color:var(--gray);margin-bottom:12px"></p>
-      <div id="seed-list"></div>
-      <div id="seed-info" style="font-size:12px;color:var(--gray);margin:10px 0"></div>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <button class="btn btn-gray" style="flex:1" onclick="saveSeedOrder()" id="save-seed-btn">💾 Sauvegarder</button>
-        <button class="btn btn-gold" style="flex:1" onclick="assignGroups()" id="assign-btn">⚽ Générer les groupes</button>
+      <div style="border-top:1px solid #eee;margin-top:14px;padding-top:14px">
+        <h2 id="seeding-title">Têtes de série</h2>
+        <p id="seeding-desc" style="font-size:12px;color:var(--gray);margin-bottom:12px"></p>
+        <div id="seed-list"></div>
+        <div id="seed-info" style="font-size:12px;color:var(--gray);margin:10px 0"></div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn btn-gray" style="flex:1" onclick="saveSeedOrder()" id="save-seed-btn">💾 Sauvegarder</button>
+          <button class="btn btn-gold" style="flex:1" onclick="assignGroups()" id="assign-btn">⚽ Générer les groupes</button>
+        </div>
+        <div id="seeding-msg"></div>
       </div>
-      <div id="seeding-msg"></div>
+    <div style="border-top:1px solid #eee;margin-top:8px;padding-top:12px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:10px" id="palmares-admin-title">🏅 Palmarès</div>
+          <div id="palmares-admin-content"></div>
+          <div style="display:flex;gap:6px;margin-top:10px">
+            <input id="new-edition-name" placeholder="Nom de l'édition" style="flex:2;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:12px">
+            <input id="new-edition-year" placeholder="Année" style="flex:1;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:12px">
+            <button class="btn btn-gold btn-sm" style="width:auto" onclick="addPalmaresEdition()">+</button>
+          </div>
+          <div id="palmares-admin-msg" style="font-size:12px;margin-top:6px"></div>
+        </div>
     </div>
     <div id="admin-actions" style="display:none">
+
       <div class="card">
         <h2 id="finalists-title">Finalistes qualifiés</h2>
         <div id="bracket-warning" style="display:none;font-size:12px;line-height:1.5;padding:10px 12px;border-radius:8px;margin-bottom:10px;background:#FDECEA;color:var(--red);border-left:3px solid var(--red)"></div>
@@ -308,29 +355,30 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
         </div>
         <div id="actions-msg"></div>
       </div>
-      <div class="card" style="margin-top:0">
-        <h2 id="notif-admin-title">🔔 Envoyer une notification</h2>
-        <div style="margin-bottom:12px">
-          <textarea id="notif-admin-msg" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;min-height:80px;resize:vertical" placeholder="Message de notification..."></textarea>
-          <button class="btn btn-gray" style="margin-top:6px" onclick="confirmAction('sendPushToAll')" id="send-notif-btn">📤 Envoyer à tous les abonnés</button>
-          <div id="notif-admin-msg-result" style="font-size:12px;margin-top:4px"></div>
-          <div id="notif-subscribers-count" style="font-size:11px;color:var(--gray);margin-top:4px"></div>
-          <a href="#" onclick="toggleSubsDetail();return false;" style="font-size:11px;color:var(--gold);text-decoration:underline">🔍 Voir le détail des dates d'abonnement</a>
-          <div id="notif-subs-detail" style="display:none;font-size:11px;color:var(--gray);margin-top:6px;max-height:180px;overflow-y:auto;background:#f8f8f8;border-radius:6px;padding:8px"></div>
-          <button class="btn btn-gray" style="margin-top:8px;font-size:12px" onclick="confirmAction('resetSubscriptions','','',false)" id="reset-subs-btn">↺ Réinitialiser tous les abonnements</button>
-        </div>
-        <h2 id="whatsapp-title">📲 Rappel WhatsApp</h2>
-        <div id="whatsapp-preview" style="font-size:12px;color:#555;background:#f8f8f8;border-radius:8px;padding:10px;margin-bottom:10px;white-space:pre-wrap;min-height:60px;line-height:1.6"></div>
-        <textarea id="whatsapp-msg" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:12px;line-height:1.6;min-height:120px;resize:vertical" placeholder="Message personnalisé..."></textarea>
-        <button class="btn btn-green" style="margin-top:8px" onclick="copyWhatsApp()" id="copy-whatsapp-btn">📋 Copier le message</button>
-        <div id="whatsapp-msg-result"></div>
-      </div>
       <div id="admin-ranking" class="card" style="display:none;visibility:hidden;height:0;overflow:hidden">
       <h2 id="ranking-title">Classement global</h2>
       <div id="ranking-content"></div>
     </div>
     <div style="text-align:center;margin-top:8px">
         <button class="btn btn-gray btn-sm" style="display:inline-block;width:auto" onclick="adminLogout()" id="logout-btn">Déconnexion</button>
+      <div class="card">
+        <h2 id="settings-title">Paramètres</h2>
+        <div class="gap">
+        <div class="form-group"><label id="set-label-name">Nom du tournoi</label><input id="set-name" type="text"></div>
+        <div class="form-group"><label id="set-label-reg-deadline">Date de clôture des inscriptions</label><input id="set-reg-deadline" type="date"></div>
+        <div class="form-group"><label id="set-label-ppg">Joueurs par groupe</label><input id="set-ppg" type="number" min="3" max="10" oninput="updatePoolEndEstimate()"><div id="set-ppg-hint" style="font-size:11px;color:var(--gray);margin-top:3px"></div></div>
+        <div class="form-group"><label id="set-label-fin">Nombre de finalistes</label><input id="set-fin" type="number" min="2" max="32" oninput="updateFinalsEndEstimate()"></div>
+        <div class="form-group"><label id="set-label-pool-start">Date de début des poules</label><input id="set-pool-start" type="date" oninput="updatePoolEndEstimate()"></div>
+        <div class="form-group"><label id="set-label-pool-interval">Intervalle entre rondes de poules (jours)</label><input id="set-pool-interval" type="number" min="1" max="30" value="4" oninput="updatePoolEndEstimate()"><div id="pool-end-estimate" style="font-size:11px;color:var(--gold);margin-top:3px;font-weight:600"></div></div>
+        <div class="form-group"><label id="set-label-finals-start">Date de début des finales</label><input id="set-finals-start" type="date" oninput="updateFinalsEndEstimate()"></div>
+        <div class="form-group"><label id="set-label-finals-interval">Intervalle entre tours de finales (jours)</label><input id="set-finals-interval" type="number" min="1" max="30" value="4" oninput="updateFinalsEndEstimate()"><div id="finals-end-estimate" style="font-size:11px;color:var(--gold);margin-top:3px;font-weight:600"></div></div>
+        <div class="form-group"><label id="set-label-semis">Format demi-finales</label><input id="set-semis" type="text" placeholder="20min + 10s/coup"></div>
+        <div class="form-group"><label id="set-label-final">Format finale</label><input id="set-final-format" type="text" placeholder="30min + 10s/coup"></div>
+
+        <button class="btn btn-gold" onclick="saveSettings()" id="save-settings-btn">Enregistrer</button>
+        <div id="settings-msg"></div>
+        </div>
+      </div>
       </div>
     </div>
   </div>
@@ -356,14 +404,14 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
   <button class="tab-btn" onclick="showPage('groups')" id="tab-groups"><span class="tab-icon">📊</span><span id="tab-label-groups">Groupes</span></button>
   <button class="tab-btn" onclick="showPage('matches')" id="tab-matches"><span class="tab-icon">⚔️</span><span id="tab-label-matches">Matchs</span></button>
   <button class="tab-btn" onclick="showPage('finals')" id="tab-finals"><span class="tab-icon">🏆</span><span id="tab-label-finals">Finales</span></button>
-  <button class="tab-btn" onclick="showPage('admin')" id="tab-admin"><span class="tab-icon">⚙️</span><span id="tab-label-admin">Admin</span></button>
+  <button class="tab-btn" onclick="showPage('info')" id="tab-info"><span class="tab-icon">ℹ️</span><span id="tab-label-info">Infos</span></button>
 </div>
 
 <!-- CONFIRM -->
 <div id="confirm-overlay" onclick="closeConfirm()">
   <div id="confirm-box" onclick="event.stopPropagation()">
     <h3 id="confirm-title"></h3>
-    <p id="confirm-text"></p>
+    <p id="confirm-text" style="white-space:pre-line;text-align:left"></p>
     <div class="row">
       <button class="btn btn-gray" style="flex:1" onclick="closeConfirm()" id="confirm-cancel-btn">Annuler</button>
       <button class="btn btn-red" style="flex:1" id="confirm-ok-btn">Confirmer</button>
@@ -469,7 +517,7 @@ async function subscribeToNotifications() {
   }
 }
 
-async function unsubscribeFromNotifications() {
+window.unsubscribeFromNotifications = async function unsubscribeFromNotifications() {
   try {
     const reg = await navigator.serviceWorker.ready;
     const sub = await reg.pushManager.getSubscription();
@@ -502,11 +550,15 @@ function updateNotifBtn() {
   }
   if (btn) {
     btn.textContent = on ? t('notif_on') : t('notif_off');
-    btn.style.background = on ? 'var(--green)' : '#EBEBEB';
-    btn.style.color = on ? '#fff' : '#555';
-    btn.style.fontWeight = on ? '700' : '600';
+    // Actif = discret (rien à faire) ; inactif = visible, c'est une invitation à cliquer.
+    btn.style.background = on ? 'transparent' : '#EBEBEB';
+    btn.style.color = on ? 'var(--green)' : '#555';
+    btn.style.fontWeight = '600';
+    btn.style.border = on ? '1px solid #A8D5B5' : 'none';
   }
   if (testBtn) testBtn.style.display = on ? 'inline-block' : 'none';
+  const disableBtn = document.getElementById('notif-disable-btn');
+  if (disableBtn) disableBtn.style.display = on ? 'block' : 'none';
   const prefsLink = document.getElementById('notif-prefs-link');
   if (prefsLink) prefsLink.style.display = on ? 'inline-block' : 'none';
   const prefsBox = document.getElementById('notif-prefs');
@@ -695,7 +747,10 @@ function showNotifConfirmPanel() {
 window.toggleNotifications = async function() {
   const on = localStorage.getItem('abct-notif') === 'on';
   if (on) {
-    await unsubscribeFromNotifications();
+    // Le bouton n'est plus un interrupteur : il indique le statut. Un clic ouvre les
+    // préférences (où se trouve la désactivation), pour qu'un clic accidentel ne
+    // désabonne pas quelqu'un sans confirmation.
+    toggleNotifPrefsPanel();
   } else {
     // Vérifier la compatibilité AVANT de montrer le panneau — sinon sur iPhone (onglet
     // normal, app pas installée) on afficherait des cases à cocher qui ne mèneraient
@@ -745,8 +800,9 @@ document.getElementById('manifest-link').href = URL.createObjectURL(mblob);
 // ── TRANSLATIONS ──
 const T = {
   fr:{
-    loading:"Chargement...",offline:"⚠️ Hors ligne — données non synchronisées",
-    tab_home:"Tournoi",tab_groups:"Groupes",tab_matches:"Matchs",tab_finals:"Finales",tab_admin:"Admin",
+    loading:"Chargement...",offline:"⚠️ Hors ligne — données non synchronisées",pin_current:"PIN actuel",reg_closed:"Les inscriptions sont fermées.",pin_new:"Nouveau PIN",pin_confirm:"Confirmer",set_semis:"Format demi-finales",set_final:"Format finale",whatsapp_title:"📲 Rappel WhatsApp",save_seed:"💾 Sauvegarder",
+    tab_home:"Tournoi",tab_groups:"Groupes",tab_matches:"Matchs",tab_finals:"Finales",
+    tab_info:"Infos",confirm_archive_before_reset:"Archiver le classement actuel dans le palmarès avant de réinitialiser ?\n\nOK = archiver puis réinitialiser\nAnnuler = réinitialiser sans archiver",palmares_admin_title:"🏅 Palmarès",palmares_edition_name_placeholder:"Nom de l'édition",info_rules_btn:"📜 Règlement",info_palmares_btn:"🏅 Palmarès",info_ranking_btn:"📊 Classement général",live_rank_title:"Classement général en direct",live_rank_qualified_title:"Joueurs qualifiés",info_admin_btn:"⚙️ Admin",info_rules_title:"Règlement",info_palmares_title:"Palmarès",
     status_registration:"Inscriptions ouvertes",status_playing:"Phase de poules",status_finals:"Phases finales",status_finished:"Terminé",
     players_count_1:"joueur inscrit",players_count_n:"joueurs inscrits",
     reg_title:"S'inscrire au tournoi",reg_nick:"Pseudo Chess.com *",
@@ -769,13 +825,25 @@ const T = {
     send_notif_btn:"📤 Envoyer à tous les abonnés",
     reset_subs_btn:"↺ Réinitialiser tous les abonnements",
     copy_whatsapp_btn:"📋 Copier le message",
-    maint_title:"Maintenance en cours",
+    maint_title:"Maintenance en cours",maint_btn:"🔧 Mode maintenance",
     maint_text:"Le site est temporairement indisponible.<br>Revenez dans quelques instants.",
     maint_admin_access:"Accès administrateur",
     maint_login_btn:"Connexion admin",
-    rules_title:"Règlement",
-    rules:`<p>🚀 Consultez l'onglet Matchs pour voir vos parties dès que la phase de poules est lancée. Envoyez une invitation à votre adversaire sur Chess.com (pseudo visible dans l'onglet Tournoi) ou jouez sur échiquier physique. Vous pouvez jouer plusieurs parties en même temps. Inscrivez le résultat dès la fin de chaque partie directement dans l'app.</p><br>
-<p>⏰ Respectez les délais indiqués dans l'onglet Matchs : même à cadence lente, enchaînez vos coups pour que la partie se termine dans le délai imparti.</p><br>
+    notif_invite_info:"💡 Pense à activer les notifications sur la page Tournoi pour ne rien manquer.",
+    palmares_empty:"Aucune édition enregistrée pour l'instant.",
+    palmares_empty_edition:"Aucun classement pour cette édition.",
+    palmares_name_required:"Le nom de l'édition est requis.",
+    palmares_edition_added:"✓ Édition ajoutée !",
+    palmares_confirm_delete_edition:"Supprimer cette édition et tout son classement ?",palmares_confirm_delete_entry:"Supprimer {n} de ce classement ?",palmares_entry_deleted:"✓ {n} supprimé",palmares_entry_added:"✓ {n} ajouté",palmares_entry_saved:"✓ {n} enregistré",palmares_validate:"Valider la saisie",
+    palmares_bulk_added:"✓ {n} joueurs ajoutés !",
+    palmares_year_placeholder:"Année",
+    palmares_delete_edition:"Supprimer l'édition",
+    palmares_pseudo_placeholder:"Pseudo Chess.com",
+    palmares_name_optional_placeholder:"Nom (optionnel)",
+    palmares_bulk_placeholder:"Un joueur par ligne : pseudo-Nom, ou juste le pseudo",
+    palmares_bulk_btn:"➕ Ajouter la liste",palmares_fill_names_btn:"🔗 Retrouver les noms",palmares_search_ph:"🔎 Rechercher un joueur…",palmares_player_none:"Aucun joueur trouvé.",palmares_edition:"édition",palmares_editions:"éditions",palmares_podium:"podium",palmares_podiums:"podiums",palmares_best:"meilleur rang :",palmares_of:" sur ",palmares_stats_btn:"Statistiques des joueurs",palmares_stats_desc:"Tous les joueurs ayant participé, classés sur l'ensemble des éditions.",palmares_ongoing:"en cours",palmares_pick:"Choisis un tournoi ci-dessus.",palmares_no_result_yet:"Aucun match encore joué.",palmares_provisional:"⏳ Classement provisoire — le tournoi est en cours",palmares_qualified:"Qualifiés",palmares_virtual:"Classement virtuel",palmares_virtual_desc:"⏳ Qui serait qualifié si les poules s'arrêtaient maintenant",palmares_qualified_desc:"✅ Joueurs qualifiés pour les phases finales",palmares_grp:"groupe",palmares_player:"joueur",palmares_players:"joueurs",palmares_format_help:"<b>Un joueur par ligne, dans l'ordre du classement :</b><br><code>pseudo-Nom</code> &nbsp;— sans statistiques<br><code>pseudo-Nom;V;N;D;V;N;D</code> &nbsp;— avec statistiques<br>Les 3 premiers chiffres = victoires, nulles, défaites <b>avec les Blancs</b> ⬜<br>Les 3 suivants = victoires, nulles, défaites <b>avec les Noirs</b> ⬛<br>Exemple : <code>Goudi8-Romain;1;3;1;4;0;1</code><br>Matchs joués et points se calculent automatiquement.",qual_rg:"Rg",qual_grp:"Grp",qual_ptsm:"Pts/M",qual_vm:"V/M",qual_vnm:"VN/M",qual_tbm:"TB/M",qual_seed:"Seed",qual_legend:"Départage, dans l'ordre : Pts/M (points par match) → V/M (victoires par match) → VN/M (victoires avec les Noirs par match) → TB/M (Buchholz par match) → Seed (tête de série). Rg = rang dans le groupe.",palmares_pts:"pts",palmares_m:"m",palmares_v:"V",palmares_n:"N",palmares_d:"D",palmares_white:"Blancs",palmares_black:"Noirs",palmares_total:"Total",palmares_on:"sur",palmares_names_filled:"✓ {n} nom(s) retrouvé(s) !",palmares_no_name_found:"Aucun nom à retrouver.",
+    rules:`<p>🚀 Consultez l'onglet Matchs pour voir vos parties dès que la phase de poules est lancée. Envoyez une invitation à votre adversaire sur Chess.com (pseudo visible dans l'onglet Tournoi) ou jouez sur échiquier physique. Inscrivez le résultat dès la fin de chaque partie directement dans l'app.</p><br>
+<p>⏰ <strong>Commencez vos parties dès le début du tournoi</strong> et terminez-les avant l'échéance affichée sur chaque match. Vous pouvez jouer plusieurs parties en parallèle, mais <strong>respectez l'ordre des rondes</strong> : traitez d'abord celles dont l'échéance est la plus proche. Même à cadence lente, enchaînez vos coups pour finir dans les délais.</p><br>
 <p>Format : Poules round-robin, puis phases finales à élimination directe.</p><br>
 <p>Scores : 1 (victoire) · 0.5 (nul) · 0 (défaite)</p><br>
 <p>Départage dans les groupes : ① Points ② Victoires ③ Victoires avec les Noirs ④ Confrontation directe ⑤ Tête de série</p><p>Départage global (finalistes) : ① Points/match ② Victoires/match ③ Victoires Noirs/match ④ Buchholz/match ⑤ Tête de série</p><br>
@@ -787,15 +855,15 @@ const T = {
     late_badge:"⏰ Retard",
     due_by:"📅 Échéance :",
     late_match:"⏰ Match en retard",
-    color_choice:"choisit sa couleur",
+    color_choice:"choisit sa couleur",color_pick:"— couleur —",color_required:"Choisis ta couleur avant de valider le score.",
     presential:"Présentiel",
-    current_phase:"Phase actuelle : ",
+    notif_disable_btn:"🔕 Désactiver les notifications",
     late_msg:"Certains matchs sont en retard, jouez rapidement !",
     pending_msg:"Certains matchs sont encore en attente, pensez à organiser vos parties rapidement !",
     notif_unsupported:"Notifications non supportées sur ce navigateur.",
     notif_denied:"Permission refusée. Ouvre les réglages du site (🔒 dans la barre d'adresse) → Autorisations → Notifications → Autoriser, puis recharge la page.",
     notif_denied_pwa:"Permission refusée. Va dans Paramètres de ton téléphone → Applications → ton navigateur → Notifications, et autorise ce site. Puis réouvre l'app.",
-    notif_on:"🔔 Désactiver les notifications",
+    notif_on:"🔔 Notifications activées",
     notif_off:"🔕 Activer les notifications",
     pref_officiel:"📢 Annonces officielles",
     pref_match:"⚔️ Résultats de matchs",
@@ -808,7 +876,6 @@ const T = {
     notif_sent:"✓ Notification enregistrée !",
     notif_subscriber:" abonné",
     notif_subscribers:" abonnés",
-    pin_section:"Modifier le PIN",
     pin_wrong:"PIN actuel incorrect.",
     pin_mismatch:"Les nouveaux PIN ne correspondent pas.",
     pin_short:"PIN trop court (min. 4 caractères).",
@@ -816,22 +883,18 @@ const T = {
     nick_taken:"Ce pseudo est déjà pris.",
     groups_reset:"Groupes réinitialisés. Les joueurs sont conservés.",
     finals_reset:"Phases finales réinitialisées.",
-    scores_reset_ok:"Scores réinitialisés.",
-    tournament_reset:"Tournoi réinitialisé.",
-    current_phase:"Phase actuelle : ",
     pin_section:"Modifier le PIN",
-    tournament_reset_ok:"Tournoi réinitialisé.",
     saved_ok:"Enregistré !",
     seed_saved:"✓ Ordre sauvegardé",
     groups_created:" groupes créés, ",
     matches_generated:" matchs générés.",
     seeding_done:[" groupes créés, "," matchs générés."],
     confirm_reset_finals_title:"Réinitialiser les phases finales ?",
-    confirm_reset_finals_text:"Le bracket des finales sera effacé. Le statut reviendra à phase de poules.",
+    confirm_reset_finals_text:"❌ EFFACÉ : le tableau des finales.\n✅ CONSERVÉ : joueurs, groupes, matchs de poule et leurs scores.\n\nLe tournoi revient en phase de poules.",
     confirm_reset_groups_title:"Réinitialiser les groupes ?",
-    confirm_reset_groups_text:"Les groupes et tous les matchs seront supprimés. Les joueurs inscrits sont conservés.",
+    confirm_reset_groups_text:"❌ EFFACÉ : les groupes, TOUS les matchs de poule avec leurs scores, et le tableau des finales.\n✅ CONSERVÉ : les joueurs inscrits et leur ordre de têtes de série.\n\nLe tournoi revient en phase d'inscriptions.",
     groups_empty:"Les groupes ne sont pas encore définis.",
-    rank_player:"Joueur",rank_pts:"Pts",rank_mj:"MJ",rank_v:"V",rank_vn:"VN",rank_tb:"TB",
+    rank_player:"Joueur",rank_pts:"Pts",rank_mj:"MJ",rank_v:"V",rank_vn:"VN",
     rank_legend:"Pts·Points MJ·Matchs joués V·Victoires VN·Victoires Noirs TB·Buchholz",
     matches_all:"Tous",matches_pending:"À jouer",matches_done:"Terminés",matches_empty:"Aucun match généré.",
     enter_score:"Entrer le score",whites:"⬜ Blancs",blacks:"⬛ Noirs",
@@ -839,42 +902,40 @@ const T = {
     admin_title:"Accès administrateur",admin_pin:"Code PIN",admin_login_btn:"Connexion",
     admin_pin_hint:"Première utilisation ? Créez votre PIN maintenant.",admin_pin_err:"PIN incorrect.",
     admin_logout:"Déconnexion",
-    subtab_settings:"Réglages",subtab_players:"Joueurs",subtab_seeding:"Groupes",subtab_actions:"Actions",
-    subtab_ranking:"Ranking",
-    ranking_title:"Global Ranking",
+    subtab_settings:"Réglages",subtab_players:"Joueurs",subtab_notifs:"Notifs",subtab_actions:"Tournoi",
     subtab_ranking:"Classement",
     ranking_title:"Classement global",
-    settings_title:"Paramètres du tournoi",set_name:"Nom du tournoi",set_reg_deadline:"Date de clôture des inscriptions",reg_deadline_until:"Jusqu'au",set_ppg:"Joueurs par groupe",set_fin:"Nombre de finalistes",set_status:"Statut",
+    settings_title:"Paramètres du tournoi",set_name:"Nom du tournoi",set_reg_deadline:"Date de clôture des inscriptions",reg_deadline_until:"Jusqu'au",set_ppg:"Joueurs par groupe",set_fin:"Nombre de finalistes",
     set_pool_start:"Date de début des poules",set_pool_interval:"Intervalle entre rondes de poules (jours)",
     set_finals_start:"Date de début des finales",set_finals_interval:"Intervalle entre tours de finales (jours)",
-    status_opt_reg:"Inscriptions ouvertes",status_opt_play:"Phase de poules",status_opt_fin:"Phases finales",status_opt_done:"Terminé",
-    save_settings:"Enregistrer",settings_saved:"Enregistré !",
+    save_settings:"Enregistrer",
     seeding_title:"Têtes de série & groupes",seeding_desc:"Réorganisez les joueurs par niveau. Distribution serpentine pour des groupes équilibrés.",
     assign_btn:"Assigner aux groupes & générer les matchs",seeding_done:[" groupes créés, "," matchs générés."],
     finalists_title:"Finalistes qualifiés",actions_title:"Actions",
     launch_finals:"🏆 Lancer les phases finales",reset_scores:"↺ Réinitialiser les scores",reset_all:"⚠️ Réinitialiser le tournoi",
-    confirm_reset_scores_title:"Réinitialiser les scores ?",confirm_reset_scores_text:"Tous les résultats des matchs de poule seront effacés.",
-    confirm_reset_all_title:"Réinitialiser le tournoi ?",confirm_reset_all_text:"Tous les joueurs, matchs et résultats seront définitivement effacés.",
+    confirm_reset_scores_title:"Réinitialiser les scores ?",confirm_reset_scores_text:"❌ EFFACÉ : les scores des matchs de poule.\n✅ CONSERVÉ : joueurs, groupes, les matchs eux-mêmes (avec leurs couleurs et dates), et le tableau des finales.",
+    confirm_reset_all_title:"Réinitialiser le tournoi ?",confirm_reset_all_text:"❌ EFFACÉ : joueurs, groupes, matchs, scores, finales et réglages du tournoi.\n✅ CONSERVÉ : le PALMARÈS (toutes les éditions passées), le code PIN, l'appareil admin et les réglages de notifications.\n\nUne proposition d'archiver le classement actuel au palmarès sera faite juste après.",
     confirm_send_notif_title:"Envoyer la notification ?",confirm_send_notif_text:"Ce message sera envoyé à tous les abonnés aux notifications.",
     confirm_reset_subs_title:"Réinitialiser tous les abonnements ?",
     confirm_reset_subs_text:"Tous les abonnements aux notifications seront supprimés. Les abonnements toujours valides reviendront automatiquement dès que chaque appareil rouvre l'app — les autres resteront supprimés pour de bon.",
     confirm_ok:"Confirmer",confirm_cancel:"Annuler",
     finals_launched:["Phases finales lancées avec "," finalistes !"],not_enough_finalists:"Pas assez de finalistes qualifiés.",
     scores_reset:"Scores réinitialisés.",tournament_reset:"Tournoi réinitialisé.",
-    no_matches:"Aucun match joué.",group_rank:"Rang",group_grp:"Grp",pts_per_match:"Pts/M",
+    no_matches:"Aucun match joué.",
     pool_reminder_title:"🚀 Phase de poules lancée !",
-    pool_reminder_text:"Consultez l'onglet Matchs pour voir vos parties. Envoyez une invitation à votre adversaire sur Chess.com (pseudo visible dans l'onglet Tournoi) ou jouez sur échiquier physique. Vous pouvez jouer plusieurs parties en même temps. Inscrivez le résultat dès la fin de chaque partie directement dans l'onglet Matchs.",
+    pool_reminder_text:"Consultez l'onglet Matchs pour voir vos parties. Envoyez une invitation à votre adversaire sur Chess.com (pseudo visible dans l'onglet Tournoi) ou jouez sur échiquier physique. Inscrivez le résultat dès la fin de chaque partie.\n\n⏰ Commencez dès maintenant et terminez avant l'échéance affichée sur chaque match. Vous pouvez jouer plusieurs parties en parallèle, mais traitez d'abord celles de la ronde 1, puis la 2, etc. — les échéances les plus proches en priorité.",
     install_btn:"📲 Installer l'app",install_title:"Installer l'application",
     install_android:["Ouvrir dans Chrome","Menu ⋮ en haut à droite","Sélectionner: Ajouter à l'écran d'accueil","Appuyer sur Ajouter"],
     install_ios:["Ouvrir dans Safari (pas Chrome)","Icône Partager (carré avec flèche ↑)","Sélectionner: Sur l'écran d'accueil","Appuyer sur Ajouter en haut à droite"],
     install_close:"Fermer",install_now:"📲 Installer maintenant",
     rules_full:"<h3 style=\"color:var(--gold);margin:16px 0 6px\">1. Format</h3>\n<p>Tous les joueurs sont r\u00e9partis en groupes. Dans chaque groupe, chaque joueur affronte une fois tous les autres (round-robin). Le nombre de groupes et de qualifi\u00e9s est d\u00e9fini par l'organisateur.</p>\n<h3 style=\"color:var(--gold);margin:16px 0 6px\">2. Scores</h3>\n<p>1 point pour une victoire \u00b7 0.5 pour un nul \u00b7 0 pour une d\u00e9faite.</p>\n<p>Chaque joueur est responsable d'inscrire son score d\u00e8s la fin de la partie.</p>\n<h3 style=\"color:var(--gold);margin:16px 0 6px\">3. D\u00e9partage</h3>\n<p>En cas d'\u00e9galit\u00e9 de points :</p>\n<p>\u2460 Points \u00b7 \u2461 Victoires totales \u00b7 \u2462 Victoires avec les Noirs \u00b7 \u2463 Buchholz (somme des points des adversaires) \u00b7 \u2464 Confrontation directe</p>\n<h3 style=\"color:var(--gold);margin:16px 0 6px\">4. Phases finales</h3>\n<p>Les 1ers de groupe sont qualifi\u00e9s directement au round avanc\u00e9. Les 2\u00e8mes et meilleurs 3\u00e8mes jouent un tour pr\u00e9liminaire pour les rejoindre.</p>\n<p>Le mieux class\u00e9 dans le tableau des finalistes choisit sa couleur pour chaque match. En cas de nul, le match est rejou\u00e9 avec les couleurs invers\u00e9es.</p>\n<h3 style=\"color:var(--gold);margin:16px 0 6px\">5. Modalit\u00e9s de jeu</h3>\n<p>Les parties se jouent sur \u00e9chiquier physique ou sur Chess.com. Le pseudo Chess.com doit correspondre \u00e0 celui indiqu\u00e9 lors de l'inscription.</p>\n<p>Temps de jeu libre, maximum <strong>24h par coup</strong>. Pas de mode vacances ni de prolongation sans accord mutuel.</p>\n<p>\u26d4 Interdit : \u00e9chiquier d'analyse, coups conditionnels sur Chess.com.</p>\n<p>Si un joueur perd au temps involontairement, la reprise est possible uniquement avec l'accord de l'adversaire. En cas de r\u00e9cidive, le match est d\u00e9finitivement perdu.</p>\n<h3 style=\"color:var(--gold);margin:16px 0 6px\">6. Fair-play & arbitrage</h3>\n<p>Le fair-play est attendu de tous les participants. En cas de litige, l'organisateur tranche. Tout manquement grave peut entra\u00eener une disqualification.</p>",
     notif_install_hint:"Installe l'app sur ton écran d'accueil pour activer les notifications.",
-    tbd:"?",winner:"🏆 Vainqueur"
+    winner:"🏆 Vainqueur",
   },
   de:{
-    loading:"Wird geladen...",offline:"⚠️ Offline — Daten werden nicht synchronisiert",
-    tab_home:"Turnier",tab_groups:"Gruppen",tab_matches:"Partien",tab_finals:"Finale",tab_admin:"Admin",
+    loading:"Wird geladen...",offline:"⚠️ Offline — Daten werden nicht synchronisiert",pin_current:"Aktueller PIN",reg_closed:"Die Anmeldung ist geschlossen.",pin_new:"Neuer PIN",pin_confirm:"Bestätigen",set_semis:"Format Halbfinale",set_final:"Format Finale",whatsapp_title:"📲 WhatsApp-Erinnerung",save_seed:"💾 Speichern",
+    tab_home:"Turnier",tab_groups:"Gruppen",tab_matches:"Partien",tab_finals:"Finale",
+    tab_info:"Infos",confirm_archive_before_reset:"Aktuelle Rangliste vor dem Zurücksetzen in der Siegerliste archivieren?\n\nOK = archivieren und zurücksetzen\nAbbrechen = ohne Archivierung zurücksetzen",palmares_admin_title:"🏅 Siegerliste",palmares_edition_name_placeholder:"Name der Ausgabe",info_rules_btn:"📜 Reglement",info_palmares_btn:"🏅 Siegerliste",info_ranking_btn:"📊 Gesamtrangliste",live_rank_title:"Gesamtrangliste live",live_rank_qualified_title:"Qualifizierte Spieler",info_admin_btn:"⚙️ Admin",info_rules_title:"Reglement",info_palmares_title:"Siegerliste",
     status_registration:"Anmeldung offen",status_playing:"Gruppenphase",status_finals:"Finalphase",status_finished:"Beendet",
     players_count_1:"Spieler angemeldet",players_count_n:"Spieler angemeldet",
     reg_title:"Zum Turnier anmelden",reg_nick:"Chess.com-Benutzername *",
@@ -897,13 +958,25 @@ const T = {
     send_notif_btn:"📤 An alle Abonnenten senden",
     reset_subs_btn:"↺ Alle Abonnements zurücksetzen",
     copy_whatsapp_btn:"📋 Nachricht kopieren",
-    maint_title:"Wartung läuft",
+    maint_title:"Wartung läuft",maint_btn:"🔧 Wartungsmodus",
     maint_text:"Die Website ist vorübergehend nicht verfügbar.<br>Bitte versuchen Sie es in Kürze erneut.",
     maint_admin_access:"Administratorzugang",
     maint_login_btn:"Admin-Anmeldung",
-    rules_title:"Reglement",
-    rules:`<p>🚀 Sieh dir deine Partien im Tab <strong>Partien</strong> an, sobald die Gruppenphase gestartet ist. Sende deinem Gegner eine Einladung auf Chess.com (Benutzername im Tab <strong>Turnier</strong>) oder spiele auf dem Brett. Du kannst mehrere Partien gleichzeitig spielen. Trage das Ergebnis direkt im Tab <strong>Partien</strong> ein.</p><br>
-<p>⏰ Haltet die im Tab Partien angegebenen Fristen ein: auch bei langsamem Tempo, zieht zügig weiter, damit die Partie fristgerecht beendet wird.</p><br>
+    notif_invite_info:"💡 Aktiviere die Benachrichtigungen auf der Turnier-Seite, um nichts zu verpassen.",
+    palmares_empty:"Noch keine Ausgabe erfasst.",
+    palmares_empty_edition:"Keine Rangliste für diese Ausgabe.",
+    palmares_name_required:"Der Name der Ausgabe ist erforderlich.",
+    palmares_edition_added:"✓ Ausgabe hinzugefügt!",
+    palmares_confirm_delete_edition:"Diese Ausgabe und ihre gesamte Rangliste löschen?",palmares_confirm_delete_entry:"{n} aus dieser Rangliste löschen?",palmares_entry_deleted:"✓ {n} gelöscht",palmares_entry_added:"✓ {n} hinzugefügt",palmares_entry_saved:"✓ {n} gespeichert",palmares_validate:"Eingabe bestätigen",
+    palmares_bulk_added:"✓ {n} Spieler hinzugefügt!",
+    palmares_year_placeholder:"Jahr",
+    palmares_delete_edition:"Ausgabe löschen",
+    palmares_pseudo_placeholder:"Chess.com-Benutzername",
+    palmares_name_optional_placeholder:"Name (optional)",
+    palmares_bulk_placeholder:"Ein Spieler pro Zeile: Pseudo-Name, oder nur das Pseudo",
+    palmares_bulk_btn:"➕ Liste hinzufügen",palmares_fill_names_btn:"🔗 Namen ergänzen",palmares_search_ph:"🔎 Spieler suchen…",palmares_player_none:"Kein Spieler gefunden.",palmares_edition:"Ausgabe",palmares_editions:"Ausgaben",palmares_podium:"Podium",palmares_podiums:"Podien",palmares_best:"beste Platzierung:",palmares_of:" von ",palmares_stats_btn:"Spielerstatistiken",palmares_stats_desc:"Alle Teilnehmer, über alle Ausgaben hinweg gewertet.",palmares_ongoing:"laufend",palmares_pick:"Wähle oben ein Turnier.",palmares_no_result_yet:"Noch keine Partie gespielt.",palmares_provisional:"⏳ Vorläufige Rangliste — das Turnier läuft",palmares_qualified:"Qualifiziert",palmares_virtual:"Virtuelle Rangliste",palmares_virtual_desc:"⏳ Wer sich qualifizieren würde, wenn die Gruppenphase jetzt endete",palmares_qualified_desc:"✅ Für die Finalrunden qualifizierte Spieler",palmares_grp:"Gruppe",palmares_player:"Spieler",palmares_players:"Spieler",palmares_format_help:"<b>Ein Spieler pro Zeile, in der Reihenfolge der Rangliste:</b><br><code>Pseudo-Name</code> &nbsp;— ohne Statistik<br><code>Pseudo-Name;S;R;N;S;R;N</code> &nbsp;— mit Statistik<br>Die ersten 3 Zahlen = Siege, Remis, Niederlagen <b>mit Weiß</b> ⬜<br>Die nächsten 3 = Siege, Remis, Niederlagen <b>mit Schwarz</b> ⬛<br>Beispiel: <code>Goudi8-Romain;1;3;1;4;0;1</code><br>Partien und Punkte werden automatisch berechnet.",qual_rg:"Rg",qual_grp:"Gr",qual_ptsm:"Pkt/P",qual_vm:"S/P",qual_vnm:"SS/P",qual_tbm:"TB/P",qual_seed:"Setz",qual_legend:"Tiebreak in dieser Reihenfolge: Pkt/P (Punkte pro Partie) → S/P (Siege pro Partie) → SS/P (Siege mit Schwarz pro Partie) → TB/P (Buchholz pro Partie) → Setzrang. Rg = Rang in der Gruppe.",palmares_pts:"Pkt",palmares_m:"P",palmares_v:"S",palmares_n:"R",palmares_d:"N",palmares_white:"Weiß",palmares_black:"Schwarz",palmares_total:"Gesamt",palmares_on:"von",palmares_names_filled:"✓ {n} Name(n) ergänzt!",palmares_no_name_found:"Keine Namen zu ergänzen.",
+    rules:`<p>🚀 Sieh dir deine Partien im Tab <strong>Partien</strong> an, sobald die Gruppenphase gestartet ist. Sende deinem Gegner eine Einladung auf Chess.com (Benutzername im Tab <strong>Turnier</strong>) oder spiele auf dem Brett. Trage das Ergebnis direkt im Tab <strong>Partien</strong> ein.</p><br>
+<p>⏰ <strong>Beginnt eure Partien gleich zu Turnierbeginn</strong> und beendet sie vor der bei jeder Partie angezeigten Frist. Ihr dürft mehrere Partien parallel spielen, aber <strong>haltet die Reihenfolge der Runden ein</strong>: spielt zuerst die Partien mit der nächstliegenden Frist. Auch bei langsamem Tempo: zieht zügig weiter, um fristgerecht fertig zu werden.</p><br>
 <p>Format: Round-Robin-Gruppen, dann K.o.-Finalrunden.</p><br>
 <p>Punkte: 1 (Sieg) · 0.5 (Remis) · 0 (Niederlage)</p><br>
 <p>Tiebreak Gruppen: ① Punkte ② Siege ③ Siege mit Schwarz ④ Direkter Vergleich ⑤ Setzrang</p><p>Globaler Tiebreak (Finalisten): ① Punkte/Partie ② Siege/Partie ③ Siege Schwarz/Partie ④ Buchholz/Partie ⑤ Setzrang</p><br>
@@ -911,7 +984,7 @@ const T = {
 <p>⛔ Verboten: Analyse, bedingte Züge auf Chess.com. Max. 24h/Zug, kein Urlaubsmodus.</p><br>
 <p>Schiedsrichter: Bei Streitigkeiten entscheidet der Organisator. Fair Play wird erwartet.</p>`,
     groups_empty:"Gruppen wurden noch nicht festgelegt.",
-    rank_player:"Spieler",rank_pts:"Pkt",rank_mj:"GP",rank_v:"S",rank_vn:"SS",rank_tb:"TB",
+    rank_player:"Spieler",rank_pts:"Pkt",rank_mj:"GP",rank_v:"S",rank_vn:"SS",
     rank_legend:"Pkt·Punkte GP·Gespielte Partien S·Siege SS·Siege mit Schwarz TB·Buchholz",
     matches_all:"Alle",matches_pending:"Ausstehend",matches_done:"Beendet",matches_empty:"Keine Partien erstellt.",
     enter_score:"Ergebnis eintragen",whites:"⬜ Weiß",blacks:"⬛ Schwarz",
@@ -919,29 +992,28 @@ const T = {
     admin_title:"Administrator-Zugang",admin_pin:"PIN-Code",admin_login_btn:"Anmelden",
     admin_pin_hint:"Erste Verwendung? Erstellen Sie jetzt Ihren PIN.",admin_pin_err:"Falscher PIN.",
     admin_logout:"Abmelden",
-    subtab_settings:"Einstellungen",subtab_players:"Spieler",subtab_seeding:"Gruppen",subtab_actions:"Aktionen",
+    subtab_settings:"Einstellungen",subtab_players:"Spieler",subtab_notifs:"Mitteil.",subtab_actions:"Turnier",
     subtab_ranking:"Rangliste",
     ranking_title:"Globale Rangliste",
-    settings_title:"Turniereinstellungen",set_name:"Turniername",set_reg_deadline:"Anmeldeschluss",reg_deadline_until:"Bis zum",set_ppg:"Spieler pro Gruppe",set_fin:"Anzahl Finalisten",set_status:"Status",
+    settings_title:"Turniereinstellungen",set_name:"Turniername",set_reg_deadline:"Anmeldeschluss",reg_deadline_until:"Bis zum",set_ppg:"Spieler pro Gruppe",set_fin:"Anzahl Finalisten",
     set_pool_start:"Startdatum Gruppenphase",set_pool_interval:"Intervall zwischen Gruppenrunden (Tage)",
     set_finals_start:"Startdatum Finalrunden",set_finals_interval:"Intervall zwischen Finalrunden (Tage)",
-    status_opt_reg:"Anmeldung offen",status_opt_play:"Gruppenphase",status_opt_fin:"Finalphase",status_opt_done:"Beendet",
-    save_settings:"Speichern",settings_saved:"Gespeichert!",
+    save_settings:"Speichern",
     seeding_title:"Setzliste & Gruppen",seeding_desc:"Spieler nach Stärke sortieren. Schlangenverteilung für ausgeglichene Gruppen.",
     assign_btn:"Gruppen zuweisen & Partien erstellen",seeding_done:[" Gruppen erstellt, "," Partien generiert."],
     finalists_title:"Qualifizierte Finalisten",actions_title:"Aktionen",
     launch_finals:"🏆 Finalrunden starten",reset_scores:"↺ Ergebnisse zurücksetzen",reset_all:"⚠️ Turnier zurücksetzen",
-    confirm_reset_scores_title:"Ergebnisse zurücksetzen?",confirm_reset_scores_text:"Alle Gruppenpartie-Ergebnisse werden gelöscht.",
-    confirm_reset_all_title:"Turnier zurücksetzen?",confirm_reset_all_text:"Alle Spieler, Partien und Ergebnisse werden dauerhaft gelöscht.",
+    confirm_reset_scores_title:"Ergebnisse zurücksetzen?",confirm_reset_scores_text:"❌ GELÖSCHT: die Ergebnisse der Gruppenpartien.\n✅ BEHALTEN: Spieler, Gruppen, die Partien selbst (mit Farben und Fristen) und das Finaltableau.",
+    confirm_reset_all_title:"Turnier zurücksetzen?",confirm_reset_all_text:"❌ GELÖSCHT: Spieler, Gruppen, Partien, Ergebnisse, Finalrunden und Turniereinstellungen.\n✅ BEHALTEN: die SIEGERLISTE (alle vergangenen Ausgaben), der PIN, das Admin-Gerät und die Benachrichtigungseinstellungen.\n\nDanach wird angeboten, die aktuelle Rangliste in der Siegerliste zu archivieren.",
     confirm_send_notif_title:"Benachrichtigung senden?",confirm_send_notif_text:"Diese Nachricht wird an alle Abonnenten gesendet.",
     confirm_reset_subs_title:"Alle Benachrichtigungsabonnements zurücksetzen?",
     confirm_reset_subs_text:"Alle Benachrichtigungsabonnements werden gelöscht. Noch gültige kommen automatisch zurück, sobald das jeweilige Gerät die App wieder öffnet — die anderen bleiben endgültig entfernt.",
     confirm_ok:"Bestätigen",confirm_cancel:"Abbrechen",
     finals_launched:["Finalrunden gestartet mit "," Finalisten!"],not_enough_finalists:"Nicht genug qualifizierte Finalisten.",
     scores_reset:"Ergebnisse zurückgesetzt.",tournament_reset:"Turnier zurückgesetzt.",
-    no_matches:"Keine Partien gespielt.",group_rank:"Rang",group_grp:"Grp",pts_per_match:"Pkt/P",
+    no_matches:"Keine Partien gespielt.",
     pool_reminder_title:"🚀 Gruppenphase gestartet!",
-    pool_reminder_text:"Sieh dir deine Partien im Tab Partien an. Sende deinem Gegner eine Einladung auf Chess.com (Benutzername im Tab Turnier sichtbar) oder spiele auf dem physischen Brett. Du kannst mehrere Partien gleichzeitig spielen. Trage das Ergebnis direkt im Tab Partien ein.",
+    pool_reminder_text:"Sieh dir deine Partien im Tab Partien an. Sende deinem Gegner eine Einladung auf Chess.com (Benutzername im Tab Turnier) oder spiele auf dem Brett. Trage das Ergebnis direkt nach jeder Partie ein.\n\n⏰ Beginnt sofort und beendet vor der bei jeder Partie angezeigten Frist. Ihr dürft mehrere Partien parallel spielen, aber spielt zuerst Runde 1, dann 2, usw. — die nächstliegenden Fristen zuerst.",
     install_btn:"📲 App installieren",install_title:"App installieren",
     install_android:["Link in Chrome öffnen","Menü ⋮ oben rechts antippen","Zum Startbildschirm hinzufügen wählen","Hinzufügen antippen"],
     install_ios:["Link in Safari öffnen (nicht Chrome)","Teilen-Symbol antippen (Quadrat mit Pfeil ↑)","Zum Home-Bildschirm wählen","Oben rechts auf Hinzufügen tippen"],
@@ -951,15 +1023,15 @@ const T = {
     late_badge:"⏰ Verspätet",
     due_by:"📅 Fällig bis",
     late_match:"⏰ Partie verspätet",
-    color_choice:"wählt die Farbe",
+    color_choice:"wählt die Farbe",color_pick:"— Farbe —",color_required:"Wähle deine Farbe, bevor du das Ergebnis bestätigst.",
     presential:"Präsenz",
-    current_phase:"Aktuelle Phase: ",
     late_msg:"Einige Partien sind verspätet, spielen Sie schnell!",
     pending_msg:"Einige Partien sind noch ausstehend, bitte spielen Sie schnell!",
     notif_unsupported:"Benachrichtigungen nicht unterstützt.",
     notif_denied:"Berechtigung verweigert. Öffne die Website-Einstellungen (🔒 in der Adressleiste) → Berechtigungen → Benachrichtigungen → Zulassen, dann lade die Seite neu.",
     notif_denied_pwa:"Berechtigung verweigert. Gehe zu Einstellungen → Apps → dein Browser → Benachrichtigungen, und erlaube diese Seite. Dann öffne die App erneut.",
-    notif_on:"🔔 Benachrichtigungen deaktivieren",
+    notif_on:"🔔 Benachrichtigungen aktiviert",
+    notif_disable_btn:"🔕 Benachrichtigungen deaktivieren",
     notif_off:"🔕 Benachrichtigungen aktivieren",
     pref_officiel:"📢 Offizielle Ankündigungen",
     pref_match:"⚔️ Spielergebnisse",
@@ -981,24 +1053,21 @@ const T = {
     nick_taken:"Dieser Spitzname ist bereits vergeben.",
     groups_reset:"Gruppen zurückgesetzt. Spieler bleiben erhalten.",
     finals_reset:"Finalrunden zurückgesetzt.",
-    scores_reset_ok:"Ergebnisse zurückgesetzt.",
-    tournament_reset:"Turnier zurückgesetzt.",
     saved_ok:"Gespeichert!",
     seed_saved:"✓ Reihenfolge gespeichert",
     groups_created:" Gruppen erstellt, ",
     matches_generated:" Partien generiert.",
     seeding_done:[" Gruppen erstellt, "," Partien generiert."],
     confirm_reset_finals_title:"Finalrunden zurücksetzen?",
-    confirm_reset_finals_text:"Das Bracket wird gelöscht. Status kehrt zur Gruppenphase zurück.",
+    confirm_reset_finals_text:"❌ GELÖSCHT: das Finalturnier-Tableau.\n✅ BEHALTEN: Spieler, Gruppen, Gruppenpartien und deren Ergebnisse.\n\nDas Turnier kehrt zur Gruppenphase zurück.",
     confirm_reset_groups_title:"Gruppen zurücksetzen?",
-    confirm_reset_groups_text:"Gruppen und alle Partien werden gelöscht. Spieler bleiben erhalten.",
-    pool_reminder_title:"🚀 Gruppenphase gestartet!",
-    pool_reminder_text:"Sieh dir deine Partien im Tab Partien an. Sende deinem Gegner eine Einladung auf Chess.com (Benutzername im Tab Turnier) oder spiele auf dem Brett. Du kannst mehrere Partien gleichzeitig spielen. Trage das Ergebnis direkt im Tab Partien ein.",
-    tbd:"?",winner:"🏆 Sieger"
+    confirm_reset_groups_text:"❌ GELÖSCHT: die Gruppen, ALLE Gruppenpartien mit Ergebnissen und das Finaltableau.\n✅ BEHALTEN: die angemeldeten Spieler und ihre Setzreihenfolge.\n\nDas Turnier kehrt zur Anmeldephase zurück.",
+    winner:"🏆 Sieger",
   },
   en:{
-    loading:"Loading...",offline:"⚠️ Offline — data not syncing",
-    tab_home:"Tournament",tab_groups:"Groups",tab_matches:"Matches",tab_finals:"Finals",tab_admin:"Admin",
+    loading:"Loading...",offline:"⚠️ Offline — data not syncing",pin_current:"Current PIN",reg_closed:"Registration is closed.",pin_new:"New PIN",pin_confirm:"Confirm",set_semis:"Semi-finals format",set_final:"Final format",whatsapp_title:"📲 WhatsApp reminder",save_seed:"💾 Save",
+    tab_home:"Tournament",tab_groups:"Groups",tab_matches:"Matches",tab_finals:"Finals",
+    tab_info:"Info",confirm_archive_before_reset:"Archive the current ranking to the hall of fame before resetting?\n\nOK = archive then reset\nCancel = reset without archiving",palmares_admin_title:"🏅 Hall of fame",palmares_edition_name_placeholder:"Edition name",info_rules_btn:"📜 Rules",info_palmares_btn:"🏅 Hall of fame",info_ranking_btn:"📊 Overall ranking",live_rank_title:"Live overall ranking",live_rank_qualified_title:"Qualified players",info_admin_btn:"⚙️ Admin",info_rules_title:"Rules",info_palmares_title:"Hall of fame",
     status_registration:"Registration open",status_playing:"Group stage",status_finals:"Final stage",status_finished:"Finished",
     players_count_1:"player registered",players_count_n:"players registered",
     reg_title:"Register for the tournament",reg_nick:"Chess.com username *",
@@ -1021,13 +1090,27 @@ const T = {
     send_notif_btn:"📤 Send to all subscribers",
     reset_subs_btn:"↺ Reset all subscriptions",
     copy_whatsapp_btn:"📋 Copy message",
-    maint_title:"Maintenance in progress",
+    maint_title:"Maintenance in progress",maint_btn:"🔧 Maintenance mode",
     maint_text:"The site is temporarily unavailable.<br>Please check back shortly.",
     maint_admin_access:"Administrator access",
     maint_login_btn:"Admin login",
-    rules_title:"Rules",
-    rules:`<p>🚀 Check the <strong>Matches</strong> tab to see your games when the group stage starts. Send an invitation to your opponent on Chess.com (username in the <strong>Tournament</strong> tab) or play on a physical board. You can play multiple games at once. Enter the result directly in the <strong>Matches</strong> tab.</p><br>
-<p>⏰ Respect the deadlines shown in the Matches tab: even at a slow pace, keep making your moves so the game finishes within the allotted time.</p><br>
+    subtab_ranking:"Ranking",
+    ranking_title:"Global ranking",
+    notif_invite_info:"💡 Remember to turn on notifications on the Tournament page so you don't miss anything.",
+    palmares_empty:"No edition recorded yet.",
+    palmares_empty_edition:"No ranking for this edition.",
+    palmares_name_required:"The edition name is required.",
+    palmares_edition_added:"✓ Edition added!",
+    palmares_confirm_delete_edition:"Delete this edition and its whole ranking?",palmares_confirm_delete_entry:"Remove {n} from this ranking?",palmares_entry_deleted:"✓ {n} removed",palmares_entry_added:"✓ {n} added",palmares_entry_saved:"✓ {n} saved",palmares_validate:"Confirm entry",
+    palmares_bulk_added:"✓ {n} players added!",
+    palmares_year_placeholder:"Year",
+    palmares_delete_edition:"Delete edition",
+    palmares_pseudo_placeholder:"Chess.com username",
+    palmares_name_optional_placeholder:"Name (optional)",
+    palmares_bulk_placeholder:"One player per line: username-Name, or just the username",
+    palmares_bulk_btn:"➕ Add the list",palmares_fill_names_btn:"🔗 Find names",palmares_search_ph:"🔎 Search a player…",palmares_player_none:"No player found.",palmares_edition:"edition",palmares_editions:"editions",palmares_podium:"podium",palmares_podiums:"podiums",palmares_best:"best rank:",palmares_of:" of ",palmares_stats_btn:"Player statistics",palmares_stats_desc:"Every player who took part, ranked across all editions.",palmares_ongoing:"ongoing",palmares_pick:"Pick a tournament above.",palmares_no_result_yet:"No match played yet.",palmares_provisional:"⏳ Provisional ranking — tournament in progress",palmares_qualified:"Qualified",palmares_virtual:"Virtual ranking",palmares_virtual_desc:"⏳ Who would qualify if the group stage ended now",palmares_qualified_desc:"✅ Players qualified for the final stages",palmares_grp:"group",palmares_player:"player",palmares_players:"players",palmares_format_help:"<b>One player per line, in ranking order:</b><br><code>username-Name</code> &nbsp;— without stats<br><code>username-Name;W;D;L;W;D;L</code> &nbsp;— with stats<br>First 3 numbers = wins, draws, losses <b>with White</b> ⬜<br>Next 3 = wins, draws, losses <b>with Black</b> ⬛<br>Example: <code>Goudi8-Romain;1;3;1;4;0;1</code><br>Games played and points are calculated automatically.",qual_rg:"Rk",qual_grp:"Grp",qual_ptsm:"Pts/G",qual_vm:"W/G",qual_vnm:"BW/G",qual_tbm:"TB/G",qual_seed:"Seed",qual_legend:"Tiebreak order: Pts/G (points per game) → W/G (wins per game) → BW/G (wins with Black per game) → TB/G (Buchholz per game) → Seed. Rk = rank within the group.",palmares_pts:"pts",palmares_m:"m",palmares_v:"W",palmares_n:"D",palmares_d:"L",palmares_white:"White",palmares_black:"Black",palmares_total:"Total",palmares_on:"of",palmares_names_filled:"✓ {n} name(s) found!",palmares_no_name_found:"No names to fill in.",
+    rules:`<p>🚀 Check the <strong>Matches</strong> tab to see your games when the group stage starts. Send an invitation to your opponent on Chess.com (username in the <strong>Tournament</strong> tab) or play on a physical board. Enter the result directly in the <strong>Matches</strong> tab.</p><br>
+<p>⏰ <strong>Start your games as soon as the tournament begins</strong> and finish them before the deadline shown on each match. You may play several games in parallel, but <strong>respect the order of the rounds</strong>: deal first with those whose deadline is closest. Even at a slow pace, keep making your moves so you finish on time.</p><br>
 <p>Format: Round-robin groups, then knockout finals.</p><br>
 <p>Scores: 1 (win) · 0.5 (draw) · 0 (loss)</p><br>
 <p>Group tiebreak: ① Points ② Wins ③ Wins with Black ④ Head-to-head ⑤ Seed</p><p>Global tiebreak (finalists): ① Points/game ② Wins/game ③ Black wins/game ④ Buchholz/game ⑤ Seed</p><br>
@@ -1038,15 +1121,15 @@ const T = {
     late_badge:"⏰ Late",
     due_by:"📅 Due by",
     late_match:"⏰ Match overdue",
-    color_choice:"chooses color",
+    color_choice:"chooses color",color_pick:"— colour —",color_required:"Choose your colour before confirming the score.",
     presential:"In-person",
-    current_phase:"Current phase: ",
     late_msg:"Some matches are overdue, please play quickly!",
     pending_msg:"Some matches are still pending, please organize your games quickly!",
     notif_unsupported:"Notifications not supported on this browser.",
     notif_denied:"Permission denied. Open site settings (🔒 in address bar) → Permissions → Notifications → Allow, then reload the page.",
     notif_denied_pwa:"Permission denied. Go to your phone's Settings → Apps → your browser → Notifications, and allow this site. Then reopen the app.",
-    notif_on:"🔔 Disable notifications",
+    notif_on:"🔔 Notifications enabled",
+    notif_disable_btn:"🔕 Disable notifications",
     notif_off:"🔕 Enable notifications",
     pref_officiel:"📢 Official announcements",
     pref_match:"⚔️ Match results",
@@ -1059,7 +1142,6 @@ const T = {
     notif_sent:"✓ Notification saved!",
     notif_subscriber:" subscriber",
     notif_subscribers:" subscribers",
-    pin_section:"Change PIN",
     pin_wrong:"Incorrect current PIN.",
     pin_mismatch:"The new PINs don't match.",
     pin_short:"PIN too short (min. 4 characters).",
@@ -1067,22 +1149,18 @@ const T = {
     nick_taken:"This nickname is already taken.",
     groups_reset:"Groups reset. Players are kept.",
     finals_reset:"Final stage reset.",
-    scores_reset_ok:"Scores reset.",
-    tournament_reset:"Tournament reset.",
-    current_phase:"Current phase: ",
     pin_section:"Change PIN",
-    tournament_reset_ok:"Tournament reset.",
     saved_ok:"Saved!",
     seed_saved:"✓ Order saved",
     groups_created:" Gruppen erstellt, ",
     matches_generated:" Partien generiert.",
     seeding_done:[" Gruppen erstellt, "," Partien generiert."],
     confirm_reset_finals_title:"Reset final stage?",
-    confirm_reset_finals_text:"The bracket will be cleared. Status returns to group stage.",
+    confirm_reset_finals_text:"❌ ERASED: the finals bracket.\n✅ KEPT: players, groups, group matches and their scores.\n\nThe tournament returns to the group stage.",
     confirm_reset_groups_title:"Reset groups?",
-    confirm_reset_groups_text:"Groups and all matches will be deleted. Registered players are kept.",
+    confirm_reset_groups_text:"❌ ERASED: the groups, ALL group matches with their scores, and the finals bracket.\n✅ KEPT: registered players and their seed order.\n\nThe tournament returns to the registration phase.",
     groups_empty:"Groups have not been set up yet.",
-    rank_player:"Player",rank_pts:"Pts",rank_mj:"MP",rank_v:"W",rank_vn:"BW",rank_tb:"TB",
+    rank_player:"Player",rank_pts:"Pts",rank_mj:"MP",rank_v:"W",rank_vn:"BW",
     rank_legend:"Pts·Points MP·Matches played W·Wins BW·Wins with Black TB·Buchholz",
     matches_all:"All",matches_pending:"To play",matches_done:"Finished",matches_empty:"No matches generated.",
     enter_score:"Enter score",whites:"⬜ White",blacks:"⬛ Black",
@@ -1090,38 +1168,38 @@ const T = {
     admin_title:"Administrator access",admin_pin:"PIN code",admin_login_btn:"Login",
     admin_pin_hint:"First time? Create your PIN now.",admin_pin_err:"Incorrect PIN.",
     admin_logout:"Logout",
-    subtab_settings:"Settings",subtab_players:"Players",subtab_seeding:"Groups",subtab_actions:"Actions",
-    settings_title:"Tournament settings",set_name:"Tournament name",set_reg_deadline:"Registration closing date",reg_deadline_until:"Until",set_ppg:"Players per group",set_fin:"Number of finalists",set_status:"Status",
+    subtab_settings:"Settings",subtab_players:"Players",subtab_notifs:"Notifs",subtab_actions:"Tournament",
+    settings_title:"Tournament settings",set_name:"Tournament name",set_reg_deadline:"Registration closing date",reg_deadline_until:"Until",set_ppg:"Players per group",set_fin:"Number of finalists",
     set_pool_start:"Pool stage start date",set_pool_interval:"Interval between pool rounds (days)",
     set_finals_start:"Finals start date",set_finals_interval:"Interval between final rounds (days)",
-    status_opt_reg:"Registration open",status_opt_play:"Group stage",status_opt_fin:"Final stage",status_opt_done:"Finished",
-    save_settings:"Save",settings_saved:"Saved!",
+    save_settings:"Save",
     seeding_title:"Seeding & groups",seeding_desc:"Sort players by strength. Snake distribution for balanced groups.",
     assign_btn:"Assign to groups & generate matches",seeding_done:[" groups created, "," matches generated."],
     finalists_title:"Qualified finalists",actions_title:"Actions",
     launch_finals:"🏆 Launch final stage",reset_scores:"↺ Reset scores",reset_all:"⚠️ Reset tournament",
-    confirm_reset_scores_title:"Reset scores?",confirm_reset_scores_text:"All group stage results will be erased.",
-    confirm_reset_all_title:"Reset tournament?",confirm_reset_all_text:"All players, matches and results will be permanently deleted.",
+    confirm_reset_scores_title:"Reset scores?",confirm_reset_scores_text:"❌ ERASED: the group match scores.\n✅ KEPT: players, groups, the matches themselves (with their colours and deadlines), and the finals bracket.",
+    confirm_reset_all_title:"Reset tournament?",confirm_reset_all_text:"❌ ERASED: players, groups, matches, scores, finals and tournament settings.\n✅ KEPT: the HALL OF FAME (all past editions), the PIN, the admin device and notification settings.\n\nYou will then be offered to archive the current ranking to the hall of fame.",
     confirm_send_notif_title:"Send notification?",confirm_send_notif_text:"This message will be sent to all notification subscribers.",
     confirm_reset_subs_title:"Reset all notification subscriptions?",
     confirm_reset_subs_text:"All notification subscriptions will be deleted. Still-valid ones will automatically come back as each device reopens the app — the rest will stay gone for good.",
     confirm_ok:"Confirm",confirm_cancel:"Cancel",
     finals_launched:["Final stage launched with "," finalists!"],not_enough_finalists:"Not enough qualified finalists.",
     scores_reset:"Scores reset.",tournament_reset:"Tournament reset.",
-    no_matches:"No matches played.",group_rank:"Rank",group_grp:"Grp",pts_per_match:"Pts/M",
+    no_matches:"No matches played.",
     pool_reminder_title:"🚀 Group stage launched!",
-    pool_reminder_text:"Check the Matches tab to see your games. Send an invitation to your opponent on Chess.com (username visible in the Tournament tab) or play on a physical board. You can play multiple games at the same time. Enter the result directly in the Matches tab.",
+    pool_reminder_text:"Check the Matches tab to see your games. Send an invitation to your opponent on Chess.com (username in the Tournament tab) or play on a physical board. Enter the result as soon as each game ends.\n\n⏰ Start now and finish before the deadline shown on each match. You may play several games in parallel, but handle round 1 first, then 2, and so on — closest deadlines first.",
     install_btn:"📲 Install app",install_title:"Install the app",
     install_android:["Open in Chrome","Tap the ⋮ menu (3 dots top right)","Select: Add to Home screen","Tap Add — icon appears on your screen"],
     install_ios:["Open in Safari (not Chrome)","Tap Share icon (square with arrow ↑)","Select: Add to Home Screen","Tap Add in the top right"],
     install_close:"Close",install_now:"📲 Install now",
     rules_full:"<h3 style=\"color:var(--gold);margin:16px 0 6px\">1. Format</h3>\n<p>All players are divided into groups. Each player faces every other player in their group once (round-robin). The number of groups and qualifiers is set by the organizer.</p>\n<h3 style=\"color:var(--gold);margin:16px 0 6px\">2. Scoring</h3>\n<p>1 point for a win \u00b7 0.5 for a draw \u00b7 0 for a loss.</p>\n<p>Each player is responsible for entering their score immediately after the game.</p>\n<h3 style=\"color:var(--gold);margin:16px 0 6px\">3. Tiebreak</h3>\n<p>In case of equal points: \u2460 Points \u00b7 \u2461 Total wins \u00b7 \u2462 Wins with Black \u00b7 \u2463 Buchholz \u00b7 \u2464 Head-to-head</p>\n<h3 style=\"color:var(--gold);margin:16px 0 6px\">4. Finals</h3>\n<p>Group winners qualify directly to the advanced round. Runners-up and best third-place finishers play a preliminary round to join them.</p>\n<p>The higher-ranked finalist chooses their color. In case of a draw, the game is replayed with colors swapped.</p>\n<h3 style=\"color:var(--gold);margin:16px 0 6px\">5. Game Rules</h3>\n<p>Games are played on a physical board or Chess.com. The Chess.com username must match the one provided at registration.</p>\n<p>Free time control, maximum <strong>24h per move</strong>. No vacation mode or time extension without mutual agreement.</p>\n<p>\u26d4 Forbidden: analysis board, conditional moves on Chess.com.</p>\n<p>If a player loses on time unintentionally, resumption is only possible with the opponent's agreement. Repeated offences result in a forfeit.</p>\n<h3 style=\"color:var(--gold);margin:16px 0 6px\">6. Fair Play & Arbitration</h3>\n<p>Fair play is expected from all participants. In case of dispute, the organizer's decision is final. Serious misconduct may result in disqualification.</p>",
     notif_install_hint:"Install the app on your home screen to enable notifications.",
-    tbd:"?",winner:"🏆 Winner"
+    winner:"🏆 Winner",
   },
   it:{
-    loading:"Caricamento...",offline:"⚠️ Offline — dati non sincronizzati",
-    tab_home:"Torneo",tab_groups:"Gruppi",tab_matches:"Partite",tab_finals:"Finali",tab_admin:"Admin",
+    loading:"Caricamento...",offline:"⚠️ Offline — dati non sincronizzati",pin_current:"PIN attuale",reg_closed:"Le iscrizioni sono chiuse.",pin_new:"Nuovo PIN",pin_confirm:"Confermare",set_semis:"Formato semifinali",set_final:"Formato finale",whatsapp_title:"📲 Promemoria WhatsApp",save_seed:"💾 Salvare",
+    tab_home:"Torneo",tab_groups:"Gruppi",tab_matches:"Partite",tab_finals:"Finali",
+    tab_info:"Info",confirm_archive_before_reset:"Archiviare la classifica attuale nell'albo d'oro prima di azzerare?\n\nOK = archiviare e azzerare\nAnnulla = azzerare senza archiviare",palmares_admin_title:"🏅 Albo d'oro",palmares_edition_name_placeholder:"Nome dell'edizione",info_rules_btn:"📜 Regolamento",info_palmares_btn:"🏅 Albo d'oro",info_ranking_btn:"📊 Classifica generale",live_rank_title:"Classifica generale in diretta",live_rank_qualified_title:"Giocatori qualificati",info_admin_btn:"⚙️ Admin",info_rules_title:"Regolamento",info_palmares_title:"Albo d'oro",
     status_registration:"Iscrizioni aperte",status_playing:"Fase a gironi",status_finals:"Fase finale",status_finished:"Terminato",
     players_count_1:"giocatore iscritto",players_count_n:"giocatori iscritti",
     reg_title:"Iscriversi al torneo",reg_nick:"Nome utente Chess.com *",
@@ -1144,13 +1222,25 @@ const T = {
     send_notif_btn:"📤 Inviare a tutti gli iscritti",
     reset_subs_btn:"↺ Azzerare tutti gli abbonamenti",
     copy_whatsapp_btn:"📋 Copiare il messaggio",
-    maint_title:"Manutenzione in corso",
+    maint_title:"Manutenzione in corso",maint_btn:"🔧 Modalità manutenzione",
     maint_text:"Il sito è temporaneamente non disponibile.<br>Riprova tra qualche istante.",
     maint_admin_access:"Accesso amministratore",
     maint_login_btn:"Accesso admin",
-    rules_title:"Regolamento",
-    rules:`<p>🚀 Consulta la scheda <strong>Partite</strong> per vedere le tue partite non appena inizia la fase a gironi. Invia un invito al tuo avversario su Chess.com (nome utente nella scheda <strong>Torneo</strong>) o gioca su una scacchiera. Puoi giocare più partite contemporaneamente. Inserisci il risultato nella scheda <strong>Partite</strong>.</p><br>
-<p>⏰ Rispettate le scadenze indicate nella scheda Partite: anche con un ritmo lento, continuate a muovere affinché la partita termini entro i tempi previsti.</p><br>
+    notif_invite_info:"💡 Ricordati di attivare le notifiche nella pagina Torneo per non perdere nulla.",
+    palmares_empty:"Nessuna edizione registrata per ora.",
+    palmares_empty_edition:"Nessuna classifica per questa edizione.",
+    palmares_name_required:"Il nome dell'edizione è obbligatorio.",
+    palmares_edition_added:"✓ Edizione aggiunta!",
+    palmares_confirm_delete_edition:"Eliminare questa edizione e tutta la sua classifica?",palmares_confirm_delete_entry:"Eliminare {n} da questa classifica?",palmares_entry_deleted:"✓ {n} eliminato",palmares_entry_added:"✓ {n} aggiunto",palmares_entry_saved:"✓ {n} salvato",palmares_validate:"Confermare l'inserimento",
+    palmares_bulk_added:"✓ {n} giocatori aggiunti!",
+    palmares_year_placeholder:"Anno",
+    palmares_delete_edition:"Eliminare l'edizione",
+    palmares_pseudo_placeholder:"Nome utente Chess.com",
+    palmares_name_optional_placeholder:"Nome (facoltativo)",
+    palmares_bulk_placeholder:"Un giocatore per riga: nomeutente-Nome, o solo il nome utente",
+    palmares_bulk_btn:"➕ Aggiungi la lista",palmares_fill_names_btn:"🔗 Ritrovare i nomi",palmares_search_ph:"🔎 Cercare un giocatore…",palmares_player_none:"Nessun giocatore trovato.",palmares_edition:"edizione",palmares_editions:"edizioni",palmares_podium:"podio",palmares_podiums:"podi",palmares_best:"miglior posizione:",palmares_of:" su ",palmares_stats_btn:"Statistiche giocatori",palmares_stats_desc:"Tutti i partecipanti, classificati su tutte le edizioni.",palmares_ongoing:"in corso",palmares_pick:"Scegli un torneo qui sopra.",palmares_no_result_yet:"Nessuna partita ancora giocata.",palmares_provisional:"⏳ Classifica provvisoria — torneo in corso",palmares_qualified:"Qualificati",palmares_virtual:"Classifica virtuale",palmares_virtual_desc:"⏳ Chi si qualificherebbe se i gironi finissero ora",palmares_qualified_desc:"✅ Giocatori qualificati per le fasi finali",palmares_grp:"girone",palmares_player:"giocatore",palmares_players:"giocatori",palmares_format_help:"<b>Un giocatore per riga, in ordine di classifica:</b><br><code>nomeutente-Nome</code> &nbsp;— senza statistiche<br><code>nomeutente-Nome;V;P;S;V;P;S</code> &nbsp;— con statistiche<br>I primi 3 numeri = vittorie, patte, sconfitte <b>con i Bianchi</b> ⬜<br>I 3 successivi = vittorie, patte, sconfitte <b>con i Neri</b> ⬛<br>Esempio: <code>Goudi8-Romain;1;3;1;4;0;1</code><br>Partite e punti si calcolano automaticamente.",qual_rg:"Pos",qual_grp:"Gir",qual_ptsm:"Pt/P",qual_vm:"V/P",qual_vnm:"VN/P",qual_tbm:"TB/P",qual_seed:"Testa",qual_legend:"Spareggio nell'ordine: Pt/P (punti per partita) → V/P (vittorie per partita) → VN/P (vittorie con i Neri per partita) → TB/P (Buchholz per partita) → testa di serie. Pos = posizione nel girone.",palmares_pts:"pt",palmares_m:"p",palmares_v:"V",palmares_n:"P",palmares_d:"S",palmares_white:"Bianchi",palmares_black:"Neri",palmares_total:"Totale",palmares_on:"su",palmares_names_filled:"✓ {n} nome(i) ritrovato(i)!",palmares_no_name_found:"Nessun nome da ritrovare.",
+    rules:`<p>🚀 Consulta la scheda <strong>Partite</strong> per vedere le tue partite non appena inizia la fase a gironi. Invia un invito al tuo avversario su Chess.com (nome utente nella scheda <strong>Torneo</strong>) o gioca su una scacchiera. Inserisci il risultato nella scheda <strong>Partite</strong>.</p><br>
+<p>⏰ <strong>Iniziate le vostre partite fin dall'inizio del torneo</strong> e concludetele entro la scadenza indicata su ogni partita. Potete giocare più partite in parallelo, ma <strong>rispettate l'ordine dei turni</strong>: affrontate per prime quelle con la scadenza più vicina. Anche con un ritmo lento, continuate a muovere per finire nei tempi.</p><br>
 <p>Formato: Gironi round-robin, poi fasi finali ad eliminazione diretta.</p><br>
 <p>Punteggi: 1 (vittoria) · 0.5 (patta) · 0 (sconfitta)</p><br>
 <p>Spareggio gironi: ① Punti ② Vittorie ③ Vittorie con il Nero ④ Scontro diretto ⑤ Testa di serie</p><p>Spareggio globale (finalisti): ① Punti/partita ② Vittorie/partita ③ Vittorie Nero/partita ④ Buchholz/partita ⑤ Testa di serie</p><br>
@@ -1161,15 +1251,15 @@ const T = {
     late_badge:"⏰ Ritardo",
     due_by:"📅 Scadenza:",
     late_match:"⏰ Partita in ritardo",
-    color_choice:"sceglie il colore",
+    color_choice:"sceglie il colore",color_pick:"— colore —",color_required:"Scegli il tuo colore prima di confermare il risultato.",
     presential:"Presenza",
-    current_phase:"Fase attuale: ",
     late_msg:"Alcune partite sono in ritardo, giocare rapidamente!",
     pending_msg:"Alcune partite sono ancora in attesa, organizzate le vostre partite rapidamente!",
     notif_unsupported:"Notifiche non supportate su questo browser.",
     notif_denied:"Autorizzazione negata. Apri le impostazioni del sito (🔒 nella barra degli indirizzi) → Autorizzazioni → Notifiche → Consenti, poi ricarica la pagina.",
     notif_denied_pwa:"Autorizzazione negata. Vai nelle Impostazioni del telefono → App → il tuo browser → Notifiche, e consenti questo sito. Poi riapri l'app.",
-    notif_on:"🔔 Disattivare le notifiche",
+    notif_on:"🔔 Notifiche attivate",
+    notif_disable_btn:"🔕 Disattivare le notifiche",
     notif_off:"🔕 Attivare le notifiche",
     pref_officiel:"📢 Annunci ufficiali",
     pref_match:"⚔️ Risultati delle partite",
@@ -1182,7 +1272,6 @@ const T = {
     notif_sent:"✓ Notifica salvata!",
     notif_subscriber:" abbonato",
     notif_subscribers:" abbonati",
-    pin_section:"Modificare il PIN",
     pin_wrong:"PIN attuale errato.",
     pin_mismatch:"I nuovi PIN non corrispondono.",
     pin_short:"PIN troppo corto (min. 4 caratteri).",
@@ -1190,22 +1279,18 @@ const T = {
     nick_taken:"Questo soprannome è già utilizzato.",
     groups_reset:"Gruppi azzerati. I giocatori sono conservati.",
     finals_reset:"Fasi finali azzerate.",
-    scores_reset_ok:"Risultati azzerati.",
-    tournament_reset:"Torneo azzerato.",
-    current_phase:"Fase attuale: ",
     pin_section:"Modificare il PIN",
-    tournament_reset_ok:"Torneo azzerato.",
     saved_ok:"Salvato!",
     seed_saved:"✓ Ordine salvato",
     groups_created:" gruppi creati, ",
     matches_generated:" partite generate.",
     seeding_done:[" gruppi creati, "," partite generate."],
     confirm_reset_finals_title:"Azzerare le fasi finali?",
-    confirm_reset_finals_text:"Il bracket sarà cancellato. Lo stato tornerà alla fase a gironi.",
+    confirm_reset_finals_text:"❌ CANCELLATO: il tabellone delle finali.\n✅ CONSERVATO: giocatori, gruppi, partite di girone e relativi risultati.\n\nIl torneo torna alla fase a gironi.",
     confirm_reset_groups_title:"Azzerare i gruppi?",
-    confirm_reset_groups_text:"I gruppi e tutte le partite saranno eliminati. I giocatori iscritti sono conservati.",
+    confirm_reset_groups_text:"❌ CANCELLATO: i gruppi, TUTTE le partite di girone con i risultati, e il tabellone delle finali.\n✅ CONSERVATO: i giocatori iscritti e il loro ordine di teste di serie.\n\nIl torneo torna alla fase di iscrizioni.",
     groups_empty:"I gruppi non sono ancora stati definiti.",
-    rank_player:"Giocatore",rank_pts:"Pti",rank_mj:"PG",rank_v:"V",rank_vn:"VN",rank_tb:"TB",
+    rank_player:"Giocatore",rank_pts:"Pti",rank_mj:"PG",rank_v:"V",rank_vn:"VN",
     rank_legend:"Pti·Punti PG·Partite giocate V·Vittorie VN·Vittorie con Nero TB·Buchholz",
     matches_all:"Tutti",matches_pending:"Da giocare",matches_done:"Terminati",matches_empty:"Nessuna partita generata.",
     enter_score:"Inserire il risultato",whites:"⬜ Bianco",blacks:"⬛ Nero",
@@ -1213,36 +1298,35 @@ const T = {
     admin_title:"Accesso amministratore",admin_pin:"Codice PIN",admin_login_btn:"Accedi",
     admin_pin_hint:"Prima utilizzo? Crea il tuo PIN adesso.",admin_pin_err:"PIN errato.",
     admin_logout:"Disconnettersi",
-    subtab_settings:"Impostazioni",subtab_players:"Giocatori",subtab_seeding:"Gruppi",subtab_actions:"Azioni",
+    subtab_settings:"Impostazioni",subtab_players:"Giocatori",subtab_notifs:"Notifiche",subtab_actions:"Torneo",
     subtab_ranking:"Classifica",
     ranking_title:"Classifica globale",
-    settings_title:"Impostazioni torneo",set_name:"Nome del torneo",set_reg_deadline:"Data di chiusura delle iscrizioni",reg_deadline_until:"Fino al",set_ppg:"Giocatori per gruppo",set_fin:"Numero di finalisti",set_status:"Stato",
+    settings_title:"Impostazioni torneo",set_name:"Nome del torneo",set_reg_deadline:"Data di chiusura delle iscrizioni",reg_deadline_until:"Fino al",set_ppg:"Giocatori per gruppo",set_fin:"Numero di finalisti",
     set_pool_start:"Data di inizio dei gironi",set_pool_interval:"Intervallo tra i turni dei gironi (giorni)",
     set_finals_start:"Data di inizio delle finali",set_finals_interval:"Intervallo tra i turni finali (giorni)",
-    status_opt_reg:"Iscrizioni aperte",status_opt_play:"Fase a gironi",status_opt_fin:"Fase finale",status_opt_done:"Terminato",
-    save_settings:"Salvare",settings_saved:"Salvato!",
+    save_settings:"Salvare",
     seeding_title:"Teste di serie & gruppi",seeding_desc:"Ordina i giocatori per livello. Distribuzione serpentina per gruppi equilibrati.",
     assign_btn:"Assegnare ai gruppi & generare le partite",seeding_done:[" gruppi creati, "," partite generate."],
     finalists_title:"Finalisti qualificati",actions_title:"Azioni",
     launch_finals:"🏆 Avviare le fasi finali",reset_scores:"↺ Azzerare i risultati",reset_all:"⚠️ Azzerare il torneo",
-    confirm_reset_scores_title:"Azzerare i risultati?",confirm_reset_scores_text:"Tutti i risultati delle partite di gruppo saranno cancellati.",
-    confirm_reset_all_title:"Azzerare il torneo?",confirm_reset_all_text:"Tutti i giocatori, le partite e i risultati saranno eliminati definitivamente.",
+    confirm_reset_scores_title:"Azzerare i risultati?",confirm_reset_scores_text:"❌ CANCELLATO: i risultati delle partite di girone.\n✅ CONSERVATO: giocatori, gruppi, le partite stesse (con colori e scadenze) e il tabellone delle finali.",
+    confirm_reset_all_title:"Azzerare il torneo?",confirm_reset_all_text:"❌ CANCELLATO: giocatori, gruppi, partite, risultati, finali e impostazioni del torneo.\n✅ CONSERVATO: l'ALBO D'ORO (tutte le edizioni passate), il PIN, il dispositivo admin e le impostazioni delle notifiche.\n\nSubito dopo sarà proposto di archiviare la classifica attuale nell'albo d'oro.",
     confirm_send_notif_title:"Inviare la notifica?",confirm_send_notif_text:"Questo messaggio sarà inviato a tutti gli iscritti alle notifiche.",
     confirm_reset_subs_title:"Azzerare tutti gli abbonamenti alle notifiche?",
     confirm_reset_subs_text:"Tutti gli abbonamenti alle notifiche saranno eliminati. Quelli ancora validi torneranno automaticamente non appena ogni dispositivo riapre l'app — gli altri resteranno eliminati definitivamente.",
     confirm_ok:"Confermare",confirm_cancel:"Annullare",
     finals_launched:["Fasi finali avviate con "," finalisti!"],not_enough_finalists:"Finalisti qualificati insufficienti.",
     scores_reset:"Risultati azzerati.",tournament_reset:"Torneo azzerato.",
-    no_matches:"Nessuna partita giocata.",group_rank:"Pos",group_grp:"Grp",pts_per_match:"Pti/P",
+    no_matches:"Nessuna partita giocata.",
     pool_reminder_title:"🚀 Fase a gironi avviata!",
-    pool_reminder_text:"Consulta la scheda Partite per vedere le tue partite. Invia un invito al tuo avversario su Chess.com (nome utente visibile nella scheda Torneo) o gioca su una scacchiera fisica. Puoi giocare più partite contemporaneamente. Inserisci il risultato direttamente nella scheda Partite.",
+    pool_reminder_text:"Consulta la scheda Partite per vedere le tue partite. Invia un invito al tuo avversario su Chess.com (nome utente nella scheda Torneo) o gioca su scacchiera fisica. Inserisci il risultato appena finisce ogni partita.\n\n⏰ Iniziate subito e concludete entro la scadenza indicata su ogni partita. Potete giocare più partite in parallelo, ma affrontate prima il turno 1, poi il 2, ecc. — le scadenze più vicine per prime.",
     install_btn:"📲 Installare l'app",install_title:"Installare l'applicazione",
     install_android:["Aprire in Chrome","Toccare il menu ⋮ (3 punti in alto a destra)","Selezionare: Aggiungi alla schermata Home","Toccare Aggiungi"],
     install_ios:["Aprire in Safari (non Chrome)","Toccare l'icona Condividi (quadrato con freccia ↑)","Selezionare: Aggiungi alla schermata Home","Toccare Aggiungi in alto a destra"],
     install_close:"Chiudere",install_now:"📲 Installa ora",
     rules_full:"<h3 style=\"color:var(--gold);margin:16px 0 6px\">1. Formato</h3>\n<p>Tutti i giocatori sono suddivisi in gironi. Ogni giocatore affronta una volta tutti gli altri del suo girone (round-robin). Il numero di gironi e qualificati \u00e8 definito dall'organizzatore.</p>\n<h3 style=\"color:var(--gold);margin:16px 0 6px\">2. Punteggio</h3>\n<p>1 punto per una vittoria \u00b7 0.5 per una patta \u00b7 0 per una sconfitta.</p>\n<p>Ogni giocatore \u00e8 responsabile dell'inserimento del proprio risultato subito dopo la partita.</p>\n<h3 style=\"color:var(--gold);margin:16px 0 6px\">3. Spareggio</h3>\n<p>In caso di parit\u00e0: \u2460 Punti \u00b7 \u2461 Vittorie totali \u00b7 \u2462 Vittorie con il Nero \u00b7 \u2463 Buchholz \u00b7 \u2464 Scontro diretto</p>\n<h3 style=\"color:var(--gold);margin:16px 0 6px\">4. Fasi finali</h3>\n<p>I primi di ogni girone si qualificano direttamente al turno avanzato. I secondi e i migliori terzi giocano un turno preliminare.</p>\n<p>Il meglio classificato tra i finalisti sceglie il colore. In caso di patta, la partita viene rigiocat con i colori invertiti.</p>\n<h3 style=\"color:var(--gold);margin:16px 0 6px\">5. Modalit\u00e0 di gioco</h3>\n<p>Le partite si giocano su scacchiera fisica o su Chess.com. Il nome utente Chess.com deve corrispondere a quello indicato all'iscrizione.</p>\n<p>Tempo libero, massimo <strong>24h per mossa</strong>. Nessuna modalit\u00e0 vacanze senza accordo reciproco.</p>\n<p>\u26d4 Vietato: scacchiera di analisi, mosse condizionali su Chess.com.</p>\n<p>In caso di perdita al tempo involontaria, la ripresa \u00e8 possibile solo con l'accordo dell'avversario. In caso di recidiva, la partita \u00e8 definitivamente persa.</p>\n<h3 style=\"color:var(--gold);margin:16px 0 6px\">6. Fair Play & Arbitraggio</h3>\n<p>Il fair play \u00e8 atteso da tutti i partecipanti. In caso di controversia, decide l'organizzatore. Gravi infrazioni possono comportare la squalifica.</p>",
     notif_install_hint:"Installa l'app sulla schermata principale per attivare le notifiche.",
-    tbd:"?",winner:"🏆 Vincitore"
+    winner:"🏆 Vincitore",
   }
 };
 
@@ -1270,7 +1354,7 @@ function applyTranslations() {
   document.getElementById('tab-label-groups').textContent = t('tab_groups');
   document.getElementById('tab-label-matches').textContent = t('tab_matches');
   document.getElementById('tab-label-finals').textContent = t('tab_finals');
-  document.getElementById('tab-label-admin').textContent = t('tab_admin');
+  document.getElementById('tab-label-info').textContent = t('tab_info');
   document.getElementById('reg-title').textContent = t('reg_title');
   document.getElementById('reg-label-nick').textContent = t('reg_nick');
   const nickHint = document.getElementById('reg-nick-hint');
@@ -1283,7 +1367,6 @@ function applyTranslations() {
   document.getElementById('reg-nick').placeholder = '';
   document.getElementById('reg-name').placeholder = '';
   document.getElementById('reg-sector').placeholder = '';
-  document.getElementById('rules-title').textContent = t('rules_title');
   document.getElementById('admin-login-title').textContent = t('admin_title');
   document.getElementById('admin-pin-label').textContent = t('admin_pin');
   document.getElementById('admin-login-btn').textContent = t('admin_login_btn');
@@ -1291,7 +1374,7 @@ function applyTranslations() {
   document.getElementById('logout-btn').textContent = t('admin_logout');
   document.getElementById('subtab-settings').textContent = t('subtab_settings');
   document.getElementById('subtab-players').textContent = t('subtab_players');
-  document.getElementById('subtab-seeding').textContent = t('subtab_seeding');
+  document.getElementById('subtab-notifs').textContent = t('subtab_notifs');
   document.getElementById('subtab-actions').textContent = t('subtab_actions');
   document.getElementById('settings-title').textContent = t('settings_title');
   document.getElementById('set-label-name').textContent = t('set_name');
@@ -1330,10 +1413,41 @@ function applyTranslations() {
 
   // Textes précédemment codés en dur, jamais traduits (trouvés par balayage systématique).
   const setT = (id, key) => { const el = document.getElementById(id); if (el) el.textContent = t(key); };
+  setT('info-rules-btn', 'info_rules_btn');
+  setT('info-palmares-btn', 'info_palmares_btn');
+  const brBtn = (id, key, icone) => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = icone + '<br>' + esc(t(key).replace(/^[^\s]+\s/, ''));
+  };
+  brBtn('info-palmares-btn', 'info_palmares_btn', '🏅');
+  brBtn('info-ranking-btn', 'info_ranking_btn', '📊');
+  brBtn('info-rules-btn', 'info_rules_btn', '📜');
+  setT('info-admin-btn', 'info_admin_btn');
+  setT('info-rules-title', 'info_rules_title');
+  // Libellés qui n'avaient jamais été branchés : ils restaient en français
+  // quelle que soit la langue choisie.
+  setT('pin-current-label', 'pin_current');
+  setT('pin-new-label', 'pin_new');
+  setT('pin-confirm-label', 'pin_confirm');
+  setT('set-label-semis', 'set_semis');
+  setT('set-label-final', 'set_final');
+  setT('whatsapp-title', 'whatsapp_title');
+  setT('save-seed-btn', 'save_seed');
+  setT('offline-text', 'offline');
+  setT('info-palmares-title', 'info_palmares_title');
+  setT('palmares-admin-title', 'palmares_admin_title');
+  const rechEl = document.getElementById('palmares-search');
+  if (rechEl) rechEl.placeholder = t('palmares_search_ph');
+  const edNameEl = document.getElementById('new-edition-name');
+  if (edNameEl) edNameEl.placeholder = t('palmares_edition_name_placeholder');
+  const edYearEl = document.getElementById('new-edition-year');
+  if (edYearEl) edYearEl.placeholder = t('palmares_year_placeholder');
   setT('notif-prefs-link', 'notif_prefs_link');
+  setT('notif-disable-btn', 'notif_disable_btn');
   setT('notif-validate-btn', 'notif_validate_btn');
   setT('change-pin-btn', 'change_pin_btn');
   setT('check-late-btn', 'check_late_btn');
+  setT('maint-btn', 'maint_btn');
   setT('open-reg-btn', 'open_reg_btn');
   setT('start-pools-btn', 'start_pools_btn');
   setT('finish-btn', 'finish_btn');
@@ -1420,12 +1534,37 @@ let recentlySubscribed = false; // évite un faux positif du contrôle d'orpheli
 let notifPanelPendingConfirm = false; // panneau ouvert, en attente du clic "Valider" — protège contre une fermeture accidentelle (ex: changement de langue) avant confirmation
 
 function defaultData() {
-  return { settings:{ name:"Air Base Chess Tour", playersPerGroup:5, finalistsCount:8, status:"registration" }, players:{}, games:{}, finals:{} };
+  return { settings:{ name:"Air Base Chess Tour", playersPerGroup:5, finalistsCount:8, status:"registration" }, players:{}, games:{}, finals:{}, palmares:{} };
 }
 
 function genId() { return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function objToArr(obj) { return obj ? Object.entries(obj).map(([id,v])=>({...v,id})) : []; }
+// Notification flottante : affichée par-dessus la page, à hauteur fixe et visible quel
+// que soit le défilement. Elle ne fait partie d'aucune mise en page, donc elle n'écarte
+// jamais rien et survit aux rafraîchissements d'affichage — contrairement à un message
+// inséré dans la page, qui pouvait être effacé par un nouveau rendu ou déplacer les
+// boutons sous le doigt de l'utilisateur.
+function showToast(text, ok = true) {
+  let t = document.getElementById('abct-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'abct-toast';
+    t.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);top:calc(12px + env(safe-area-inset-top));z-index:9500;max-width:92%;padding:12px 16px;border-radius:12px;font-size:13px;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,0.18);text-align:center;white-space:pre-line;display:none';
+    document.body.appendChild(t);
+  }
+  t.style.background = ok ? '#E8F5E9' : '#FDECEA';
+  t.style.color = ok ? 'var(--green)' : 'var(--red)';
+  t.style.border = '1px solid ' + (ok ? '#A8D5B5' : '#F0B4B0');
+  t.textContent = text;
+  t.style.display = 'block';
+  clearTimeout(t._minuteur);
+  t._minuteur = setTimeout(() => { t.style.display = 'none'; }, 3500);
+}
+
 function showMsg(id, text, ok=true, persist=false) {
+  // Les retours d'action de l'admin passent par la notification flottante : leur zone
+  // d'affichage d'origine est trop loin des boutons pour être vue.
+  if (id === 'actions-msg' && !persist) { showToast(text, ok); return; }
   const el = document.getElementById(id); if(!el) return;
   el.className='msg '+(ok?'ok':'err');
   if (persist) {
@@ -1445,11 +1584,712 @@ window.showPage = function(page) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
-  document.getElementById('tab-'+page).classList.add('active');
+  // Admin n'a plus son propre onglet (on y accède depuis Infos) : on garde "Infos" en
+  // surbrillance plutôt que de planter en cherchant un onglet qui n'existe plus.
+  const tabId = (page === 'admin') ? 'tab-info' : 'tab-' + page;
+  const tabEl = document.getElementById(tabId);
+  if (tabEl) tabEl.classList.add('active');
   currentPage = page;
   applyMaintenanceOverlay();
   renderPage(page);
 };
+
+// ── PAGE INFOS ──
+window.toggleInfoSection = function(section) {
+  const sections = { rules: 'info-rules-section', palmares: 'info-palmares-section', ranking: 'info-ranking-section' };
+  const cible = document.getElementById(sections[section]);
+  if (!cible) return;
+  // Un second clic sur le même bouton referme la section (accordéon, une seule ouverte).
+  const dejaOuverte = cible.style.display !== 'none';
+  Object.values(sections).forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
+  if (!dejaOuverte) {
+    cible.style.display = 'block';
+    if (section === 'ranking') renderLiveRanking();
+  }
+};
+
+function renderInfo() {
+  const s = state?.settings || {};
+  const rulesEl = document.getElementById('rules-content');
+  if (rulesEl) {
+    rulesEl.innerHTML = t('rules');
+    // Les formats de cadence sont injectés dans le texte du règlement s'il les prévoit.
+    const semisSpan = document.getElementById('home-semis-format');
+    const finalSpan = document.getElementById('home-final-format');
+    if (semisSpan) semisSpan.textContent = s.semisFormat || '20min + 10s/coup';
+    if (finalSpan) finalSpan.textContent = s.finalFormat || '30min + 10s/coup';
+  }
+  const inviteEl = document.getElementById('notif-invite-text');
+  if (inviteEl) inviteEl.textContent = t('notif_invite_info');
+  renderPalmares();
+  // Le classement en direct doit suivre les scores en temps réel, pas seulement
+  // au moment où on ouvre sa section.
+  const sec = document.getElementById('info-ranking-section');
+  if (sec && sec.style.display !== 'none') renderLiveRanking();
+}
+
+// ── PALMARÈS — affichage ──
+// Un bouton par édition (le tournoi en cours d'abord), plus un bouton statistiques.
+// Cliquer ouvre la section correspondante ; recliquer la referme.
+let palmaresSection = null; // 'stats' | 'current' | id d'édition
+
+// Classement du tournoi EN COURS, avec les statistiques réelles calculées en direct.
+function classementEnCours() {
+  // Le détail par couleur est calculé depuis les vrais matchs : ils portent playerWhite
+  // et playerBlack, donc rien n'est estimé.
+  const d = {};
+  // mF/vF/nF : matchs, victoires et nulles des phases finales (sans couleur connue)
+  const init = n => { if (!d[n]) d[n] = { pseudo:n, vB:0,nB:0,dB:0, vN:0,nN:0,dN:0, mF:0,vF:0,nF:0 }; };
+  getGames().forEach(g => {
+    const joue = g.scoreWhite !== null && g.scoreWhite !== undefined
+              && g.scoreBlack !== null && g.scoreBlack !== undefined;
+    if (!joue || !g.playerWhite || !g.playerBlack) return;
+    init(g.playerWhite); init(g.playerBlack);
+    if (g.scoreWhite === 1) { d[g.playerWhite].vB++; d[g.playerBlack].dN++; }
+    else if (g.scoreBlack === 1) { d[g.playerBlack].vN++; d[g.playerWhite].dB++; }
+    else { d[g.playerWhite].nB++; d[g.playerBlack].nN++; }
+  });
+  // Les phases finales comptent aussi dans le classement en direct. Elles n'enregistrent
+  // pas les couleurs (seul le choix de couleur est indiqué, pas la couleur jouée) : elles
+  // s'ajoutent donc aux matchs/victoires/points, mais pas au détail Blancs/Noirs.
+  getFinals().forEach(f => {
+    const joue = f.score1 !== null && f.score1 !== undefined
+              && f.score2 !== null && f.score2 !== undefined;
+    if (!joue || !f.player1 || !f.player2) return; // exemptions et matchs à venir exclus
+    init(f.player1); init(f.player2);
+    if (f.colorP1 === 'white' || f.colorP1 === 'black') {
+      // Couleur renseignée : le match alimente le détail Blancs/Noirs comme une poule.
+      const blanc = f.colorP1 === 'white' ? f.player1 : f.player2;
+      const noir  = f.colorP1 === 'white' ? f.player2 : f.player1;
+      const scoreBlanc = f.colorP1 === 'white' ? f.score1 : f.score2;
+      const scoreNoir  = f.colorP1 === 'white' ? f.score2 : f.score1;
+      if (scoreBlanc > scoreNoir) { d[blanc].vB++; d[noir].dN++; }
+      else if (scoreNoir > scoreBlanc) { d[noir].vN++; d[blanc].dB++; }
+      else { d[blanc].nB++; d[noir].nN++; }
+    } else {
+      // Couleur inconnue : compte dans les totaux, pas dans le détail.
+      d[f.player1].mF++; d[f.player2].mF++;
+      if (f.score1 > f.score2) { d[f.player1].vF++; }
+      else if (f.score2 > f.score1) { d[f.player2].vF++; }
+      else { d[f.player1].nF++; d[f.player2].nF++; }
+    }
+  });
+
+  const noms = {};
+  getPlayers().forEach(p => { noms[p.nickname] = p.name || null; });
+  const joueurs = Object.values(d).map(x => {
+    const mCouleurs = x.vB+x.nB+x.dB+x.vN+x.nN+x.dN;
+    const m = mCouleurs + x.mF;
+    return { ...x, name: noms[x.pseudo] || null, m,
+             v: x.vB + x.vN + x.vF,
+             pts: x.vB + x.vN + x.vF + 0.5*(x.nB + x.nN + x.nF) };
+  });
+  joueurs.sort((a,b) => (b.pts-a.pts) || (b.v-a.v) || (b.vN-a.vN));
+  return joueurs.map((j,i) => ({ ...j, rank: i+1 }));
+}
+
+// Cumul de tous les joueurs, toutes éditions confondues (tournoi en cours inclus).
+function statsCumulees() {
+  const acc = {};
+  const cle = p => p.trim().toLowerCase();
+  function ajouter(pseudo, nom, rang, total, st) {
+    const k = cle(pseudo);
+    if (!acc[k]) acc[k] = { pseudo, name: nom || null, editions: 0, victoires: 0, podiums: 0,
+                            meilleur: 999, pts: 0, m: 0, v: 0, vN: 0,
+                            vB: 0, nB: 0, dB: 0, nN: 0, dN: 0,
+                            aStats: false, aCouleurs: false };
+    const a = acc[k];
+    if (!a.name && nom) a.name = nom;
+    a.editions++;
+    if (rang === 1) a.victoires++;
+    if (rang <= 3) a.podiums++;
+    if (rang < a.meilleur) a.meilleur = rang;
+    if (st) {
+      a.pts += st.pts||0; a.m += st.m||0; a.v += st.v||0; a.vN += st.vN||0;
+      ['vB','nB','dB','nN','dN'].forEach(k => { a[k] = (a[k]||0) + (st[k]||0); });
+      if (st.vB !== undefined || st.dB !== undefined) a.aCouleurs = true;
+      if ((st.m||0) > 0) a.aStats = true;
+    }
+  }
+  const palmares = state?.palmares || {};
+  Object.values(palmares).forEach(ed => {
+    const entries = Object.values(ed.entries || {});
+    entries.forEach(e => {
+      if (!e?.pseudo) return;
+      const st = (e.m || e.pts || e.v || e.vB !== undefined || e.dB !== undefined)
+        ? { pts:e.pts, m:e.m, v:e.v, vB:e.vB, nB:e.nB, dB:e.dB, vN:e.vN, nN:e.nN, dN:e.dN }
+        : null;
+      ajouter(e.pseudo, e.name, e.rank || 999, entries.length, st);
+    });
+  });
+  // Le tournoi en cours ne compte que s'il a réellement commencé (des matchs joués).
+  const enCours = classementEnCours().filter(j => j.m > 0);
+  enCours.forEach(j => ajouter(j.pseudo, j.name, j.rank, enCours.length, {
+    pts:j.pts, m:j.m, v:j.v,
+    vB:j.vB, nB:j.nB, dB:j.dB, vN:j.vN, nN:j.nN, dN:j.dN
+  }));
+
+  return Object.values(acc).sort((a,b) =>
+    (b.victoires - a.victoires) || (b.podiums - a.podiums) ||
+    (a.meilleur - b.meilleur) || (b.editions - a.editions) || (b.pts - a.pts));
+}
+
+window.togglePalmaresSection = function(cle) {
+  palmaresSection = (palmaresSection === cle) ? null : cle;
+  renderPalmares();
+};
+
+// Joueur choisi en cliquant une ligne. Séparé du champ de recherche pour ne pas y
+// laisser un nom qui resterait affiché ensuite. Purement local à cet appareil.
+let joueurSelectionne = null;
+
+window.onPalmaresSearch = function() {
+  joueurSelectionne = null; // taper une recherche annule la sélection par clic
+  renderPalmares();
+};
+
+window.voirJoueurPalmares = function(pseudo) {
+  joueurSelectionne = pseudo;
+  renderPalmares();
+  const fiche = document.getElementById('palmares-player-card');
+  if (fiche && fiche.scrollIntoView) fiche.scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+
+window.fermerFichePalmares = function() {
+  joueurSelectionne = null;
+  const champ = document.getElementById('palmares-search');
+  if (champ) champ.value = '';
+  renderPalmares();
+};
+
+// Une ligne de classement, avec les statistiques quand elles existent.
+// medailles=false pour un tournoi en cours : un classement provisoire ne doit pas
+// afficher de coupe ni de podium, ce serait trompeur.
+function lignePalmares(e, surligne, medailles = true) {
+  const gagnant = medailles && e.rank === 1;
+  const medaille = !medailles ? '' : e.rank === 1 ? '🏆' : e.rank === 2 ? '🥈' : e.rank === 3 ? '🥉' : '';
+  const affichage = e.name
+    ? `${esc(e.name)} <span style="color:#bbb">(${esc(e.pseudo)})</span>`
+    : esc(e.pseudo);
+  const stats = (e.m || e.pts || e.v)
+    ? `<span style="font-size:10px;color:var(--gray);white-space:nowrap">${e.pts??0} ${t('palmares_pts')} · ${e.m??0} ${t('palmares_m')} · ${e.v??0}${t('palmares_v')}</span>`
+    : '';
+  const fond = gagnant ? 'background:var(--gold-light);border-radius:8px'
+    : surligne ? 'background:#E8F5E9;border-radius:8px' : '';
+  return `<div onclick="voirJoueurPalmares('${esc(e.pseudo).replace(/'/g,"\\'")}')" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:${gagnant||surligne?'8px':'5px'} 8px;${fond};margin-bottom:2px">
+    <span style="width:24px;text-align:center;font-weight:${gagnant?'800':'600'};font-size:${gagnant?'15px':'12px'}">${medaille || e.rank}</span>
+    <span style="flex:1;min-width:0;font-size:${gagnant?'14px':'12px'};font-weight:${gagnant||surligne?'700':'500'}">${affichage}</span>
+    ${stats}
+  </div>`;
+}
+
+// ── CLASSEMENT GÉNÉRAL EN DIRECT ──
+// Section propre dans l'onglet Infos, indépendante du palmarès : il s'agit du tournoi
+// en cours, pas d'un historique.
+function renderLiveRanking() {
+  const el = document.getElementById('live-ranking-content');
+  if (!el) return;
+  const finalesLancees = ['finals','finished'].includes(state?.settings?.status);
+  const recherche = '';
+  const correspond = () => false;
+  const titre = document.getElementById('info-ranking-title');
+  if (titre) titre.textContent = t(finalesLancees ? 'live_rank_qualified_title' : 'live_rank_title');
+  if (!getGames().length) {
+    el.innerHTML = `<div style="color:var(--gray);font-size:12px;text-align:center;padding:8px">${t('palmares_no_result_yet')}</div>`;
+    return;
+  }
+    const standings = computeStandings();
+    const fin = discoverFinalists(standings, state?.settings?.finalistsCount || 8);
+    const noms = {}, seedMap = {};
+    getPlayers().forEach(p => {
+      noms[p.nickname] = p.name || null;
+      seedMap[p.nickname] = typeof p.seed === 'number' ? p.seed + 1 : null;
+    });
+    const entete = `<div style="font-size:11px;color:var(--gray);text-align:center;padding:4px 0 8px">${t(finalesLancees ? 'palmares_qualified_desc' : 'palmares_virtual_desc')}</div>`;
+    // Mêmes colonnes que la vue admin : en cas de repêchage d'un 3e ou 4e, chacun doit
+    // pouvoir refaire le calcul du départage lui-même.
+    el.innerHTML = fin.length
+      ? entete + `<div class="scroll-x"><table class="rank-table">
+        <thead><tr>
+          <th>#</th><th>${t('rank_player')}</th><th>${t('qual_rg')}</th><th>${t('qual_grp')}</th>
+          <th>${t('qual_ptsm')}</th><th>${t('rank_mj')}</th><th>${t('qual_vm')}</th><th>${t('qual_vnm')}</th><th>${t('qual_tbm')}</th><th>${t('qual_seed')}</th>
+        </tr></thead>
+        <tbody>${fin.map((f,i) => {
+          const s = f.stats;
+          // Même normalisation que le tri : sans match joué, la moyenne vaut 0.
+          // (Avec `matches || 1` on affichait une valeur que le tri n'utilisait pas.)
+          const nrm = v => s.matches > 0 ? v / s.matches : 0;
+          const surligne = correspond({pseudo:f.player, name:noms[f.player]});
+          const aff = noms[f.player] ? esc(noms[f.player]) : esc(f.player);
+          return `<tr onclick="voirJoueurPalmares('${esc(f.player).replace(/'/g,"\\'")}')" style="cursor:pointer;${surligne?'background:#E8F5E9':''}">
+            <td><strong style="color:var(--gold)">${i+1}</strong></td>
+            <td>${aff}</td>
+            <td style="color:var(--gray)">${f.groupRank}</td>
+            <td style="color:var(--gray);font-size:11px">${esc((f.group||'').replace('Groupe ','G'))}</td>
+            <td>${nrm(s.points).toFixed(2)}</td><td>${s.matches}</td>
+            <td>${nrm(s.totalWins).toFixed(2)}</td><td>${nrm(s.blackWins).toFixed(2)}</td>
+            <td>${nrm(s.tieBreak).toFixed(2)}</td>
+            <td style="color:var(--gray)">${seedMap[f.player] ?? '—'}</td>
+          </tr>`;
+        }).join('')}</tbody></table></div>
+        <div style="font-size:10px;color:var(--gray);margin-top:8px;line-height:1.5">${t('qual_legend')}</div>`
+      : `<div style="color:var(--gray);font-size:12px;text-align:center;padding:8px">${t('palmares_no_result_yet')}</div>`;
+
+}
+
+function renderPalmares() {
+  const boutons = document.getElementById('palmares-buttons');
+  const el = document.getElementById('palmares-content');
+  if (!boutons || !el) return;
+  const recherche = (joueurSelectionne || document.getElementById('palmares-search')?.value || '').trim().toLowerCase();
+  renderPalmaresPlayerCard(recherche);
+
+  const palmares = state?.palmares || {};
+  // Éditions de la plus récente à la plus ancienne (l'ordre de saisie est chronologique).
+  const editions = Object.entries(palmares).sort((a,b) => (b[1].order||0) - (a[1].order||0));
+  const enCours = classementEnCours().filter(j => j.m > 0);
+
+  const btn = (cle, libelle, actif) =>
+    `<button class="btn ${actif ? 'btn-gold' : 'btn-gray'}" style="text-align:left;padding:10px 14px;font-size:13px" onclick="togglePalmaresSection('${cle}')">${libelle}</button>`;
+
+  let html = btn('stats', '📊 ' + t('palmares_stats_btn'), palmaresSection === 'stats');
+  // Toujours affiché : s'il n'y a pas encore de résultat, la section l'indique.
+  {
+    const nomT = state?.settings?.name || 'Air Base Chess Tour';
+    html += btn('current', '⚔️ ' + esc(nomT) + ' — ' + t('palmares_ongoing'), palmaresSection === 'current');
+  }
+  editions.forEach(([id, ed]) => {
+    html += btn(id, '🗓️ ' + esc(ed.name || '') + (ed.year ? ' (' + esc(String(ed.year)) + ')' : ''), palmaresSection === id);
+  });
+  boutons.innerHTML = html;
+
+  if (!palmaresSection) {
+    el.innerHTML = (!editions.length && !enCours.length)
+      ? `<div style="color:var(--gray);font-size:13px;text-align:center">${t('palmares_empty')}</div>`
+      : `<div style="color:var(--gray);font-size:12px;text-align:center;padding:8px">${t('palmares_pick')}</div>`;
+    return;
+  }
+
+  const correspond = e => recherche && ((e.pseudo && e.pseudo.toLowerCase().includes(recherche))
+    || (e.name && e.name.toLowerCase().includes(recherche)));
+
+  if (palmaresSection === 'stats') {
+    const s = statsCumulees();
+    if (!s.length) { el.innerHTML = `<div style="color:var(--gray);font-size:13px;text-align:center">${t('palmares_empty')}</div>`; return; }
+    el.innerHTML = `<div style="font-size:11px;color:var(--gray);margin-bottom:8px">${t('palmares_stats_desc')}</div>` +
+      s.map((a,i) => {
+        const affichage = a.name ? `${esc(a.name)} <span style="color:#bbb">(${esc(a.pseudo)})</span>` : esc(a.pseudo);
+        const surligne = correspond(a);
+        const couleurs = a.aCouleurs ? `<div style="font-size:10px;color:var(--gray);margin-top:2px">
+            ⬜ ${a.vB}${t('palmares_v')} ${a.nB}${t('palmares_n')} ${a.dB}${t('palmares_d')}
+            &nbsp;·&nbsp; ⬛ ${a.vN}${t('palmares_v')} ${a.nN}${t('palmares_n')} ${a.dN}${t('palmares_d')}
+          </div>` : '';
+        const detail = a.aStats ? ` · ${a.pts} ${t('palmares_pts')} · ${a.v}${t('palmares_v')}` : '';
+        return `<div onclick="voirJoueurPalmares('${esc(a.pseudo).replace(/'/g,"\\'")}')" style="cursor:pointer;padding:6px 8px;${surligne?'background:#E8F5E9;border-radius:8px;':''}border-bottom:1px solid #f0f0f0">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="width:24px;text-align:center;font-weight:700;color:var(--gold);font-size:12px">${i+1}</span>
+            <span style="flex:1;min-width:0;font-size:12px;font-weight:${surligne?'700':'500'}">${affichage}</span>
+            <span style="font-size:10px;color:var(--gray);white-space:nowrap;text-align:right">
+              ${a.editions} ${t(a.editions>1?'palmares_editions':'palmares_edition')}${a.victoires?' · 🏆'+a.victoires:''}${detail}
+            </span>
+          </div>
+          ${couleurs ? '<div style="padding-left:32px">' + couleurs + '</div>' : ''}
+        </div>`;
+      }).join('');
+    return;
+  }
+
+  if (palmaresSection === 'current') {
+    const termine = state?.settings?.status === 'finished';
+    const entete = termine ? '' :
+      `<div style="font-size:11px;color:var(--gray);text-align:center;padding:4px 0 8px">${t('palmares_provisional')}</div>`;
+    el.innerHTML = enCours.length
+      ? entete + enCours.map(e => lignePalmares(e, correspond(e), termine)).join('')
+      : `<div style="color:var(--gray);font-size:12px;text-align:center;padding:8px">${t('palmares_no_result_yet')}</div>`;
+    return;
+  }
+
+  const ed = palmares[palmaresSection];
+  if (!ed) { el.innerHTML = ''; return; }
+  const entries = Object.values(ed.entries || {}).sort((a,b) => (a.rank||999)-(b.rank||999));
+  el.innerHTML = entries.length
+    ? entries.map(e => lignePalmares(e, correspond(e))).join('')
+    : `<div style="color:var(--gray);font-size:12px">${t('palmares_empty_edition')}</div>`;
+}
+
+// Fiche d'un joueur : son parcours à travers toutes les éditions, avec récapitulatif.
+function renderPalmaresPlayerCard(recherche) {
+  const box = document.getElementById('palmares-player-card');
+  if (!box) return;
+  const q = (recherche || '').trim().toLowerCase();
+  if (!q) { box.style.display = 'none'; return; }
+
+  const palmares = state?.palmares || {};
+  const editions = Object.entries(palmares).sort((a,b)=>(a[1].order||0)-(b[1].order||0));
+  const parcours = [];
+  // On retient le nom ET le pseudo : chercher un pseudo pour ne voir qu'un nom
+  // ne permet pas de savoir si on est tombé sur le bon joueur.
+  let nom = null, pseudo = null;
+  editions.forEach(([id, ed]) => {
+    const entries = Object.values(ed.entries || {});
+    const e = entries.find(x => x?.pseudo && (
+      x.pseudo.toLowerCase().includes(q) || (x.name && x.name.toLowerCase().includes(q))
+    ));
+    if (e) {
+      if (!nom) nom = e.name || null;
+      if (!pseudo) pseudo = e.pseudo;
+      parcours.push({ edition: ed.name || '', annee: ed.year || '', rang: e.rank, total: entries.length });
+    }
+  });
+  // Inclut aussi le tournoi en cours s'il a démarré.
+  const enCours = classementEnCours().filter(j => j.m > 0);
+  const moi = enCours.find(j => j.pseudo.toLowerCase().includes(q) || (j.name && j.name.toLowerCase().includes(q)));
+  if (moi) {
+    if (!nom) nom = moi.name || null;
+    if (!pseudo) pseudo = moi.pseudo;
+    parcours.push({ edition: state?.settings?.name || '', annee: t('palmares_ongoing'), rang: moi.rank, total: enCours.length });
+  }
+  // Titre : "Nom (pseudo)" si les deux existent, sinon le pseudo seul.
+  const titreJoueur = nom
+    ? esc(nom) + ' <span style="font-weight:600;color:#8a7a4a;font-size:13px">(' + esc(pseudo || '') + ')</span>'
+    : esc(pseudo || '');
+
+  if (!parcours.length) {
+    box.innerHTML = `<div style="background:#f8f8f8;border-radius:10px;padding:12px;font-size:12px;color:var(--gray);text-align:center">${t('palmares_player_none')}</div>`;
+    box.style.display = 'block';
+    return;
+  }
+
+  const victoires = parcours.filter(p => p.rang === 1).length;
+  const podiums = parcours.filter(p => p.rang <= 3).length;
+  const meilleur = Math.min(...parcours.map(p => p.rang));
+
+  const lignes = parcours.map(p => {
+    const medaille = p.rang === 1 ? '🏆' : p.rang === 2 ? '🥈' : p.rang === 3 ? '🥉' : '';
+    return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #eee;font-size:12px">
+      <span style="width:26px;text-align:center;font-weight:700">${medaille || p.rang}</span>
+      <span style="flex:1;min-width:0">${esc(p.edition)}${p.annee ? ' <span style="color:#bbb">(' + esc(String(p.annee)) + ')</span>' : ''}</span>
+      <span style="color:var(--gray);font-size:11px;white-space:nowrap">${p.rang}${t('palmares_of')}${p.total}</span>
+    </div>`;
+  }).join('');
+
+  // Bilan par couleur, repris du classement cumulé (qui agrège éditions + tournoi en cours).
+  const cumul = statsCumulees().find(a =>
+    a.pseudo.toLowerCase() === q || a.pseudo.toLowerCase().includes(q) || (a.name && a.name.toLowerCase().includes(q)));
+  const bilan = (cumul && cumul.aCouleurs) ? `<div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(0,0,0,0.08);font-size:11px;color:#7a6a3a">
+      <div>⬜ ${t('palmares_white')} : <b>${cumul.vB}</b>${t('palmares_v')} · ${cumul.nB}${t('palmares_n')} · ${cumul.dB}${t('palmares_d')}</div>
+      <div>⬛ ${t('palmares_black')} : <b>${cumul.vN}</b>${t('palmares_v')} · ${cumul.nN}${t('palmares_n')} · ${cumul.dN}${t('palmares_d')}</div>
+      <div style="margin-top:3px">${t('palmares_total')} : <b>${cumul.v}</b>${t('palmares_v')} · ${cumul.nB+cumul.nN}${t('palmares_n')} · ${cumul.dB+cumul.dN}${t('palmares_d')} ${t('palmares_on')} ${cumul.m} ${t('palmares_m')}</div>
+    </div>` : '';
+
+  box.innerHTML = `<div style="background:var(--gold-light);border-radius:10px;padding:12px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
+      <div style="flex:1;font-size:15px;font-weight:800">${titreJoueur}</div>
+      <button onclick="fermerFichePalmares()" style="border:none;background:none;color:#8a7a4a;font-size:16px;cursor:pointer;padding:0 4px">✕</button>
+    </div>
+    <div style="font-size:11px;color:#7a6a3a;margin-bottom:10px">
+      ${parcours.length} ${t(parcours.length > 1 ? 'palmares_editions' : 'palmares_edition')}
+      ${victoires ? ' · 🏆 ' + victoires : ''}
+      ${podiums ? ' · ' + podiums + ' ' + t(podiums > 1 ? 'palmares_podiums' : 'palmares_podium') : ''}
+      · ${t('palmares_best')} ${meilleur}
+    </div>
+    ${lignes}
+    ${bilan}
+  </div>`;
+  box.style.display = 'block';
+}
+
+// ── PALMARÈS — administration ──
+
+// Analyse un collage en vrac ("pseudo [tab] nom", "pseudo-Nom", ou juste "pseudo").
+// Un tiret n'est traité comme séparateur QUE s'il est suivi d'une majuscule (un nom
+// commence toujours par une majuscule) — un tiret suivi d'un chiffre ou d'une minuscule
+// fait partie du pseudo (ex. "NoNo-25" reste un seul pseudo). Limite connue : un pseudo
+// comme "Jean-François" sera coupé à tort ; c'est ambigu par nature, corrigeable à la main.
+function parsePalmaresBulkText(text) {
+  return text.split('\n').map(line => {
+    let clean = line.trim().replace(/[,;]+$/, '').trim();
+    if (!clean) return null;
+    if (clean.includes('\t')) {
+      let [pseudo, ...rest] = clean.split('\t');
+      let name = rest.join('\t').trim();
+      pseudo = pseudo.trim().replace(/-+$/, '').trim();
+      name = name.replace(/^-+/, '').trim();
+      return { pseudo, name: name || null, stats: null };
+    }
+    // Statistiques optionnelles : "pseudo-Nom;points;matchs;victoires;victoiresNoirs"
+    let stats = null;
+    if (clean.includes(';')) {
+      const bouts = clean.split(';');
+      clean = bouts[0].trim();
+      const n = bouts.slice(1).map(x => parseFloat(String(x).replace(',', '.')));
+      if (n.length && n.every(x => !isNaN(x))) {
+        if (n.length >= 6) {
+          // Détail complet : victoires/nulles/défaites en Blancs, puis en Noirs.
+          // Tout le reste (matchs, points, total de victoires) s'en déduit.
+          const [vB,nB,dB,vN,nN,dN] = n;
+          stats = { vB,nB,dB,vN,nN,dN,
+                    m: vB+nB+dB+vN+nN+dN,
+                    v: vB+vN,
+                    pts: vB+vN + 0.5*(nB+nN) };
+        } else {
+          // Ancien format abrégé : points, matchs, victoires, victoires aux Noirs.
+          stats = { pts:n[0]||0, m:n[1]||0, v:n[2]||0, vN:n[3]||0 };
+        }
+      }
+    }
+    const dashMatch = clean.match(/^(.+?)-([A-ZÀ-Ý].*)$/);
+    if (dashMatch) return { pseudo: dashMatch[1].trim(), name: dashMatch[2].trim(), stats };
+    return { pseudo: clean, name: null, stats };
+  }).filter(Boolean);
+}
+
+// Retrouve un nom déjà associé à ce pseudo ailleurs (autres éditions du palmarès, ou
+// joueurs inscrits au tournoi en cours). Comparaison insensible à la casse : les pseudos
+// sont saisis de façon irrégulière d'une édition à l'autre (Wmdp18 / wmdp18 / WmdP18).
+function findKnownName(pseudo, excludeEditionId) {
+  if (!pseudo) return null;
+  const cible = pseudo.trim().toLowerCase();
+  const palmares = state?.palmares || {};
+  for (const [edId, ed] of Object.entries(palmares)) {
+    if (edId === excludeEditionId) continue;
+    for (const e of Object.values(ed.entries || {})) {
+      if (e?.name && e.pseudo && e.pseudo.trim().toLowerCase() === cible) return e.name;
+    }
+  }
+  // À défaut, le nom donné à l'inscription du tournoi en cours.
+  const joueur = getPlayers().find(p => p.nickname && p.nickname.trim().toLowerCase() === cible);
+  return joueur?.name || null;
+}
+
+window.addPalmaresEdition = async function() {
+  if (!isAdmin) return;
+  const nameEl = document.getElementById('new-edition-name');
+  const yearEl = document.getElementById('new-edition-year');
+  const name = nameEl?.value?.trim();
+  if (!name) { showMsg('palmares-admin-msg', t('palmares_name_required'), false); return; }
+  const year = yearEl?.value?.trim() || null;
+  const existing = Object.keys(state?.palmares || {}).length;
+  const id = 'ed_' + Date.now();
+  await set(ref(db, 'palmares/' + id), { name, year, order: existing, entries: {} });
+  if (nameEl) nameEl.value = '';
+  if (yearEl) yearEl.value = '';
+  showMsg('palmares-admin-msg', t('palmares_edition_added'));
+};
+
+window.deletePalmaresEdition = async function(editionId) {
+  if (!isAdmin) return;
+  if (!confirm(t('palmares_confirm_delete_edition'))) return;
+  await set(ref(db, 'palmares/' + editionId), null);
+};
+
+window.updatePalmaresEditionMeta = async function(editionId) {
+  if (!isAdmin) return;
+  const name = document.getElementById('ped-name-' + editionId)?.value?.trim();
+  if (!name) return;
+  const year = document.getElementById('ped-year-' + editionId)?.value?.trim() || null;
+  await set(ref(db, 'palmares/' + editionId + '/name'), name);
+  await set(ref(db, 'palmares/' + editionId + '/year'), year);
+};
+
+window.addPalmaresEntry = async function(editionId) {
+  if (!isAdmin) return;
+  const pseudoEl = document.getElementById('new-entry-pseudo-' + editionId);
+  const nameEl = document.getElementById('new-entry-name-' + editionId);
+  const pseudo = pseudoEl?.value?.trim();
+  if (!pseudo) return;
+  // Si aucun nom n'est saisi, on reprend celui déjà connu ailleurs pour ce pseudo.
+  const name = nameEl?.value?.trim() || findKnownName(pseudo, editionId) || null;
+  const entries = state?.palmares?.[editionId]?.entries || {};
+  const nextRank = Object.keys(entries).length + 1;
+  await set(ref(db, `palmares/${editionId}/entries/e_${Date.now()}`), { pseudo, name, rank: nextRank });
+  showToast(t('palmares_entry_added').replace('{n}', name ? name + ' (' + pseudo + ')' : pseudo));
+  if (pseudoEl) pseudoEl.value = '';
+  if (nameEl) nameEl.value = '';
+};
+
+window.bulkAddPalmaresEntries = async function(editionId) {
+  if (!isAdmin) return;
+  const textEl = document.getElementById('bulk-entries-' + editionId);
+  const parsed = parsePalmaresBulkText(textEl?.value || '');
+  if (!parsed.length) return;
+  const existingEntries = state?.palmares?.[editionId]?.entries || {};
+  const existingCount = Object.keys(existingEntries).length;
+  const updated = { ...existingEntries };
+  parsed.forEach((p, i) => {
+    // Pseudo seul dans la liste collée : on récupère le nom si ce joueur est déjà
+    // connu d'une autre édition (ou du tournoi en cours).
+    const nom = p.name || findKnownName(p.pseudo, editionId) || null;
+    const ent = { pseudo: p.pseudo, name: nom, rank: existingCount + i + 1 };
+    if (p.stats) Object.assign(ent, p.stats);
+    updated['e_' + Date.now() + '_' + i] = ent;
+  });
+  await set(ref(db, `palmares/${editionId}/entries`), updated);
+  if (textEl) textEl.value = '';
+  showMsg('palmares-admin-msg', t('palmares_bulk_added').replace('{n}', parsed.length));
+};
+
+// Bouton ✓ : sur mobile, la flèche du clavier passe au champ suivant sans déclencher
+// l'enregistrement (qui se fait à la sortie du champ). Ce bouton ferme le clavier et
+// enregistre explicitement, sans avoir à toucher ailleurs sur l'écran.
+window.validerPalmaresEntry = async function(editionId, entryId) {
+  if (!isAdmin) return;
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  // window. explicite : la fonction n'existe que sur window (assignation anonyme),
+  // pas comme variable du module.
+  await window.updatePalmaresEntry(editionId, entryId);
+};
+
+window.updatePalmaresEntry = async function(editionId, entryId) {
+  if (!isAdmin) return;
+  const pseudo = document.getElementById('pe-pseudo-' + entryId)?.value?.trim();
+  if (!pseudo) return; // un pseudo vide n'a pas de sens : on ignore plutôt que d'effacer
+  const name = document.getElementById('pe-name-' + entryId)?.value?.trim() || null;
+
+  // Détail par couleur. Le nombre de matchs, les points et le total de victoires en
+  // découlent : modifier une victoire aux Noirs met tout le reste à jour automatiquement.
+  const lire = k => {
+    const v = parseFloat(document.getElementById('pe-' + k + '-' + entryId)?.value);
+    return isNaN(v) || v < 0 ? 0 : v;
+  };
+  const vB = lire('vB'), nB = lire('nB'), dB = lire('dB');
+  const vN = lire('vN'), nN = lire('nN'), dN = lire('dN');
+  const m = vB + nB + dB + vN + nN + dN;
+
+  await set(ref(db, `palmares/${editionId}/entries/${entryId}`), {
+    pseudo, name,
+    rank: state?.palmares?.[editionId]?.entries?.[entryId]?.rank ?? 999,
+    vB, nB, dB, vN, nN, dN,
+    m, v: vB + vN, pts: vB + vN + 0.5 * (nB + nN)
+  });
+  // Sans retour visible, on ne sait pas si la saisie a bien été prise en compte.
+  showToast(t('palmares_entry_saved').replace('{n}', pseudo));
+};
+
+window.fillKnownNames = async function(editionId) {
+  if (!isAdmin) return;
+  const entries = Object.entries(state?.palmares?.[editionId]?.entries || {});
+  let n = 0;
+  for (const [eid, e] of entries) {
+    if (e.name) continue; // ne jamais écraser un nom déjà saisi
+    const nom = findKnownName(e.pseudo, editionId);
+    if (nom) { await set(ref(db, `palmares/${editionId}/entries/${eid}/name`), nom); n++; }
+  }
+  showMsg('palmares-admin-msg', n ? t('palmares_names_filled').replace('{n}', n) : t('palmares_no_name_found'));
+};
+
+window.deletePalmaresEntry = async function(editionId, entryId) {
+  if (!isAdmin) return;
+  // Suppression irréversible : on demande confirmation, en nommant le joueur concerné.
+  const e = state?.palmares?.[editionId]?.entries?.[entryId];
+  const qui = e ? (e.name ? e.name + ' (' + e.pseudo + ')' : e.pseudo) : '';
+  if (!confirm(t('palmares_confirm_delete_entry').replace('{n}', qui))) return;
+  await set(ref(db, `palmares/${editionId}/entries/${entryId}`), null);
+  await renumberPalmaresEntries(editionId);
+  showToast(t('palmares_entry_deleted').replace('{n}', qui));
+};
+
+window.movePalmaresEntry = async function(editionId, entryId, direction) {
+  if (!isAdmin) return;
+  const entries = Object.entries(state?.palmares?.[editionId]?.entries || {}).sort((a,b)=>(a[1].rank||999)-(b[1].rank||999));
+  const idx = entries.findIndex(([id]) => id === entryId);
+  const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+  if (idx < 0 || swapIdx < 0 || swapIdx >= entries.length) return;
+  const [id1, e1] = entries[idx];
+  const [id2, e2] = entries[swapIdx];
+  await set(ref(db, `palmares/${editionId}/entries/${id1}/rank`), e2.rank);
+  await set(ref(db, `palmares/${editionId}/entries/${id2}/rank`), e1.rank);
+};
+
+async function renumberPalmaresEntries(editionId) {
+  const entries = Object.entries(state?.palmares?.[editionId]?.entries || {}).sort((a,b)=>(a[1].rank||999)-(b[1].rank||999));
+  for (let i = 0; i < entries.length; i++) {
+    const [id, e] = entries[i];
+    if (e.rank !== i + 1) await set(ref(db, `palmares/${editionId}/entries/${id}/rank`), i + 1);
+  }
+}
+
+// Édition ouverte dans le panneau admin. Local à l'appareil, comme côté public :
+// les listes complètes sont longues, on n'en affiche qu'une à la fois.
+let editionAdminOuverte = null;
+
+window.togglePalmaresAdminEdition = function(id) {
+  editionAdminOuverte = (editionAdminOuverte === id) ? null : id;
+  renderPalmaresAdmin();
+};
+
+function renderPalmaresAdmin() {
+  const el = document.getElementById('palmares-admin-content');
+  if (!el) return;
+  const palmares = state?.palmares || {};
+  const editions = Object.entries(palmares).sort((a,b) => (a[1].order||0)-(b[1].order||0));
+  if (!editions.length) {
+    el.innerHTML = `<div style="color:var(--gray);font-size:12px">${t('palmares_empty')}</div>`;
+    return;
+  }
+  el.innerHTML = editions.map(([id, ed]) => {
+    const entries = Object.entries(ed.entries||{}).sort((a,b)=>(a[1].rank||999)-(b[1].rank||999));
+    const ouverte = editionAdminOuverte === id;
+    if (!ouverte) {
+      // Repliée : juste un bouton avec le nom, l'année et le nombre de joueurs.
+      return `<button class="btn btn-gray" style="text-align:left;padding:10px 14px;font-size:13px;margin-bottom:6px;width:100%" onclick="togglePalmaresAdminEdition('${id}')">
+        🗓️ ${esc(ed.name||'')}${ed.year ? ' (' + esc(String(ed.year)) + ')' : ''}
+        <span style="color:var(--gray);font-size:11px">— ${entries.length} ${t(entries.length>1?'palmares_players':'palmares_player')}</span>
+      </button>`;
+    }
+    const champStat = (eid, k, v) =>
+      `<input id="pe-${k}-${eid}" type="number" min="0" inputmode="numeric" value="${v ?? 0}" onchange="updatePalmaresEntry('${id}','${eid}')" style="width:30px;padding:3px 2px;border:1px solid #e5e5e5;border-radius:4px;font-size:10px;text-align:center">`;
+    const entryRows = entries.map(([eid, e], i) => `
+      <div style="padding:4px 0;border-bottom:1px solid #f0f0f0">
+        <div style="display:flex;align-items:center;gap:4px">
+          <span style="width:20px;font-size:11px;font-weight:700;color:var(--gold);text-align:center">${e.rank}</span>
+          <input id="pe-pseudo-${eid}" value="${esc(e.pseudo||'')}" onchange="updatePalmaresEntry('${id}','${eid}')" style="flex:1;min-width:0;padding:4px 6px;border:1px solid #e5e5e5;border-radius:5px;font-size:11px">
+          <input id="pe-name-${eid}" value="${esc(e.name||'')}" onchange="updatePalmaresEntry('${id}','${eid}')" placeholder="${t('palmares_name_optional_placeholder')}" style="flex:1;min-width:0;padding:4px 6px;border:1px solid #e5e5e5;border-radius:5px;font-size:11px;color:#888">
+          <button class="seed-btn" style="font-size:14px" onclick="movePalmaresEntry('${id}','${eid}','up')" ${i===0?'disabled':''}>▲</button>
+          <button class="seed-btn" style="font-size:14px" onclick="movePalmaresEntry('${id}','${eid}','down')" ${i>=entries.length-1?'disabled':''}>▼</button>
+          <button class="seed-btn" style="color:var(--red)" onclick="deletePalmaresEntry('${id}','${eid}')">✕</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:3px;padding:3px 0 0 24px;font-size:10px;color:var(--gray)">
+          <span>⬜</span>${champStat(eid,'vB',e.vB)}${champStat(eid,'nB',e.nB)}${champStat(eid,'dB',e.dB)}
+          <span style="margin-left:6px">⬛</span>${champStat(eid,'vN',e.vN)}${champStat(eid,'nN',e.nN)}${champStat(eid,'dN',e.dN)}
+          <button class="seed-btn" style="color:var(--green);font-size:15px;margin-left:4px" onclick="validerPalmaresEntry('${id}','${eid}')" title="${t('palmares_validate')}">✓</button>
+          <span style="margin-left:auto;white-space:nowrap">${e.m||0} ${t('palmares_m')} · ${e.pts??0} ${t('palmares_pts')}</span>
+        </div>
+      </div>`).join('');
+    return `<div style="border:1px solid var(--gold);border-radius:8px;padding:10px;margin-bottom:10px">
+      <button class="btn btn-gray" style="text-align:left;padding:8px 12px;font-size:12px;margin-bottom:8px;width:100%" onclick="togglePalmaresAdminEdition('${id}')">
+        ▲ ${esc(ed.name||'')}${ed.year ? ' (' + esc(String(ed.year)) + ')' : ''} — ${entries.length} ${t(entries.length>1?'palmares_players':'palmares_player')}
+      </button>
+      <div style="display:flex;gap:6px;margin-bottom:8px">
+        <input id="ped-name-${id}" value="${esc(ed.name||'')}" onchange="updatePalmaresEditionMeta('${id}')" style="flex:2;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;font-weight:700">
+        <input id="ped-year-${id}" value="${esc(ed.year||'')}" onchange="updatePalmaresEditionMeta('${id}')" placeholder="${t('palmares_year_placeholder')}" style="flex:1;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px">
+        <button class="seed-btn" style="color:var(--red)" onclick="deletePalmaresEdition('${id}')" title="${t('palmares_delete_edition')}">🗑️</button>
+      </div>
+      ${entries.length ? `<div style="display:flex;align-items:center;gap:3px;padding:0 0 3px 24px;font-size:9px;color:#aaa">
+        <span>⬜</span><span style="width:30px;text-align:center">${t('palmares_v')}</span><span style="width:30px;text-align:center">${t('palmares_n')}</span><span style="width:30px;text-align:center">${t('palmares_d')}</span>
+        <span style="margin-left:6px">⬛</span><span style="width:30px;text-align:center">${t('palmares_v')}</span><span style="width:30px;text-align:center">${t('palmares_n')}</span><span style="width:30px;text-align:center">${t('palmares_d')}</span>
+      </div>` : ''}
+      ${entryRows || `<div style="color:var(--gray);font-size:11px;margin-bottom:6px">${t('palmares_empty_edition')}</div>`}
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <input id="new-entry-pseudo-${id}" placeholder="${t('palmares_pseudo_placeholder')}" style="flex:1;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px">
+        <input id="new-entry-name-${id}" placeholder="${t('palmares_name_optional_placeholder')}" style="flex:1;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px">
+        <button class="btn btn-gray btn-sm" style="width:auto" onclick="addPalmaresEntry('${id}')">+</button>
+      </div>
+      <div style="margin-top:8px">
+        <div style="font-size:10px;color:var(--gray);line-height:1.6;background:#f8f8f8;border-radius:6px;padding:8px;margin-bottom:6px">
+          ${t('palmares_format_help')}
+        </div>
+        <textarea id="bulk-entries-${id}" placeholder="${t('palmares_bulk_placeholder')}" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:11px;min-height:60px"></textarea>
+        <div style="display:flex;gap:6px;margin-top:4px">
+          <button class="btn btn-gray btn-sm" style="flex:1" onclick="bulkAddPalmaresEntries('${id}')">${t('palmares_bulk_btn')}</button>
+          <button class="btn btn-gray btn-sm" style="flex:1" onclick="fillKnownNames('${id}')">${t('palmares_fill_names_btn')}</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
 
 function renderPage(page) {
   if (!state) return;
@@ -1458,6 +2298,7 @@ function renderPage(page) {
   if (page==='matches') renderMatches();
   if (page==='finals') renderFinals();
   if (page==='admin') renderAdmin();
+  if (page==='info') renderInfo();
 }
 
 // ── ADMIN ──
@@ -1486,6 +2327,7 @@ window.adminLogout = function() {
 };
 
 window.changePin = async function() {
+  if (!isAdmin) return;
   const current = document.getElementById('pin-current')?.value.trim();
   const newPin = document.getElementById('pin-new')?.value.trim();
   const confirm = document.getElementById('pin-confirm')?.value.trim();
@@ -1572,7 +2414,7 @@ function renderRanking() {
 
 window.showAdminTab = function(tab) {
   currentAdminTab=tab;
-  ['actions','settings','players','seeding'].forEach(t2=>{
+  ['actions','settings','players','notifs'].forEach(t2=>{
     const el=document.getElementById('admin-'+t2); if(el) el.style.display=t2===tab?'block':'none';
     const btn=document.getElementById('subtab-'+t2); if(btn) btn.className='subtab '+(t2===tab?'active':'inactive');
   });
@@ -1580,6 +2422,7 @@ window.showAdminTab = function(tab) {
 };
 
 window.saveSettings = async function() {
+  if (!isAdmin) return;
   const name=document.getElementById('set-name').value.trim();
   const regDeadline=document.getElementById('set-reg-deadline').value||'';
   const ppg=parseInt(document.getElementById('set-ppg').value)||5;
@@ -1612,6 +2455,9 @@ window.confirmUnregister = function(id, nickname) {
 };
 
 window.registerPlayer = async function() {
+  // Le formulaire n'est affiché que pendant la phase d'inscription, mais la fonction
+  // elle-même ne le vérifiait pas : garde de sécurité en profondeur.
+  if (state?.settings?.status !== 'registration') { showMsg('reg-msg', t('reg_closed'), false); return; }
   const nick=document.getElementById('reg-nick').value.trim();
   const name=document.getElementById('reg-name').value.trim();
   const sector=document.getElementById('reg-sector').value.trim();
@@ -1730,6 +2576,7 @@ window.cancelEditPlayer = function() {
 };
 
 window.saveSeedOrder = async function() {
+  if (!isAdmin) return;
   // Save each player's position in current seedOrder to Firebase
   const promises = seedOrder.map((p, i) => set(ref(db, 'players/' + p.id + '/seed'), i));
   await Promise.all(promises);
@@ -1817,6 +2664,7 @@ function assignBalancedColors(pls, schedule, seedLookup) {
 }
 
 window.assignGroups = async function() {
+  if (!isAdmin) return;
   const ppg=state.settings.playersPerGroup||5;
   // Re-read seedOrder from current state to get latest saved order
   const freshPlayers = getPlayers().sort((a,b)=>(typeof a.seed==='number'?a.seed:999)-(typeof b.seed==='number'?b.seed:999));
@@ -1918,6 +2766,13 @@ window.submitFinalScore = async function(id) {
   const s2=parseFloat(document.getElementById('fs2-'+id)?.value);
   if(isNaN(s1)||isNaN(s2)) return;
   const game=state.finals?.[id]; if(!game) return;
+  // La couleur est obligatoire : sans elle, ce match ne pourrait pas alimenter le détail
+  // Blancs/Noirs, et l'information serait définitivement perdue.
+  const couleurP1 = document.getElementById('fc-'+id)?.value;
+  if (couleurP1 !== 'white' && couleurP1 !== 'black') {
+    showToast(t('color_required'), false);
+    return;
+  }
   const wasPlayed = game.score1!==null && game.score1!==undefined;
   const oldWinner=game.winner;
   const newWinner=s1>s2?game.player1:s2>s1?game.player2:null;
@@ -1927,6 +2782,7 @@ window.submitFinalScore = async function(id) {
   if(oldWinner && oldWinner!==newWinner) {
     await removePropagatedWinner(id, oldWinner, game);
   }
+  await set(ref(db,'finals/'+id+'/colorP1'),couleurP1);
   await set(ref(db,'finals/'+id+'/score1'),s1);
   await set(ref(db,'finals/'+id+'/score2'),s2);
   await set(ref(db,'finals/'+id+'/winner'),newWinner);
@@ -2150,6 +3006,7 @@ function validateBracket(fin) {
 }
 
 window.launchFinals = async function() {
+  if (!isAdmin) return;
   const standings = computeStandings();
   const fin = discoverFinalists(standings, state.settings.finalistsCount || 8);
   if (fin.length < 2) { showMsg('actions-msg', t('not_enough_finalists'), false); return; }
@@ -2397,6 +3254,7 @@ window.maintAdminLogin = async function() {
 };
 
 window.toggleMaintenance = async function() {
+  if (!isAdmin) return;
   maintenanceMode = !maintenanceMode;
   await set(ref(db, 'maintenance'), maintenanceMode);
   applyMaintenanceOverlay();
@@ -2404,11 +3262,13 @@ window.toggleMaintenance = async function() {
 };
 
 window.toggleAutoNotify = async function() {
+  if (!isAdmin) return;
   const current = state?.settings?.autoNotifyResults === true;
   await set(ref(db, 'settings/autoNotifyResults'), !current);
 };
 
 window.toggleAutoLateAlert = async function() {
+  if (!isAdmin) return;
   const current = state?.settings?.autoNotifyLateAlerts === true;
   await set(ref(db, 'settings/autoNotifyLateAlerts'), !current);
 };
@@ -2428,6 +3288,7 @@ window.resetAdminDevice = async function() {
 };
 
 window.checkLateNow = async function() {
+  if (!isAdmin) return;
   const btn = document.getElementById('check-late-btn');
   const resultEl = document.getElementById('check-late-result');
   if (btn) btn.disabled = true;
@@ -2491,11 +3352,13 @@ function applyMaintenanceOverlay() {
 };
 
 window.setStatus = async function(status) {
+  if (!isAdmin) return;
   await set(ref(db,'settings/status'), status);
   showMsg('actions-msg', '✓');
 };
 
 window.resetGroups = async function() {
+  if (!isAdmin) return;
   // Remove group assignment from all players
   const players = getPlayers();
   for (const p of players) {
@@ -2510,6 +3373,7 @@ window.resetGroups = async function() {
 };
 
 window.resetFinals = async function() {
+  if (!isAdmin) return;
   await set(ref(db,'finals'), null);
   await set(ref(db,'settings/status'), 'playing');
   showMsg('actions-msg', t('finals_reset'));
@@ -2582,6 +3446,7 @@ function generateWhatsAppMsg() {
 }
 
 window.sendPushToAll = async function() {
+  if (!isAdmin) return;
   const msgEl = document.getElementById('notif-admin-msg');
   const msg = msgEl?.value?.trim();
   if (!msg) { showMsg('notif-admin-msg-result', t('notif_enter_msg'), false); return; }
@@ -2630,19 +3495,77 @@ window.copyWhatsApp = async function() {
 };
 
 window.resetScores = async function() {
+  if (!isAdmin) return;
   const games=state.games||{};
   for(const id of Object.keys(games)){await set(ref(db,'games/'+id+'/scoreWhite'),null);await set(ref(db,'games/'+id+'/scoreBlack'),null);}
   showMsg('actions-msg',t('scores_reset'));
 };
+// Construit le classement final du tournoi en cours, prêt à être archivé au palmarès.
+// Ordre : vainqueur et finalistes d'abord (d'après le bracket), puis le reste des
+// joueurs selon le classement global des poules.
+function buildCurrentRanking() {
+  const finals = getFinals();
+  const ordered = [];
+  const seen = new Set();
+  const add = nick => { if (nick && !seen.has(nick)) { seen.add(nick); ordered.push(nick); } };
+
+  const finale = finals.find(f => f.round === 'Finale');
+  if (finale && finale.winner) {
+    add(finale.winner);
+    add(finale.winner === finale.player1 ? finale.player2 : finale.player1);
+  }
+  const troisieme = finals.find(f => f.round === '3ème place');
+  if (troisieme && troisieme.winner) {
+    add(troisieme.winner);
+    add(troisieme.winner === troisieme.player1 ? troisieme.player2 : troisieme.player1);
+  }
+  // Puis les autres joueurs, dans l'ordre du classement global des poules.
+  const standings = computeStandings();
+  const tous = [];
+  Object.values(standings).forEach(grp => {
+    Object.entries(grp).forEach(([nick, st]) => tous.push({ nick, st }));
+  });
+  tous.sort((a, b) => (b.st.points - a.st.points) || (b.st.totalWins - a.st.totalWins));
+  tous.forEach(x => add(x.nick));
+
+  const playersByNick = {};
+  getPlayers().forEach(p => { playersByNick[p.nickname] = p; });
+  return ordered.map((nick, i) => ({
+    pseudo: nick,
+    name: playersByNick[nick]?.name || null,
+    rank: i + 1
+  }));
+}
+
 window.resetAll = async function() {
+  if (!isAdmin) return;
   const pin=await get(ref(db,'adminPin')).then(s=>s.exists()?s.val():null);
   const prevSettings=await get(ref(db,'settings')).then(s=>s.exists()?s.val():{});
+  // Le palmarès doit survivre à une réinitialisation : il contient l'historique des
+  // éditions passées, sans rapport avec le tournoi en cours.
+  const prevPalmares=await get(ref(db,'palmares')).then(s=>s.exists()?s.val():{}) || {};
+
+  // Proposition d'archivage : le classement actuel est rangé dans le palmarès avant
+  // d'effacer, sinon il serait définitivement perdu.
+  const ranking = buildCurrentRanking();
+  const palmares = { ...prevPalmares };
+  if (ranking.length && confirm(t('confirm_archive_before_reset'))) {
+    const entries = {};
+    ranking.forEach((r, i) => { entries['e_' + Date.now() + '_' + i] = r; });
+    palmares['ed_' + Date.now()] = {
+      name: prevSettings?.name || 'Air Base Chess Tour',
+      year: String(new Date().getFullYear()),
+      order: Object.keys(prevPalmares).length,
+      entries
+    };
+  }
+
   const fresh=defaultData();
   fresh.settings.adminSubId=prevSettings?.adminSubId||null;
   fresh.settings.adminSubIdDev=prevSettings?.adminSubIdDev||null;
   fresh.settings.autoNotifyResults=prevSettings?.autoNotifyResults||false;
   fresh.settings.autoNotifyLateAlerts=prevSettings?.autoNotifyLateAlerts||false;
-  await set(ref(db),{...fresh,adminPin:pin});
+  await set(ref(db),{...fresh, palmares, adminPin:pin});
   showMsg('actions-msg',t('tournament_reset'));
 };
 
@@ -2673,7 +3596,14 @@ function computeStandings(){
   for(const grp of Object.keys(groups)){
     const g=groups[grp];
     for(const player of Object.keys(g)){
-      g[player].tieBreak=games.filter(m=>m.group===grp&&(m.playerWhite===player||m.playerBlack===player)).reduce((sum,m)=>{
+      // Buchholz = somme des points des adversaires DÉJÀ AFFRONTÉS. Les matchs non
+      // encore joués sont exclus : sinon un joueur n'ayant disputé aucune partie
+      // récoltait déjà du Buchholz grâce aux résultats de ses futurs adversaires.
+      // Même critère de "match joué" que plus haut (les deux scores doivent être des nombres).
+      g[player].tieBreak=games.filter(m=>m.group===grp
+          &&(m.playerWhite===player||m.playerBlack===player)
+          &&!isNaN(parseFloat(m.scoreWhite))&&!isNaN(parseFloat(m.scoreBlack))
+        ).reduce((sum,m)=>{
         const opp=m.playerWhite===player?m.playerBlack:m.playerWhite;
         return sum+(g[opp]?.points||0);
       },0);
@@ -2738,7 +3668,10 @@ function discoverFinalists(standings,total){
       ||(norm(b.stats,'totalWins')-norm(a.stats,'totalWins'))
       ||(norm(b.stats,'blackWins')-norm(a.stats,'blackWins'))
       ||(norm(b.stats,'tieBreak')-norm(a.stats,'tieBreak'))
-      ||((seedMap3[a.player]||999)-(seedMap3[b.player]||999));
+      // ⚠️ Piège : en JavaScript, 0 || 999 vaut 999. La tête de série n°1 est enregistrée
+      // en interne comme 0 — avec `||` elle devenait la PIRE au lieu de la meilleure.
+      ||((typeof seedMap3[a.player] === 'number' ? seedMap3[a.player] : 999)
+        -(typeof seedMap3[b.player] === 'number' ? seedMap3[b.player] : 999));
   });
   return finalists;
 }
@@ -2791,18 +3724,6 @@ function renderHome(){
   // Show pool reminder banner only during pool phase
   const reminder = document.getElementById('pool-reminder');
   if (reminder) reminder.style.display = s.status==='playing' ? 'block' : 'none';
-  // Render rules with dynamic format values
-  const semisF = s.semisFormat || '20min + 10s/coup';
-  const finalF = s.finalFormat || '30min + 10s/coup';
-  const rulesEl = document.getElementById('rules-content');
-  if (rulesEl) {
-    let rulesHtml = t('rules');
-    rulesEl.innerHTML = rulesHtml;
-    const semisSpan = document.getElementById('home-semis-format');
-    const finalSpan = document.getElementById('home-final-format');
-    if (semisSpan) semisSpan.textContent = semisF;
-    if (finalSpan) finalSpan.textContent = finalF;
-  }
   document.getElementById('player-list-count').textContent=cnt;
   const pl=document.getElementById('player-list');
   if(!cnt){pl.innerHTML=`<div style="color:var(--gray);font-size:13px">${t('reg_err_fields').split('.')[0]}...</div>`;return;}
@@ -2944,7 +3865,16 @@ function finalCardHTML(f){
     </div>
     ${f.winner?`<div style="text-align:center;margin-top:8px;font-size:12px;color:var(--green);font-weight:700">${t('winner')}: ${esc(f.winner)}</div>`:''}
     ${canPlay&&!played&&!isEditing?`<button class="btn btn-gold" style="margin-top:10px;font-size:13px;padding:9px" onclick="openFinalEdit('${f.id}')">${t('enter_score')}</button>`:''}
-    ${isEditing?`<div class="score-row">
+    ${played&&!isEditing&&(f.colorP1==='white'||f.colorP1==='black')?`<div style="font-size:10px;color:var(--gray);text-align:center;margin-top:4px">${f.colorP1==='white'?'⬜':'⬛'} ${esc(f.player1||'')} &nbsp;·&nbsp; ${f.colorP1==='white'?'⬛':'⬜'} ${esc(f.player2||'')}</div>`:''}
+    ${isEditing?`<div style="display:flex;align-items:center;gap:6px;justify-content:center;margin-top:8px;font-size:11px;color:var(--gray)">
+      <span>${esc(f.player1||'')}</span>
+      <select class="score-select" id="fc-${f.id}" style="width:auto;padding:6px 8px;font-size:12px">
+        <option value=""${f.colorP1?'':' selected'}>${t('color_pick')}</option>
+        <option value="white"${f.colorP1==='white'?' selected':''}>${t('whites')}</option>
+        <option value="black"${f.colorP1==='black'?' selected':''}>${t('blacks')}</option>
+      </select>
+    </div>
+    <div class="score-row">
       <select class="score-select" id="fs1-${f.id}" onchange="autoFinalScore('${f.id}','p1')"><option value="">—</option>${opts(f.score1)}</select>
       <span style="font-weight:700;color:#ccc">—</span>
       <select class="score-select" id="fs2-${f.id}" onchange="autoFinalScore('${f.id}','p2')"><option value="">—</option>${opts(f.score2)}</select>
@@ -2969,6 +3899,7 @@ function renderAdmin(){
   document.getElementById('set-final-format').value=s.finalFormat||'30min + 10s/coup';
   updatePoolEndEstimate();
   updateFinalsEndEstimate();
+  renderPalmaresAdmin();
 
   const players=getPlayers();
   const ppg=s.playersPerGroup||5;
@@ -2994,7 +3925,7 @@ function renderAdmin(){
   renderSeedList();
   document.getElementById('seed-info').textContent=`${players.length} → ${numGroups} groupe${numGroups>1?'s':''} ~${ppg}`;
   if(currentAdminTab==='ranking') renderRanking();
-  if(currentAdminTab==='actions'){
+  if(currentAdminTab==='notifs'){
     // Show subscriber count
     const subsCount = Object.values(state?.[SUB_PATH] || {}).filter(s => s?.endpoint && s?.keys).length;
     const subsEl = document.getElementById('notif-subscribers-count');
@@ -3052,6 +3983,10 @@ function renderAdmin(){
       const ab = document.getElementById(activeBtn);
       if (ab) { ab.style.borderLeft = '3px solid var(--gold)'; ab.style.fontWeight = '700'; }
     }
+  }
+
+  // Classement des finalistes : hors condition d'onglet — il vit dans l'onglet Tournoi,
+  // pas dans Notifs, et doit se mettre à jour en direct quel que soit l'onglet consulté.
     const standings=computeStandings();
     const fin=discoverFinalists(standings,s.finalistsCount||8);
     // Avertissement préventif : signale une combinaison impossible AVANT le clic sur "Lancer".
@@ -3083,7 +4018,8 @@ function renderAdmin(){
         <th>Pts/M</th><th>MJ</th><th>V/M</th><th>VN/M</th><th>TB/M</th><th>H2H</th><th>Seed</th>
       </tr></thead>
       <tbody>${fin.map((f,i)=>{
-        const s=f.stats; const m=s.matches||1;
+        const s=f.stats;
+        const nrm = v => s.matches > 0 ? v / s.matches : 0;
         const h2h=s.headToHead||{};
         const h2hStr=Object.keys(h2h).length?Object.keys(h2h).map(o=>esc(o)+':'+h2h[o]).join(', '):'—';
         return `<tr>
@@ -3091,15 +4027,15 @@ function renderAdmin(){
           <td>${esc(f.player)}</td>
           <td style="color:var(--gray)">${f.groupRank}</td>
           <td style="color:var(--gray);font-size:11px">${esc(f.group.replace('Groupe ','G'))}</td>
-          <td>${(s.points/m).toFixed(2)}</td><td>${s.matches}</td>
-          <td>${(s.totalWins/m).toFixed(2)}</td><td>${(s.blackWins/m).toFixed(2)}</td>
-          <td>${(s.tieBreak/m).toFixed(2)}</td>
+          <td>${nrm(s.points).toFixed(2)}</td><td>${s.matches}</td>
+          <td>${nrm(s.totalWins).toFixed(2)}</td><td>${nrm(s.blackWins).toFixed(2)}</td>
+          <td>${nrm(s.tieBreak).toFixed(2)}</td>
           <td style="font-size:10px;color:var(--gray)">${h2hStr}</td>
           <td style="color:var(--gray)">${seedMapF[f.player] !== null && seedMapF[f.player] !== undefined ? seedMapF[f.player] : '—'}</td>
         </tr>`;
       }).join('')}</tbody>
-    </table></div>`;}
-  }
+    </table></div>`;
+}
 }
 
 function renderSeedList(){
@@ -3168,7 +4104,7 @@ onValue(ref(db),(snapshot)=>{
   },400);
   // Only reset seedOrder from Firebase if not actively editing seeding
   // (prevents Firebase sync from undoing user's unsaved reordering)
-  if (currentPage !== 'admin' || currentAdminTab !== 'seeding') {
+  if (currentPage !== 'admin' || currentAdminTab !== 'players') {
     seedOrder=[...getPlayers()].sort((a,b)=>(typeof a.seed==='number'?a.seed:999)-(typeof b.seed==='number'?b.seed:999));
   } else {
     // Seeding tab open: only sync if player list changed (additions/removals)

@@ -828,7 +828,7 @@ const T = {
     notif_validate_btn:"✅ Valider et activer",
     change_pin_btn:"Modifier le PIN",
     check_late_btn:"🔍 Vérifier les retards maintenant",
-    open_reg_btn:"📋 Ouvrir les inscriptions",
+    open_reg_btn:"📋 Ouvrir les inscriptions",phase_reg_done:"📋 Inscriptions ouvertes",phase_pools_done:"⚔️ Phase de poules lancée",phase_finals_done:"🏆 Phases finales lancées",phase_finished_done:"🏁 Tournoi terminé",
     start_pools_btn:"⚔️ Lancer la phase de poules",
     finish_btn:"🏁 Terminer le tournoi",
     assign_btn_action:"♟ Assigner groupes & générer matchs",
@@ -961,7 +961,7 @@ const T = {
     notif_validate_btn:"✅ Bestätigen und aktivieren",
     change_pin_btn:"PIN ändern",
     check_late_btn:"🔍 Verspätungen jetzt prüfen",
-    open_reg_btn:"📋 Anmeldung öffnen",
+    open_reg_btn:"📋 Anmeldung öffnen",phase_reg_done:"📋 Anmeldung geöffnet",phase_pools_done:"⚔️ Gruppenphase gestartet",phase_finals_done:"🏆 Finalrunden gestartet",phase_finished_done:"🏁 Turnier beendet",
     start_pools_btn:"⚔️ Gruppenphase starten",
     finish_btn:"🏁 Turnier beenden",
     assign_btn_action:"♟ Gruppen zuweisen & Partien erstellen",
@@ -1093,7 +1093,7 @@ const T = {
     notif_validate_btn:"✅ Confirm and activate",
     change_pin_btn:"Change PIN",
     check_late_btn:"🔍 Check for overdue matches now",
-    open_reg_btn:"📋 Open registration",
+    open_reg_btn:"📋 Open registration",phase_reg_done:"📋 Registration open",phase_pools_done:"⚔️ Group stage launched",phase_finals_done:"🏆 Final stages launched",phase_finished_done:"🏁 Tournament finished",
     start_pools_btn:"⚔️ Launch group stage",
     finish_btn:"🏁 Finish tournament",
     assign_btn_action:"♟ Assign groups & generate matches",
@@ -1225,7 +1225,7 @@ const T = {
     notif_validate_btn:"✅ Conferma e attiva",
     change_pin_btn:"Modificare il PIN",
     check_late_btn:"🔍 Verificare i ritardi adesso",
-    open_reg_btn:"📋 Aprire le iscrizioni",
+    open_reg_btn:"📋 Aprire le iscrizioni",phase_reg_done:"📋 Iscrizioni aperte",phase_pools_done:"⚔️ Fase a gironi avviata",phase_finals_done:"🏆 Fasi finali avviate",phase_finished_done:"🏁 Torneo terminato",
     start_pools_btn:"⚔️ Avviare la fase a gironi",
     finish_btn:"🏁 Terminare il torneo",
     assign_btn_action:"♟ Assegnare i gruppi & generare le partite",
@@ -1416,17 +1416,6 @@ function applyTranslations() {
   if (pinTitle) pinTitle.textContent = t('pin_section');
   const pcta = document.getElementById('pool-reminder-cta');
   if (pcta) pcta.textContent = t('pool_cta');
-  // Indicateur de phase dans l'onglet Tournoi : l'élément existait dans le HTML
-  // mais rien ne le remplissait — il restait donc vide et invisible.
-  const phaseEl = document.getElementById('current-phase-label');
-  if (phaseEl) {
-    const icones = { registration:'📋', playing:'⚔️', finals:'🏆', finished:'✅' };
-    const st = state?.settings?.status;
-    // statusMap est local à renderHome : on refait la correspondance ici.
-    const libelles = { registration:t('status_registration'), playing:t('status_playing'),
-                       finals:t('status_finals'), finished:t('status_finished') };
-    phaseEl.innerHTML = `${icones[st] || ''} <strong>${esc(libelles[st] || '—')}</strong>`;
-  }
   const prt = document.getElementById('pool-reminder-title');
   const prx = document.getElementById('pool-reminder-text');
   if (prt) prt.textContent = t('pool_reminder_title');
@@ -4016,7 +4005,7 @@ function renderAdmin(){
       finals: t('status_finals'),
       finished: t('status_finished')
     };
-    if (phaseLabel) phaseLabel.innerHTML = `Phase actuelle : <strong style="color:var(--dark)">${statusMap2[s.status]||'—'}</strong>`;
+    if (phaseLabel) phaseLabel.textContent = '';
     // Highlight active phase button
     ['open-reg-btn','start-pools-btn','launch-finals-btn','finish-btn'].forEach(id => {
       const btn = document.getElementById(id);
@@ -4028,10 +4017,32 @@ function renderAdmin(){
       const btn = document.getElementById(id);
       if (btn) { btn.style.background = ''; btn.style.color = ''; btn.style.fontWeight = ''; btn.style.borderLeft = ''; }
     });
-    // Mark active with subtle left border indicator only
+    // Le bouton de la phase EN COURS change de libellé (au passé) et reçoit le
+    // repère doré à gauche. Les autres gardent leur libellé d'action.
+    const libellesActifs = {
+      'open-reg-btn': 'phase_reg_done',
+      'start-pools-btn': 'phase_pools_done',
+      'launch-finals-btn': 'phase_finals_done',
+      'finish-btn': 'phase_finished_done'
+    };
+    const libellesActions = {
+      'open-reg-btn': 'open_reg_btn',
+      'start-pools-btn': 'start_pools_btn',
+      'launch-finals-btn': 'launch_finals',
+      'finish-btn': 'finish_btn'
+    };
+    Object.keys(libellesActions).forEach(id => {
+      const b = document.getElementById(id);
+      if (b) b.textContent = t(libellesActions[id]);
+    });
     if (activeBtn) {
       const ab = document.getElementById(activeBtn);
-      if (ab) { ab.style.borderLeft = '3px solid var(--gold)'; ab.style.fontWeight = '700'; }
+      if (ab) {
+        ab.style.borderLeft = '4px solid var(--gold)';
+        ab.style.fontWeight = '700';
+        ab.style.background = 'var(--gold-light)';
+        ab.textContent = t(libellesActifs[activeBtn]);
+      }
     }
   }
 

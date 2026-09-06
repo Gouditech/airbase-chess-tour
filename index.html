@@ -143,7 +143,6 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
     <button class="btn btn-gray btn-sm" style="display:inline-block;width:auto;margin-top:12px" onclick="openInstallModal()" id="install-btn-home">📲 Installer l'app</button>
     <button class="btn btn-gray btn-sm" style="display:inline-block;width:auto;margin-top:8px" onclick="toggleNotifications()" id="notif-toggle-btn">🔕 Activer les notifications</button>
     <button class="btn btn-gray btn-sm" style="display:none;width:auto;margin-top:8px;margin-left:6px;font-size:11px" onclick="testNotification()" id="notif-test-btn">🔔 Test</button>
-    <div><a href="#" onclick="toggleNotifPrefsPanel();return false;" id="notif-prefs-link" style="display:none;font-size:12px;color:var(--gray);margin-top:8px;text-decoration:underline">⚙️ Préférences de notification</a></div>
     <div id="notif-prefs" style="display:none;margin-top:10px;text-align:left">
       <label style="display:flex;align-items:center;gap:6px;font-size:12px;margin-bottom:5px;cursor:pointer"><input type="checkbox" id="pref-officiel" onchange="updateNotifPrefs()"><span id="pref-officiel-label"></span></label>
       <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;margin-bottom:8px"><input type="checkbox" id="pref-match" onchange="updateNotifPrefs()"><span id="pref-match-label"></span></label>
@@ -154,6 +153,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
     <div id="home-admin-device-status" style="display:none;font-size:11px;color:var(--gray);margin-top:6px;padding:5px 10px;background:#f8f8f8;border-radius:6px"></div>
   </div>
   <div id="pool-reminder" style="display:none;background:var(--gold-light);border-left:4px solid var(--gold);border-radius:10px;padding:14px 16px;margin-bottom:12px;font-size:13px;color:var(--dark);line-height:1.6">
+    <div id="pool-reminder-cta" style="font-size:19px;font-weight:800;color:var(--gold);margin-bottom:4px;letter-spacing:0.5px"></div>
     <strong id="pool-reminder-title"></strong><br>
     <span id="pool-reminder-text" style="white-space:pre-line"></span>
   </div>
@@ -449,6 +449,7 @@ if ('serviceWorker' in navigator) {
   });
 }
 import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC-UUvxF0kaRGf-i_0uCUW9a_R4tohnrwM",
@@ -462,6 +463,19 @@ const firebaseConfig = {
 
 const fbApp = initializeApp(firebaseConfig);
 const db = getDatabase(fbApp);
+
+// ── AUTHENTIFICATION ANONYME ──
+// Chaque visiteur reçoit un jeton anonyme. Objectif : pouvoir un jour exiger
+// `auth != null` dans les règles Firebase, ce qui bloque les robots qui scannent
+// les bases ouvertes sans rien changer pour les joueurs.
+//
+// ÉTAPE 1 : totalement inoffensive. Tant que les règles restent ouvertes, un échec
+// de connexion n'empêche RIEN — le site continue exactement comme avant. C'est
+// volontaire : on met le jeton en place d'abord, on resserre les règles ensuite.
+const fbAuth = getAuth(fbApp);
+signInAnonymously(fbAuth)
+  .then(() => console.log('[ABCT] Session anonyme établie'))
+  .catch(e => console.log('[ABCT] Session anonyme indisponible (sans conséquence pour l\'instant) :', e.code));
 
 // ── PUSH NOTIFICATIONS (FCM) ──
 const VAPID_KEY = 'BDy7Ykx_56HPF9np6HhyQcwnvEFjkRpC3_P_Y3I9NE5gNrXpH3jPufff_c_qcTperoPyXnynH-lAG0XS6sTh6kA';
@@ -559,8 +573,6 @@ function updateNotifBtn() {
   if (testBtn) testBtn.style.display = on ? 'inline-block' : 'none';
   const disableBtn = document.getElementById('notif-disable-btn');
   if (disableBtn) disableBtn.style.display = on ? 'block' : 'none';
-  const prefsLink = document.getElementById('notif-prefs-link');
-  if (prefsLink) prefsLink.style.display = on ? 'inline-block' : 'none';
   const prefsBox = document.getElementById('notif-prefs');
   if (prefsBox) {
     if (!on && !notifPanelPendingConfirm) prefsBox.style.display = 'none'; // toujours masqué si désabonné — sauf en pleine confirmation
@@ -922,7 +934,7 @@ const T = {
     finals_launched:["Phases finales lancées avec "," finalistes !"],not_enough_finalists:"Pas assez de finalistes qualifiés.",
     scores_reset:"Scores réinitialisés.",tournament_reset:"Tournoi réinitialisé.",
     no_matches:"Aucun match joué.",
-    pool_reminder_title:"🚀 Phase de poules lancée !",
+    pool_cta:"♟️ JOUEZ !",pool_reminder_title:"🚀 Phase de poules lancée !",
     pool_reminder_text:"Consultez l'onglet Matchs pour voir vos parties. Envoyez une invitation à votre adversaire sur Chess.com (pseudo visible dans l'onglet Tournoi) ou jouez sur échiquier physique. Inscrivez le résultat dès la fin de chaque partie.\n\n⏰ Commencez dès maintenant et terminez avant l'échéance affichée sur chaque match. Vous pouvez jouer plusieurs parties en parallèle, mais traitez d'abord celles de la ronde 1, puis la 2, etc. — les échéances les plus proches en priorité.",
     install_btn:"📲 Installer l'app",install_title:"Installer l'application",
     install_android:["Ouvrir dans Chrome","Menu ⋮ en haut à droite","Sélectionner: Ajouter à l'écran d'accueil","Appuyer sur Ajouter"],
@@ -1012,7 +1024,7 @@ const T = {
     finals_launched:["Finalrunden gestartet mit "," Finalisten!"],not_enough_finalists:"Nicht genug qualifizierte Finalisten.",
     scores_reset:"Ergebnisse zurückgesetzt.",tournament_reset:"Turnier zurückgesetzt.",
     no_matches:"Keine Partien gespielt.",
-    pool_reminder_title:"🚀 Gruppenphase gestartet!",
+    pool_cta:"♟️ SPIELT!",pool_reminder_title:"🚀 Gruppenphase gestartet!",
     pool_reminder_text:"Sieh dir deine Partien im Tab Partien an. Sende deinem Gegner eine Einladung auf Chess.com (Benutzername im Tab Turnier) oder spiele auf dem Brett. Trage das Ergebnis direkt nach jeder Partie ein.\n\n⏰ Beginnt sofort und beendet vor der bei jeder Partie angezeigten Frist. Ihr dürft mehrere Partien parallel spielen, aber spielt zuerst Runde 1, dann 2, usw. — die nächstliegenden Fristen zuerst.",
     install_btn:"📲 App installieren",install_title:"App installieren",
     install_android:["Link in Chrome öffnen","Menü ⋮ oben rechts antippen","Zum Startbildschirm hinzufügen wählen","Hinzufügen antippen"],
@@ -1186,7 +1198,7 @@ const T = {
     finals_launched:["Final stage launched with "," finalists!"],not_enough_finalists:"Not enough qualified finalists.",
     scores_reset:"Scores reset.",tournament_reset:"Tournament reset.",
     no_matches:"No matches played.",
-    pool_reminder_title:"🚀 Group stage launched!",
+    pool_cta:"♟️ PLAY!",pool_reminder_title:"🚀 Group stage launched!",
     pool_reminder_text:"Check the Matches tab to see your games. Send an invitation to your opponent on Chess.com (username in the Tournament tab) or play on a physical board. Enter the result as soon as each game ends.\n\n⏰ Start now and finish before the deadline shown on each match. You may play several games in parallel, but handle round 1 first, then 2, and so on — closest deadlines first.",
     install_btn:"📲 Install app",install_title:"Install the app",
     install_android:["Open in Chrome","Tap the ⋮ menu (3 dots top right)","Select: Add to Home screen","Tap Add — icon appears on your screen"],
@@ -1318,7 +1330,7 @@ const T = {
     finals_launched:["Fasi finali avviate con "," finalisti!"],not_enough_finalists:"Finalisti qualificati insufficienti.",
     scores_reset:"Risultati azzerati.",tournament_reset:"Torneo azzerato.",
     no_matches:"Nessuna partita giocata.",
-    pool_reminder_title:"🚀 Fase a gironi avviata!",
+    pool_cta:"♟️ GIOCATE!",pool_reminder_title:"🚀 Fase a gironi avviata!",
     pool_reminder_text:"Consulta la scheda Partite per vedere le tue partite. Invia un invito al tuo avversario su Chess.com (nome utente nella scheda Torneo) o gioca su scacchiera fisica. Inserisci il risultato appena finisce ogni partita.\n\n⏰ Iniziate subito e concludete entro la scadenza indicata su ogni partita. Potete giocare più partite in parallelo, ma affrontate prima il turno 1, poi il 2, ecc. — le scadenze più vicine per prime.",
     install_btn:"📲 Installare l'app",install_title:"Installare l'applicazione",
     install_android:["Aprire in Chrome","Toccare il menu ⋮ (3 punti in alto a destra)","Selezionare: Aggiungi alla schermata Home","Toccare Aggiungi"],
@@ -1401,6 +1413,8 @@ function applyTranslations() {
   updateNotifBtn();
   const pinTitle = document.getElementById('pin-change-title');
   if (pinTitle) pinTitle.textContent = t('pin_section');
+  const pcta = document.getElementById('pool-reminder-cta');
+  if (pcta) pcta.textContent = t('pool_cta');
   const prt = document.getElementById('pool-reminder-title');
   const prx = document.getElementById('pool-reminder-text');
   if (prt) prt.textContent = t('pool_reminder_title');
@@ -1442,7 +1456,6 @@ function applyTranslations() {
   if (edNameEl) edNameEl.placeholder = t('palmares_edition_name_placeholder');
   const edYearEl = document.getElementById('new-edition-year');
   if (edYearEl) edYearEl.placeholder = t('palmares_year_placeholder');
-  setT('notif-prefs-link', 'notif_prefs_link');
   setT('notif-disable-btn', 'notif_disable_btn');
   setT('notif-validate-btn', 'notif_validate_btn');
   setT('change-pin-btn', 'change_pin_btn');

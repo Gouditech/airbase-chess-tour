@@ -337,9 +337,6 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
       </div>
       <div class="card">
         <h2 id="actions-title">Actions</h2>
-        <div id="tournament-phase" style="margin-bottom:12px;padding:10px 12px;background:#f8f8f8;border-radius:8px;font-size:13px;color:var(--gray)">
-          <span id="current-phase-label"></span>
-        </div>
         <div class="gap">
           <button class="btn btn-gray" onclick="toggleMaintenance()" id="maint-btn" style="background:#444;color:#fff">🔧 Mode maintenance</button>
           <button class="btn btn-gray" onclick="setStatus('registration')" id="open-reg-btn">📋 Ouvrir les inscriptions</button>
@@ -3998,14 +3995,12 @@ function renderAdmin(){
       }
     }
     // Show current phase and highlight active button
-    const phaseLabel = document.getElementById('current-phase-label');
-    const statusMap2 = {
-      registration: t('status_registration'),
-      playing: t('status_playing'),
-      finals: t('status_finals'),
-      finished: t('status_finished')
-    };
-    if (phaseLabel) phaseLabel.textContent = '';
+
+  }
+
+  // Boutons de phase : HORS condition d'onglet — ils vivent dans l'onglet Tournoi,
+  // pas dans Notifs. Ce bloc etait reste coince dans la condition 'notifs' lors du
+  // deplacement des notifications, donc il ne s'executait jamais.
     // Highlight active phase button
     ['open-reg-btn','start-pools-btn','launch-finals-btn','finish-btn'].forEach(id => {
       const btn = document.getElementById(id);
@@ -4044,7 +4039,6 @@ function renderAdmin(){
         ab.textContent = t(libellesActifs[activeBtn]);
       }
     }
-  }
 
   // Classement des finalistes : hors condition d'onglet — il vit dans l'onglet Tournoi,
   // pas dans Notifs, et doit se mettre à jour en direct quel que soit l'onglet consulté.
@@ -4113,13 +4107,17 @@ function renderSeedList(){
 window.setMatchFilter=function(f){currentMatchFilter=f;renderMatches();};
 
 // ── FIREBASE LISTENER ──
-onValue(ref(db),(snapshot)=>{
-  const rawData = snapshot.exists()?snapshot.val():defaultData();
-  // Read and isolate maintenance flag
-  const firebaseMaintenance = rawData.maintenance === true;
-  if (!isAdmin) maintenanceMode = firebaseMaintenance;
-  delete rawData.maintenance;
-  state = rawData;
+// ── ÉCOUTE DES DONNÉES ──
+// Le site écoutait auparavant la RACINE de la base (`onValue(ref(db), ...)`).
+// Or lire un chemin exige le droit de lecture à ce niveau ou au-dessus : une
+// lecture de la racine aurait donc réclamé `.read` à la racine, rendant `adminPin`
+// lisible par tous — exactement ce qu'on veut empêcher.
+// On écoute donc chaque section séparément. `adminPin` n'est jamais lu : sa
+// vérification se fait côté serveur.
+const CHEMINS = ['settings', 'players', 'games', 'finals', 'palmares', 'maintenance', SUB_PATH];
+let premierChargement = true;
+
+function surDonneesChangees() {
   if(!state.settings) state.settings=defaultData().settings;
   // Si on croit être abonné mais que l'entrée Firebase n'existe plus (ex: supprimée
   // manuellement dans le panneau admin) : la volonté du joueur prime. On vérifie si son
@@ -4178,9 +4176,28 @@ onValue(ref(db),(snapshot)=>{
   applyTranslations();
   renderPage(currentPage);
   renderAdminDeviceStatus();
-},(error)=>{
-  console.error('Firebase error:',error);
-  document.getElementById('offline-bar').style.display='block';
+}
+
+CHEMINS.forEach(chemin => {
+  onValue(ref(db, chemin), (snap) => {
+    const val = snap.exists() ? snap.val() : null;
+    if (chemin === 'maintenance') {
+      const m = val === true;
+      if (!isAdmin) maintenanceMode = m;
+    } else {
+      state = state || {};
+      state[chemin] = val;
+    }
+    if (!state) state = defaultData();
+    surDonneesChangees();
+  }, (err) => {
+    // Une section refusée ou une coupure réseau ne doit pas figer le site :
+    // on signale, on affiche la barre hors ligne, et on rend ce qu'on a.
+    console.error('[ABCT] Lecture impossible sur ' + chemin + ' :', err.message);
+    const bar = document.getElementById('offline-bar');
+    if (bar) bar.style.display = 'block';
+    surDonneesChangees();
+  });
 });
 
 window.addEventListener('offline',()=>document.getElementById('offline-bar').style.display='block');

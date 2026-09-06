@@ -447,7 +447,7 @@ if ('serviceWorker' in navigator) {
   });
 }
 import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC-UUvxF0kaRGf-i_0uCUW9a_R4tohnrwM",
@@ -471,6 +471,15 @@ const db = getDatabase(fbApp);
 // de connexion n'empêche RIEN — le site continue exactement comme avant. C'est
 // volontaire : on met le jeton en place d'abord, on resserre les règles ensuite.
 const fbAuth = getAuth(fbApp);
+// Promesse résolue dès que l'état d'authentification est connu (jeton présent ou
+// non). Toute écriture au démarrage doit l'attendre : avec les règles resserrées,
+// écrire avant le jeton serait refusé en silence.
+const authPrete = new Promise(resolve => {
+  // onAuthStateChanged se déclenche d'abord avec null (état initial), puis avec
+  // l'utilisateur une fois signInAnonymously abouti : on n'accepte que le second.
+  const stop = onAuthStateChanged(fbAuth, (user) => { if (user) { stop(); resolve(); } });
+  setTimeout(resolve, 4000); // ne jamais bloquer indéfiniment
+});
 signInAnonymously(fbAuth)
   .then(() => console.log('[ABCT] Session anonyme établie'))
   .catch(e => console.log('[ABCT] Session anonyme indisponible (sans conséquence pour l\'instant) :', e.code));
@@ -810,7 +819,7 @@ document.getElementById('manifest-link').href = URL.createObjectURL(mblob);
 // ── TRANSLATIONS ──
 const T = {
   fr:{
-    loading:"Chargement...",offline:"⚠️ Hors ligne — données non synchronisées",pin_current:"PIN actuel",reg_closed:"Les inscriptions sont fermées.",pin_new:"Nouveau PIN",pin_confirm:"Confirmer",set_semis:"Format demi-finales",set_final:"Format finale",whatsapp_title:"📲 Rappel WhatsApp",save_seed:"💾 Sauvegarder",
+    loading:"Chargement...",offline:"⚠️ Hors ligne — données non synchronisées",write_denied:"⛔ Enregistrement refusé — recharge la page et réessaie.",pin_current:"PIN actuel",reg_closed:"Les inscriptions sont fermées.",pin_new:"Nouveau PIN",pin_confirm:"Confirmer",set_semis:"Format demi-finales",set_final:"Format finale",whatsapp_title:"📲 Rappel WhatsApp",save_seed:"💾 Sauvegarder",
     tab_home:"Tournoi",tab_groups:"Groupes",tab_matches:"Matchs",tab_finals:"Finales",
     tab_info:"Infos",confirm_archive_before_reset:"Archiver le classement actuel dans le palmarès avant de réinitialiser ?\n\nOK = archiver puis réinitialiser\nAnnuler = réinitialiser sans archiver",palmares_admin_title:"🏅 Palmarès",palmares_edition_name_placeholder:"Nom de l'édition",info_rules_btn:"📜 Règlement",info_palmares_btn:"🏅 Palmarès",info_ranking_btn:"📊 Classement général",live_rank_title:"Classement général en direct",live_rank_qualified_title:"Joueurs qualifiés",info_admin_btn:"⚙️ Admin",info_rules_title:"Règlement",info_palmares_title:"Palmarès",
     status_registration:"Inscriptions ouvertes",status_playing:"Phase de poules",status_finals:"Phases finales",status_finished:"Terminé",
@@ -943,7 +952,7 @@ const T = {
     winner:"🏆 Vainqueur",
   },
   de:{
-    loading:"Wird geladen...",offline:"⚠️ Offline — Daten werden nicht synchronisiert",pin_current:"Aktueller PIN",reg_closed:"Die Anmeldung ist geschlossen.",pin_new:"Neuer PIN",pin_confirm:"Bestätigen",set_semis:"Format Halbfinale",set_final:"Format Finale",whatsapp_title:"📲 WhatsApp-Erinnerung",save_seed:"💾 Speichern",
+    loading:"Wird geladen...",offline:"⚠️ Offline — Daten werden nicht synchronisiert",write_denied:"⛔ Speichern abgelehnt — Seite neu laden und erneut versuchen.",pin_current:"Aktueller PIN",reg_closed:"Die Anmeldung ist geschlossen.",pin_new:"Neuer PIN",pin_confirm:"Bestätigen",set_semis:"Format Halbfinale",set_final:"Format Finale",whatsapp_title:"📲 WhatsApp-Erinnerung",save_seed:"💾 Speichern",
     tab_home:"Turnier",tab_groups:"Gruppen",tab_matches:"Partien",tab_finals:"Finale",
     tab_info:"Infos",confirm_archive_before_reset:"Aktuelle Rangliste vor dem Zurücksetzen in der Siegerliste archivieren?\n\nOK = archivieren und zurücksetzen\nAbbrechen = ohne Archivierung zurücksetzen",palmares_admin_title:"🏅 Siegerliste",palmares_edition_name_placeholder:"Name der Ausgabe",info_rules_btn:"📜 Reglement",info_palmares_btn:"🏅 Siegerliste",info_ranking_btn:"📊 Gesamtrangliste",live_rank_title:"Gesamtrangliste live",live_rank_qualified_title:"Qualifizierte Spieler",info_admin_btn:"⚙️ Admin",info_rules_title:"Reglement",info_palmares_title:"Siegerliste",
     status_registration:"Anmeldung offen",status_playing:"Gruppenphase",status_finals:"Finalphase",status_finished:"Beendet",
@@ -1075,7 +1084,7 @@ const T = {
     winner:"🏆 Sieger",
   },
   en:{
-    loading:"Loading...",offline:"⚠️ Offline — data not syncing",pin_current:"Current PIN",reg_closed:"Registration is closed.",pin_new:"New PIN",pin_confirm:"Confirm",set_semis:"Semi-finals format",set_final:"Final format",whatsapp_title:"📲 WhatsApp reminder",save_seed:"💾 Save",
+    loading:"Loading...",offline:"⚠️ Offline — data not syncing",write_denied:"⛔ Save refused — reload the page and try again.",pin_current:"Current PIN",reg_closed:"Registration is closed.",pin_new:"New PIN",pin_confirm:"Confirm",set_semis:"Semi-finals format",set_final:"Final format",whatsapp_title:"📲 WhatsApp reminder",save_seed:"💾 Save",
     tab_home:"Tournament",tab_groups:"Groups",tab_matches:"Matches",tab_finals:"Finals",
     tab_info:"Info",confirm_archive_before_reset:"Archive the current ranking to the hall of fame before resetting?\n\nOK = archive then reset\nCancel = reset without archiving",palmares_admin_title:"🏅 Hall of fame",palmares_edition_name_placeholder:"Edition name",info_rules_btn:"📜 Rules",info_palmares_btn:"🏅 Hall of fame",info_ranking_btn:"📊 Overall ranking",live_rank_title:"Live overall ranking",live_rank_qualified_title:"Qualified players",info_admin_btn:"⚙️ Admin",info_rules_title:"Rules",info_palmares_title:"Hall of fame",
     status_registration:"Registration open",status_playing:"Group stage",status_finals:"Final stage",status_finished:"Finished",
@@ -1207,7 +1216,7 @@ const T = {
     winner:"🏆 Winner",
   },
   it:{
-    loading:"Caricamento...",offline:"⚠️ Offline — dati non sincronizzati",pin_current:"PIN attuale",reg_closed:"Le iscrizioni sono chiuse.",pin_new:"Nuovo PIN",pin_confirm:"Confermare",set_semis:"Formato semifinali",set_final:"Formato finale",whatsapp_title:"📲 Promemoria WhatsApp",save_seed:"💾 Salvare",
+    loading:"Caricamento...",offline:"⚠️ Offline — dati non sincronizzati",write_denied:"⛔ Salvataggio rifiutato — ricarica la pagina e riprova.",pin_current:"PIN attuale",reg_closed:"Le iscrizioni sono chiuse.",pin_new:"Nuovo PIN",pin_confirm:"Confermare",set_semis:"Formato semifinali",set_final:"Formato finale",whatsapp_title:"📲 Promemoria WhatsApp",save_seed:"💾 Salvare",
     tab_home:"Torneo",tab_groups:"Gruppi",tab_matches:"Partite",tab_finals:"Finali",
     tab_info:"Info",confirm_archive_before_reset:"Archiviare la classifica attuale nell'albo d'oro prima di azzerare?\n\nOK = archiviare e azzerare\nAnnulla = azzerare senza archiviare",palmares_admin_title:"🏅 Albo d'oro",palmares_edition_name_placeholder:"Nome dell'edizione",info_rules_btn:"📜 Regolamento",info_palmares_btn:"🏅 Albo d'oro",info_ranking_btn:"📊 Classifica generale",live_rank_title:"Classifica generale in diretta",live_rank_qualified_title:"Giocatori qualificati",info_admin_btn:"⚙️ Admin",info_rules_title:"Regolamento",info_palmares_title:"Albo d'oro",
     status_registration:"Iscrizioni aperte",status_playing:"Fase a gironi",status_finals:"Fase finale",status_finished:"Terminato",
@@ -4114,8 +4123,13 @@ window.setMatchFilter=function(f){currentMatchFilter=f;renderMatches();};
 // lisible par tous — exactement ce qu'on veut empêcher.
 // On écoute donc chaque section séparément. `adminPin` n'est jamais lu : sa
 // vérification se fait côté serveur.
-const CHEMINS = ['settings', 'players', 'games', 'finals', 'palmares', 'maintenance', SUB_PATH];
-let premierChargement = true;
+// Sections en lecture PUBLIQUE dans les règles : elles s'écoutent immédiatement.
+const CHEMINS_PUBLICS = ['settings', 'players', 'games', 'finals', 'palmares', 'maintenance'];
+// Les abonnements aux notifications, eux, exigent un jeton dans les règles.
+// ⚠️ Piège documenté (firebase-js-sdk #6280) : un écouteur attaché AVANT que
+// l'authentification aboutisse reçoit permission_denied et ne réessaie pas.
+// On attend donc que le jeton soit là pour attacher celui-ci.
+let ecouteAbonnesActive = false;
 
 function surDonneesChangees() {
   if(!state.settings) state.settings=defaultData().settings;
@@ -4178,7 +4192,7 @@ function surDonneesChangees() {
   renderAdminDeviceStatus();
 }
 
-CHEMINS.forEach(chemin => {
+function ecouterSection(chemin) {
   onValue(ref(db, chemin), (snap) => {
     const val = snap.exists() ? snap.val() : null;
     if (chemin === 'maintenance') {
@@ -4191,18 +4205,55 @@ CHEMINS.forEach(chemin => {
     if (!state) state = defaultData();
     surDonneesChangees();
   }, (err) => {
-    // Une section refusée ou une coupure réseau ne doit pas figer le site :
-    // on signale, on affiche la barre hors ligne, et on rend ce qu'on a.
     console.error('[ABCT] Lecture impossible sur ' + chemin + ' :', err.message);
+    // AUTO-RÉPARATION : un refus de lecture (et non une coupure réseau) signifie
+    // presque toujours que les règles ont changé pendant que la page était ouverte,
+    // ou qu'une version périmée tourne encore. Un rechargement charge la version
+    // à jour et obtient un jeton frais. Une seule fois par session, pour ne jamais
+    // boucler si les règles sont réellement cassées.
+    if (/permission[_ -]?denied/i.test(err.message) && !sessionStorage.getItem('abct-auto-reload')) {
+      sessionStorage.setItem('abct-auto-reload', '1');
+      console.log('[ABCT] Rechargement automatique pour récupérer un accès à jour');
+      location.reload();
+      return;
+    }
+    // Sinon (réseau, ou second refus) : barre hors ligne et on rend ce qu'on a.
     const bar = document.getElementById('offline-bar');
     if (bar) bar.style.display = 'block';
     surDonneesChangees();
   });
+}
+
+CHEMINS_PUBLICS.forEach(ecouterSection);
+
+// Les abonnements : seulement une fois authentifié. Sur les visites suivantes le
+// jeton est déjà en mémoire locale, donc ce rappel se déclenche immédiatement.
+onAuthStateChanged(fbAuth, (user) => {
+  if (user && !ecouteAbonnesActive) {
+    ecouteAbonnesActive = true;
+    ecouterSection(SUB_PATH);
+  }
 });
 
 window.addEventListener('offline',()=>document.getElementById('offline-bar').style.display='block');
+
+// ── FILET DE SÉCURITÉ : ÉCRITURE REFUSÉE PAR LES RÈGLES ──
+// Avec des règles ouvertes, une écriture n'échoue jamais. Une fois les règles
+// resserrées, un refus ferait échouer l'écriture EN SILENCE : le joueur clique,
+// rien ne se passe, aucun message. On intercepte ici tout refus pour le rendre
+// visible, avec la cause la plus probable (jeton absent = authentification anonyme
+// désactivée ou pas encore aboutie).
+window.addEventListener('unhandledrejection', (ev) => {
+  const msg = String(ev?.reason?.message || ev?.reason || '');
+  if (/permission[_ -]?denied/i.test(msg)) {
+    ev.preventDefault();
+    console.error('[ABCT] Écriture refusée par les règles Firebase :', msg);
+    showToast(t('write_denied'), false);
+  }
+});
 // Init notification button state
 setTimeout(async () => {
+  await authPrete; // écriture possible plus bas : il faut le jeton
   // Recovery: si localStorage effacé mais abonnement push encore actif, restaurer l'état
   // — ET recréer l'entrée Firebase si elle manque (ex: supprimée par l'admin), sinon on
   // ne fait que remettre le bouton sur "actif" sans que rien ne soit réellement reçu.

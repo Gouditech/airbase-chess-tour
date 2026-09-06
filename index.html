@@ -2315,13 +2315,25 @@ function renderPage(page) {
 }
 
 // ── ADMIN ──
+// Vérifie le PIN auprès du serveur. Le PIN n'est plus lisible depuis le
+// navigateur : on envoie la saisie, on reçoit oui ou non.
+async function verifierPin(pin, action, newPin) {
+  const res = await fetch('/.netlify/functions/verify-pin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pin, action, newPin })
+  });
+  return await res.json();
+}
+
 window.adminLogin = async function() {
   const pin = document.getElementById('admin-pin-input').value.trim();
   if (!pin) { showMsg('login-msg', t('admin_pin_err'), false); return; }
-  const stored = await get(ref(db,'adminPin')).then(s=>s.exists()?s.val():null);
-  if (!stored) { await set(ref(db,'adminPin'), pin); isAdmin=true; }
-  else if (stored===pin) { isAdmin=true; }
-  else { showMsg('login-msg', t('admin_pin_err'), false); return; }
+  let r;
+  try { r = await verifierPin(pin); }
+  catch { showMsg('login-msg', t('admin_pin_err'), false); return; }
+  if (!r?.ok) { showMsg('login-msg', t('admin_pin_err'), false); return; }
+  isAdmin = true;
   document.getElementById('admin-login').style.display='none';
   document.getElementById('admin-dashboard').style.display='block';
   sessionStorage.setItem('abct-session-pin', document.getElementById('admin-pin-input').value);
@@ -2347,9 +2359,10 @@ window.changePin = async function() {
   if (!current || !newPin || !confirm) { showMsg('pin-msg','Tous les champs sont requis.',false); return; }
   if (newPin !== confirm) { showMsg('pin-msg',t('pin_mismatch'),false); return; }
   if (newPin.length < 4) { showMsg('pin-msg',t('pin_short'),false); return; }
-  const stored = await get(ref(db,'adminPin')).then(s=>s.exists()?s.val():null);
-  if (stored !== current) { showMsg('pin-msg',t('pin_wrong'),false); return; }
-  await set(ref(db,'adminPin'), newPin);
+  let r;
+  try { r = await verifierPin(current, 'change', newPin); }
+  catch { showMsg('pin-msg', t('pin_wrong'), false); return; }
+  if (!r?.ok) { showMsg('pin-msg', t('pin_wrong'), false); return; }
   document.getElementById('pin-current').value='';
   document.getElementById('pin-new').value='';
   document.getElementById('pin-confirm').value='';
@@ -3248,8 +3261,9 @@ let maintenanceMode = false; // mirrors Firebase /maintenance
 window.maintAdminLogin = async function() {
   const pin = document.getElementById('maint-pin')?.value.trim();
   if (!pin) return;
-  const stored = await get(ref(db,'adminPin')).then(s=>s.exists()?s.val():null);
-  if (stored === pin) {
+  let r;
+  try { r = await verifierPin(pin); } catch { return; }
+  if (r?.ok) {
     isAdmin = true;
     sessionStorage.setItem('abct-session-pin', pin);
     // Disable maintenance
@@ -3552,7 +3566,6 @@ function buildCurrentRanking() {
 
 window.resetAll = async function() {
   if (!isAdmin) return;
-  const pin=await get(ref(db,'adminPin')).then(s=>s.exists()?s.val():null);
   const prevSettings=await get(ref(db,'settings')).then(s=>s.exists()?s.val():{});
   // Le palmarès doit survivre à une réinitialisation : il contient l'historique des
   // éditions passées, sans rapport avec le tournoi en cours.
@@ -3578,7 +3591,18 @@ window.resetAll = async function() {
   fresh.settings.adminSubIdDev=prevSettings?.adminSubIdDev||null;
   fresh.settings.autoNotifyResults=prevSettings?.autoNotifyResults||false;
   fresh.settings.autoNotifyLateAlerts=prevSettings?.autoNotifyLateAlerts||false;
-  await set(ref(db),{...fresh, palmares, adminPin:pin});
+  // On écrit SECTION PAR SECTION, jamais à la racine.
+  // Écrire à la racine remplaçait toute la base : cela effaçait `adminPin` (qu'il
+  // fallait relire pour le remettre — impossible une fois les règles fermées) mais
+  // aussi TOUS LES ABONNEMENTS aux notifications, désabonnant silencieusement les
+  // joueurs à chaque réinitialisation.
+  // Ce qui n'est pas cité ici n'est pas touché : adminPin, maintenance,
+  // subscriptions, subscriptions-dev, notifications.
+  await set(ref(db,'settings'), fresh.settings);
+  await set(ref(db,'players'), null);
+  await set(ref(db,'games'), null);
+  await set(ref(db,'finals'), null);
+  await set(ref(db,'palmares'), palmares);
   showMsg('actions-msg',t('tournament_reset'));
 };
 

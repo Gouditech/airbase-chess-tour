@@ -35,20 +35,20 @@ async function runLateCheck(siteUrl) {
   const { isDev, subPath, adminKey } = envFromUrl(siteUrl);
 
   if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY || !DB_URL)
-    return { sent: false, reason: 'config manquante (VAPID/DB_URL) cote Netlify' };
+    return { sent: false, code: 'no_config', reason: 'config manquante (VAPID/DB_URL) cote Netlify' };
 
   const autoOn = await fbRead('settings/autoNotifyLateAlerts').catch(() => false);
-  if (autoOn !== true) return { sent: false, reason: 'Alerte automatique désactivée (case à cocher dans Réglages)' };
+  if (autoOn !== true) return { sent: false, code: 'auto_off', reason: 'Alerte automatique désactivée (case à cocher dans Réglages)' };
 
   const maint = await fbRead('maintenance').catch(() => true);
-  if (maint === true && !isDev) return { sent: false, reason: 'Mode maintenance actif — alerte suspendue' };
+  if (maint === true && !isDev) return { sent: false, code: 'maintenance', reason: 'Mode maintenance actif — alerte suspendue' };
 
   const adminSubId = await fbRead('settings/' + adminKey).catch(() => null);
-  if (!adminSubId) return { sent: false, reason: 'Aucun appareil admin enregistré' };
+  if (!adminSubId) return { sent: false, code: 'no_admin_device', reason: 'Aucun appareil admin enregistré' };
 
   const adminSub = await fbRead(subPath + '/' + adminSubId).catch(() => null);
   if (!adminSub?.endpoint || !adminSub?.keys?.p256dh || !adminSub?.keys?.auth)
-    return { sent: false, reason: 'Abonnement admin introuvable ou invalide' };
+    return { sent: false, code: 'admin_sub_invalid', reason: 'Abonnement admin introuvable ou invalide' };
 
   const [settings, gamesObj, finalsObj] = await Promise.all([
     fbRead('settings').catch(() => ({})),
@@ -89,16 +89,16 @@ async function runLateCheck(siteUrl) {
     // devient du bruit. Les vraies alertes de retard, elles, ne sont jamais bridees.
     const enJeu = settings.status === 'playing' || settings.status === 'finals';
     if (!enJeu) {
-      return { sent: false, total: 0, reason: 'Tournoi hors phase de jeu (statut: ' + (settings.status || 'inconnu') + ') — preuve de vie inutile' };
+      return { sent: false, total: 0, code: 'not_playing', reason: 'Tournoi hors phase de jeu (statut: ' + (settings.status || 'inconnu') + ') — preuve de vie inutile' };
     }
     const lastPing = await fbRead('settings/lastLateAlertPing').catch(() => 0);
     const daysSincePing = (Date.now() - (lastPing || 0)) / (1000 * 60 * 60 * 24);
     if (daysSincePing >= 7) {
       await send('✅ Alerte retard active — aucun match en retard actuellement.', 'low');
       await fbWrite('settings/lastLateAlertPing', Date.now());
-      return { sent: true, total: 0, reason: 'Aucun retard — preuve de vie hebdomadaire envoyée' };
+      return { sent: true, total: 0, code: 'proof_sent', reason: 'Aucun retard — preuve de vie hebdomadaire envoyée' };
     }
-    return { sent: false, total: 0, reason: 'Aucun match en retard actuellement (rien à envoyer)' };
+    return { sent: false, total: 0, code: 'nothing_late', reason: 'Aucun match en retard actuellement (rien à envoyer)' };
   }
 
   let body = `⏰ ${total} match${total > 1 ? 's' : ''} en retard\n`;
@@ -108,7 +108,7 @@ async function runLateCheck(siteUrl) {
 
   await send(body.trim(), 'high');
   await fbWrite('settings/lastLateAlertPing', Date.now());
-  return { sent: true, total, reason: total + ' match(s) en retard — notification envoyée à l\'appareil admin' };
+  return { sent: true, total, code: 'alert_sent', reason: total + ' match(s) en retard — notification envoyée à l\'appareil admin' };
 }
 
 module.exports = { runLateCheck };

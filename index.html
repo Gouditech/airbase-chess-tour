@@ -248,7 +248,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
       <button class="subtab inactive" onclick="showAdminTab('notifs')" id="subtab-notifs">Notifs</button>
       <button class="subtab inactive" onclick="showAdminTab('settings')" id="subtab-settings">Réglages</button>
     </div>
-    <div id="admin-settings" class="card">
+    <div id="admin-settings" class="card" style="display:none">
       
       <div class="gap">
         
@@ -359,8 +359,6 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
       <h2 id="ranking-title">Classement global</h2>
       <div id="ranking-content"></div>
     </div>
-    <div style="text-align:center;margin-top:8px">
-        <button class="btn btn-gray btn-sm" style="display:inline-block;width:auto" onclick="adminLogout()" id="logout-btn">Déconnexion</button>
       <div class="card">
         <h2 id="settings-title">Paramètres</h2>
         <div class="gap">
@@ -380,6 +378,9 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
         </div>
       </div>
       </div>
+    <div style="text-align:center;margin-top:28px;margin-bottom:12px;padding-top:16px;border-top:1px solid #eee">
+      <button class="btn btn-gray btn-sm" style="display:inline-block;width:auto" onclick="adminLogout()" id="logout-btn">Déconnexion</button>
+    </div>
     </div>
   </div>
 </div>
@@ -1415,6 +1416,17 @@ function applyTranslations() {
   if (pinTitle) pinTitle.textContent = t('pin_section');
   const pcta = document.getElementById('pool-reminder-cta');
   if (pcta) pcta.textContent = t('pool_cta');
+  // Indicateur de phase dans l'onglet Tournoi : l'élément existait dans le HTML
+  // mais rien ne le remplissait — il restait donc vide et invisible.
+  const phaseEl = document.getElementById('current-phase-label');
+  if (phaseEl) {
+    const icones = { registration:'📋', playing:'⚔️', finals:'🏆', finished:'✅' };
+    const st = state?.settings?.status;
+    // statusMap est local à renderHome : on refait la correspondance ici.
+    const libelles = { registration:t('status_registration'), playing:t('status_playing'),
+                       finals:t('status_finals'), finished:t('status_finished') };
+    phaseEl.innerHTML = `${icones[st] || ''} <strong>${esc(libelles[st] || '—')}</strong>`;
+  }
   const prt = document.getElementById('pool-reminder-title');
   const prx = document.getElementById('pool-reminder-text');
   if (prt) prt.textContent = t('pool_reminder_title');
@@ -3273,6 +3285,7 @@ window.maintAdminLogin = async function() {
     // Show admin panel
     document.getElementById('admin-login').style.display='none';
     document.getElementById('admin-dashboard').style.display='block';
+    showAdminTab('actions');
     showPage('admin');
   } else {
     const msg = document.getElementById('maint-pin-msg');

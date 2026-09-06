@@ -24,14 +24,10 @@ function envFromUrl(url) {
   };
 }
 
-async function fbRead(path) {
-  const res = await fetch(`${DB_URL}/${path}.json`);
-  if (!res.ok) throw new Error('Lecture ' + path + ' impossible (HTTP ' + res.status + ')');
-  return await res.json();
-}
-async function fbWrite(path, value) {
-  await fetch(`${DB_URL}/${path}.json`, { method: 'PUT', body: JSON.stringify(value) });
-}
+// Accès authentifie via le compte de service (voir _shared/fb-auth.js).
+const { fbRead: fbReadAuth, fbWrite: fbWriteAuth } = require('./fb-auth.js');
+async function fbRead(path) { return fbReadAuth(DB_URL, path); }
+async function fbWrite(path, value) { return fbWriteAuth(DB_URL, path, value); }
 
 // siteUrl sert uniquement a detecter dev/prod (voir envFromUrl). Retourne toujours
 // un resultat structure { sent, total?, reason }, jamais une exception non geree.

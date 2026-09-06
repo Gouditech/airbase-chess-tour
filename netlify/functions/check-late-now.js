@@ -2,10 +2,11 @@ const { runLateCheck } = require('./_shared/late-check-core.js');
 
 const DB_URL = process.env.FIREBASE_DB_URL;
 
+// Accès authentifie via le compte de service (voir _shared/fb-auth.js).
+// Indispensable ici : adminPin sera bientot illisible sans compte de service.
+const { fbRead } = require('./_shared/fb-auth.js');
 async function getAdminPin() {
-  const res = await fetch(`${DB_URL}/adminPin.json`);
-  if (!res.ok) throw new Error('Lecture adminPin impossible (HTTP ' + res.status + ')');
-  return await res.json();
+  return fbRead(DB_URL, 'adminPin');
 }
 
 exports.handler = async function (event) {

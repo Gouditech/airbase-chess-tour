@@ -7,14 +7,10 @@ const DB_URL        = process.env.FIREBASE_DB_URL;
 webpush.setVapidDetails('mailto:airbasechesstour@gmail.com', VAPID_PUBLIC, VAPID_PRIVATE);
 
 // Les règles Firebase sont publiques en lecture/écriture -> pas besoin d'OAuth pour ces petits champs.
-async function fbRead(path) {
-  const res = await fetch(`${DB_URL}/${path}.json`);
-  if (!res.ok) throw new Error('Lecture ' + path + ' impossible (HTTP ' + res.status + ')');
-  return await res.json();
-}
-async function fbWrite(path, value) {
-  await fetch(`${DB_URL}/${path}.json`, { method: 'PUT', body: JSON.stringify(value) });
-}
+// Accès authentifie via le compte de service (voir _shared/fb-auth.js).
+const { fbRead: fbReadAuth, fbWrite: fbWriteAuth } = require('./_shared/fb-auth.js');
+async function fbRead(path) { return fbReadAuth(DB_URL, path); }
+async function fbWrite(path, value) { return fbWriteAuth(DB_URL, path, value); }
 
 async function getAdminPin() {
   return fbRead('adminPin');

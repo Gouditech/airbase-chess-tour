@@ -337,9 +337,6 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
       </div>
       <div class="card">
         <h2 id="actions-title">Actions</h2>
-        <div id="tournament-phase" style="margin-bottom:12px;padding:10px 12px;background:#f8f8f8;border-radius:8px;font-size:13px;color:var(--gray)">
-          <span id="current-phase-label"></span>
-        </div>
         <div class="gap">
           <button class="btn btn-gray" onclick="toggleMaintenance()" id="maint-btn" style="background:#444;color:#fff">🔧 Mode maintenance</button>
           <button class="btn btn-gray" onclick="setStatus('registration')" id="open-reg-btn">📋 Ouvrir les inscriptions</button>
@@ -450,7 +447,7 @@ if ('serviceWorker' in navigator) {
   });
 }
 import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC-UUvxF0kaRGf-i_0uCUW9a_R4tohnrwM",
@@ -474,6 +471,15 @@ const db = getDatabase(fbApp);
 // de connexion n'empêche RIEN — le site continue exactement comme avant. C'est
 // volontaire : on met le jeton en place d'abord, on resserre les règles ensuite.
 const fbAuth = getAuth(fbApp);
+// Promesse résolue dès que l'état d'authentification est connu (jeton présent ou
+// non). Toute écriture au démarrage doit l'attendre : avec les règles resserrées,
+// écrire avant le jeton serait refusé en silence.
+const authPrete = new Promise(resolve => {
+  // onAuthStateChanged se déclenche d'abord avec null (état initial), puis avec
+  // l'utilisateur une fois signInAnonymously abouti : on n'accepte que le second.
+  const stop = onAuthStateChanged(fbAuth, (user) => { if (user) { stop(); resolve(); } });
+  setTimeout(resolve, 4000); // ne jamais bloquer indéfiniment
+});
 signInAnonymously(fbAuth)
   .then(() => console.log('[ABCT] Session anonyme établie'))
   .catch(e => console.log('[ABCT] Session anonyme indisponible (sans conséquence pour l\'instant) :', e.code));
@@ -642,6 +648,13 @@ function adminDeviceState() {
   const thisIsSubscribed = localStorage.getItem('abct-notif') === 'on' && !!thisSubId;
   if (!adminSubId) return { kind: 'none', thisIsSubscribed };
   if (thisIsSubscribed && adminSubId === thisSubId) return { kind: 'this', thisIsSubscribed };
+  // L'appareil enregistré a-t-il encore un abonnement ? Quand l'admin coupe ses
+  // notifications, son abonnement disparaît mais le pointeur reste. Sans ce test,
+  // on affichait "un AUTRE appareil est enregistré" — faux : ce n'est plus personne.
+  // (state[SUB_PATH] n'est chargé qu'après le jeton : tant qu'il est absent, on ne
+  // conclut pas à l'orphelin.)
+  const abonnes = state?.[SUB_PATH];
+  if (abonnes && !abonnes[adminSubId]) return { kind: 'orphan', thisIsSubscribed };
   return { kind: 'other', thisIsSubscribed };
 }
 
@@ -651,20 +664,20 @@ function renderAdminDeviceStatus() {
   const devStatus = document.getElementById('admin-device-status');
   const devActions = document.getElementById('admin-device-actions');
   if (devStatus && devActions) {
+    const btnRegister = `<button class="btn btn-gold" onclick="registerThisDeviceAsAdmin()">${t('dev_register_btn')}</button>`;
     if (d.kind === 'none') {
-      devStatus.innerHTML = '⚠️ Aucun appareil admin enregistré pour l\'alerte retard.';
-      devActions.innerHTML = d.thisIsSubscribed
-        ? `<button class="btn btn-gold" onclick="registerThisDeviceAsAdmin()">📍 Faire de cet appareil mon appareil admin</button>`
-        : `<span style="font-size:12px;color:var(--gray)">Active tes notifications ci-dessus d'abord.</span>`;
+      devStatus.innerHTML = t('dev_none');
+      devActions.innerHTML = d.thisIsSubscribed ? btnRegister : `<span style="font-size:12px;color:var(--gray)">${t('dev_enable_first')}</span>`;
+    } else if (d.kind === 'orphan') {
+      devStatus.innerHTML = t('dev_orphan');
+      devActions.innerHTML = d.thisIsSubscribed ? btnRegister : `<span style="font-size:12px;color:var(--gray)">${t('dev_enable_then_register')}</span>`;
     } else if (d.kind === 'this') {
-      devStatus.innerHTML = alertsOn
-        ? '✅ C\'est cet appareil qui est enregistré pour l\'alerte retard.'
-        : '⏸️ Cet appareil est enregistré, mais l\'alerte automatique est désactivée (case ci-dessus).';
-      devActions.innerHTML = `<button class="btn btn-gray btn-sm" style="width:auto;font-size:12px;background:#fee;color:var(--red)" onclick="resetAdminDevice()">🔄 Retirer cet enregistrement</button>`;
+      devStatus.innerHTML = alertsOn ? t('dev_this_on') : t('dev_this_off');
+      devActions.innerHTML = `<button class="btn btn-gray btn-sm" style="width:auto;font-size:12px;background:#fee;color:var(--red)" onclick="resetAdminDevice()">${t('dev_remove_this')}</button>`;
     } else {
-      devStatus.innerHTML = '⚠️ Un <b>autre</b> appareil est enregistré pour l\'alerte retard — pas celui-ci.';
-      devActions.innerHTML = (d.thisIsSubscribed ? `<button class="btn btn-gold" onclick="registerThisDeviceAsAdmin()">📍 Enregistrer cet appareil à la place</button>` : '') +
-        `<button class="btn btn-gray btn-sm" style="width:auto;font-size:12px" onclick="resetAdminDevice()">🔄 Retirer l'enregistrement actuel</button>`;
+      devStatus.innerHTML = t('dev_other');
+      devActions.innerHTML = (d.thisIsSubscribed ? `<button class="btn btn-gold" onclick="registerThisDeviceAsAdmin()">${t('dev_register_instead')}</button>` : '') +
+        `<button class="btn btn-gray btn-sm" style="width:auto;font-size:12px" onclick="resetAdminDevice()">${t('dev_remove_current')}</button>`;
     }
   }
   // Version compacte, page d'accueil — visible seulement si on est connecté en admin sur CET appareil.
@@ -675,10 +688,10 @@ function renderAdminDeviceStatus() {
     } else {
       homeStatus.style.display = 'block';
       const label = d.kind === 'this'
-        ? (alertsOn ? '✅ Appareil admin — alerte retard active ici' : '⏸️ Appareil admin enregistré ici — alerte désactivée')
-        : d.kind === 'other'
-          ? '⚠️ Pas l\'appareil admin enregistré — aucune alerte retard ici'
-          : '⚠️ Aucun appareil admin enregistré';
+        ? (alertsOn ? t('dev_home_this_on') : t('dev_home_this_off'))
+        : d.kind === 'other' ? t('dev_home_other')
+        : d.kind === 'orphan' ? t('dev_home_orphan')
+        : t('dev_home_none');
       homeStatus.textContent = label;
     }
   }
@@ -813,7 +826,9 @@ document.getElementById('manifest-link').href = URL.createObjectURL(mblob);
 // ── TRANSLATIONS ──
 const T = {
   fr:{
-    loading:"Chargement...",offline:"⚠️ Hors ligne — données non synchronisées",pin_current:"PIN actuel",reg_closed:"Les inscriptions sont fermées.",pin_new:"Nouveau PIN",pin_confirm:"Confirmer",set_semis:"Format demi-finales",set_final:"Format finale",whatsapp_title:"📲 Rappel WhatsApp",save_seed:"💾 Sauvegarder",
+    loading:"Chargement...",offline:"⚠️ Hors ligne — données non synchronisées",write_denied:"⛔ Enregistrement refusé — recharge la page et réessaie.",
+    dev_none:"⚠️ Aucun appareil admin enregistré pour l'alerte retard.",dev_orphan:"⚠️ L'appareil admin enregistré n'a plus d'abonnement actif — l'alerte retard ne parvient à personne.",dev_this_on:"✅ C'est cet appareil qui est enregistré pour l'alerte retard.",dev_this_off:"⏸️ Cet appareil est enregistré, mais l'alerte automatique est désactivée (case ci-dessus).",dev_other:"⚠️ Un <b>autre</b> appareil est enregistré pour l'alerte retard — pas celui-ci.",dev_register_btn:"📍 Faire de cet appareil mon appareil admin",dev_register_instead:"📍 Enregistrer cet appareil à la place",dev_remove_this:"🔄 Retirer cet enregistrement",dev_remove_current:"🔄 Retirer l'enregistrement actuel",dev_enable_first:"Active tes notifications ci-dessus d'abord.",dev_enable_then_register:"Active tes notifications ci-dessus, puis enregistre cet appareil.",dev_home_this_on:"✅ Appareil admin — alerte retard active ici",dev_home_this_off:"⏸️ Appareil admin enregistré ici — alerte désactivée",dev_home_other:"⚠️ Pas l'appareil admin enregistré — aucune alerte retard ici",dev_home_orphan:"⚠️ L'appareil admin enregistré n'est plus abonné — alerte sans destinataire",dev_home_none:"⚠️ Aucun appareil admin enregistré",
+    late_check_alert_sent:"{n} match(s) en retard — alerte envoyée à l'appareil admin",late_check_nothing_late:"Aucun match en retard. Rien à envoyer.",late_check_proof_sent:"Aucun retard. Le message hebdomadaire de contrôle a été envoyé.",late_check_not_playing:"Le tournoi n'est pas en phase de jeu : aucun match ne peut être en retard.",late_check_no_admin_device:"Aucun appareil admin enregistré : l'alerte n'a pas de destinataire.",late_check_admin_sub_invalid:"L'abonnement de l'appareil admin est invalide. Réenregistre-le.",late_check_auto_off:"L'alerte automatique est désactivée (case dans l'onglet Notifs).",late_check_maintenance:"Mode maintenance actif : l'alerte est suspendue.",late_check_no_config:"Configuration serveur incomplète (clés manquantes sur Netlify).",pin_current:"PIN actuel",reg_closed:"Les inscriptions sont fermées.",pin_new:"Nouveau PIN",pin_confirm:"Confirmer",set_semis:"Format demi-finales",set_final:"Format finale",whatsapp_title:"📲 Rappel WhatsApp",save_seed:"💾 Sauvegarder",
     tab_home:"Tournoi",tab_groups:"Groupes",tab_matches:"Matchs",tab_finals:"Finales",
     tab_info:"Infos",confirm_archive_before_reset:"Archiver le classement actuel dans le palmarès avant de réinitialiser ?\n\nOK = archiver puis réinitialiser\nAnnuler = réinitialiser sans archiver",palmares_admin_title:"🏅 Palmarès",palmares_edition_name_placeholder:"Nom de l'édition",info_rules_btn:"📜 Règlement",info_palmares_btn:"🏅 Palmarès",info_ranking_btn:"📊 Classement général",live_rank_title:"Classement général en direct",live_rank_qualified_title:"Joueurs qualifiés",info_admin_btn:"⚙️ Admin",info_rules_title:"Règlement",info_palmares_title:"Palmarès",
     status_registration:"Inscriptions ouvertes",status_playing:"Phase de poules",status_finals:"Phases finales",status_finished:"Terminé",
@@ -828,7 +843,7 @@ const T = {
     notif_validate_btn:"✅ Valider et activer",
     change_pin_btn:"Modifier le PIN",
     check_late_btn:"🔍 Vérifier les retards maintenant",
-    open_reg_btn:"📋 Ouvrir les inscriptions",
+    open_reg_btn:"📋 Ouvrir les inscriptions",phase_reg_done:"📋 Inscriptions ouvertes",phase_pools_done:"⚔️ Phase de poules lancée",phase_finals_done:"🏆 Phases finales lancées",phase_finished_done:"🏁 Tournoi terminé",
     start_pools_btn:"⚔️ Lancer la phase de poules",
     finish_btn:"🏁 Terminer le tournoi",
     assign_btn_action:"♟ Assigner groupes & générer matchs",
@@ -866,7 +881,7 @@ const T = {
 <p>Arbitrage : En cas de litige, l'organisateur tranche. Fair-play attendu de tous.</p>`,
     modify:"modifier",
     late_badge:"⏰ Retard",
-    due_by:"📅 Échéance :",
+    due_by:"📅 Échéance :",round_short:"Ronde",
     late_match:"⏰ Match en retard",
     color_choice:"choisit sa couleur",color_pick:"— couleur —",color_required:"Choisis ta couleur avant de valider le score.",
     presential:"Présentiel",
@@ -946,7 +961,9 @@ const T = {
     winner:"🏆 Vainqueur",
   },
   de:{
-    loading:"Wird geladen...",offline:"⚠️ Offline — Daten werden nicht synchronisiert",pin_current:"Aktueller PIN",reg_closed:"Die Anmeldung ist geschlossen.",pin_new:"Neuer PIN",pin_confirm:"Bestätigen",set_semis:"Format Halbfinale",set_final:"Format Finale",whatsapp_title:"📲 WhatsApp-Erinnerung",save_seed:"💾 Speichern",
+    loading:"Wird geladen...",offline:"⚠️ Offline — Daten werden nicht synchronisiert",write_denied:"⛔ Speichern abgelehnt — Seite neu laden und erneut versuchen.",
+    dev_none:"⚠️ Kein Admin-Gerät für die Verspätungswarnung registriert.",dev_orphan:"⚠️ Das registrierte Admin-Gerät hat kein aktives Abonnement mehr — die Warnung erreicht niemanden.",dev_this_on:"✅ Dieses Gerät ist für die Verspätungswarnung registriert.",dev_this_off:"⏸️ Dieses Gerät ist registriert, aber die automatische Warnung ist deaktiviert (Kästchen oben).",dev_other:"⚠️ Ein <b>anderes</b> Gerät ist für die Verspätungswarnung registriert — nicht dieses.",dev_register_btn:"📍 Dieses Gerät zu meinem Admin-Gerät machen",dev_register_instead:"📍 Stattdessen dieses Gerät registrieren",dev_remove_this:"🔄 Diese Registrierung entfernen",dev_remove_current:"🔄 Aktuelle Registrierung entfernen",dev_enable_first:"Aktiviere zuerst oben deine Benachrichtigungen.",dev_enable_then_register:"Aktiviere oben deine Benachrichtigungen und registriere dann dieses Gerät.",dev_home_this_on:"✅ Admin-Gerät — Verspätungswarnung hier aktiv",dev_home_this_off:"⏸️ Admin-Gerät hier registriert — Warnung deaktiviert",dev_home_other:"⚠️ Nicht das registrierte Admin-Gerät — keine Warnung hier",dev_home_orphan:"⚠️ Registriertes Admin-Gerät nicht mehr abonniert — Warnung ohne Empfänger",dev_home_none:"⚠️ Kein Admin-Gerät registriert",
+    late_check_alert_sent:"{n} verspätete Partie(n) — Warnung an das Admin-Gerät gesendet",late_check_nothing_late:"Keine verspätete Partie. Nichts zu senden.",late_check_proof_sent:"Keine Verspätung. Die wöchentliche Kontrollnachricht wurde gesendet.",late_check_not_playing:"Das Turnier ist nicht in der Spielphase: keine Partie kann verspätet sein.",late_check_no_admin_device:"Kein Admin-Gerät registriert: die Warnung hat keinen Empfänger.",late_check_admin_sub_invalid:"Das Abonnement des Admin-Geräts ist ungültig. Bitte neu registrieren.",late_check_auto_off:"Die automatische Warnung ist deaktiviert (Kästchen im Tab Benachrichtigungen).",late_check_maintenance:"Wartungsmodus aktiv: die Warnung ist ausgesetzt.",late_check_no_config:"Serverkonfiguration unvollständig (fehlende Schlüssel auf Netlify).",pin_current:"Aktueller PIN",reg_closed:"Die Anmeldung ist geschlossen.",pin_new:"Neuer PIN",pin_confirm:"Bestätigen",set_semis:"Format Halbfinale",set_final:"Format Finale",whatsapp_title:"📲 WhatsApp-Erinnerung",save_seed:"💾 Speichern",
     tab_home:"Turnier",tab_groups:"Gruppen",tab_matches:"Partien",tab_finals:"Finale",
     tab_info:"Infos",confirm_archive_before_reset:"Aktuelle Rangliste vor dem Zurücksetzen in der Siegerliste archivieren?\n\nOK = archivieren und zurücksetzen\nAbbrechen = ohne Archivierung zurücksetzen",palmares_admin_title:"🏅 Siegerliste",palmares_edition_name_placeholder:"Name der Ausgabe",info_rules_btn:"📜 Reglement",info_palmares_btn:"🏅 Siegerliste",info_ranking_btn:"📊 Gesamtrangliste",live_rank_title:"Gesamtrangliste live",live_rank_qualified_title:"Qualifizierte Spieler",info_admin_btn:"⚙️ Admin",info_rules_title:"Reglement",info_palmares_title:"Siegerliste",
     status_registration:"Anmeldung offen",status_playing:"Gruppenphase",status_finals:"Finalphase",status_finished:"Beendet",
@@ -961,7 +978,7 @@ const T = {
     notif_validate_btn:"✅ Bestätigen und aktivieren",
     change_pin_btn:"PIN ändern",
     check_late_btn:"🔍 Verspätungen jetzt prüfen",
-    open_reg_btn:"📋 Anmeldung öffnen",
+    open_reg_btn:"📋 Anmeldung öffnen",phase_reg_done:"📋 Anmeldung geöffnet",phase_pools_done:"⚔️ Gruppenphase gestartet",phase_finals_done:"🏆 Finalrunden gestartet",phase_finished_done:"🏁 Turnier beendet",
     start_pools_btn:"⚔️ Gruppenphase starten",
     finish_btn:"🏁 Turnier beenden",
     assign_btn_action:"♟ Gruppen zuweisen & Partien erstellen",
@@ -1034,7 +1051,7 @@ const T = {
     rules_full:"<h3 style=\"color:var(--gold);margin:16px 0 6px\">1. Format</h3>\n<p>Alle Spieler werden in Gruppen eingeteilt. Jeder Spieler trifft einmal auf jeden anderen Spieler seiner Gruppe (Round-Robin). Anzahl der Gruppen und Qualifizierter wird vom Organisator festgelegt.</p>\n<h3 style=\"color:var(--gold);margin:16px 0 6px\">2. Punkte</h3>\n<p>1 Punkt f\u00fcr einen Sieg \u00b7 0.5 f\u00fcr ein Remis \u00b7 0 f\u00fcr eine Niederlage.</p>\n<p>Jeder Spieler ist f\u00fcr die Eingabe seines Ergebnisses unmittelbar nach der Partie verantwortlich.</p>\n<h3 style=\"color:var(--gold);margin:16px 0 6px\">3. Tiebreak</h3>\n<p>Bei Punktgleichheit: \u2460 Punkte \u00b7 \u2461 Siege \u00b7 \u2462 Siege mit Schwarz \u00b7 \u2463 Buchholz \u00b7 \u2464 Direkter Vergleich</p>\n<h3 style=\"color:var(--gold);margin:16px 0 6px\">4. Finalrunden</h3>\n<p>Gruppensieger qualifizieren sich direkt f\u00fcr die fortgeschrittene Runde. Zweite und beste Dritte spielen eine Vorrunde.</p>\n<p>Der besser platzierte Finalist w\u00e4hlt seine Farbe. Bei Remis wird mit getauschten Farben wiederholt.</p>\n<h3 style=\"color:var(--gold);margin:16px 0 6px\">5. Spielmodus</h3>\n<p>Partien auf physischem Brett oder Chess.com. Der Chess.com-Benutzername muss dem bei der Anmeldung angegebenen entsprechen.</p>\n<p>Freie Bedenkzeit, maximal <strong>24h pro Zug</strong>. Kein Urlaubsmodus ohne gegenseitige Einigung.</p>\n<p>\u26d4 Verboten: Analysebrett, bedingte Z\u00fcge auf Chess.com.</p>\n<p>Bei unbeabsichtigtem Zeitverlust ist eine Fortsetzung nur mit Zustimmung des Gegners m\u00f6glich. Bei Wiederholung gilt die Partie als verloren.</p>\n<h3 style=\"color:var(--gold);margin:16px 0 6px\">6. Fair Play & Schiedsrichter</h3>\n<p>Fair Play wird von allen Teilnehmern erwartet. Bei Streitigkeiten entscheidet der Organisator. Bei schwerwiegenden Verst\u00f6ssen kann eine Disqualifikation ausgesprochen werden.</p>",
     modify:"ändern",
     late_badge:"⏰ Verspätet",
-    due_by:"📅 Fällig bis",
+    due_by:"📅 Fällig bis",round_short:"Runde",
     late_match:"⏰ Partie verspätet",
     color_choice:"wählt die Farbe",color_pick:"— Farbe —",color_required:"Wähle deine Farbe, bevor du das Ergebnis bestätigst.",
     presential:"Präsenz",
@@ -1078,7 +1095,9 @@ const T = {
     winner:"🏆 Sieger",
   },
   en:{
-    loading:"Loading...",offline:"⚠️ Offline — data not syncing",pin_current:"Current PIN",reg_closed:"Registration is closed.",pin_new:"New PIN",pin_confirm:"Confirm",set_semis:"Semi-finals format",set_final:"Final format",whatsapp_title:"📲 WhatsApp reminder",save_seed:"💾 Save",
+    loading:"Loading...",offline:"⚠️ Offline — data not syncing",write_denied:"⛔ Save refused — reload the page and try again.",
+    dev_none:"⚠️ No admin device registered for the late alert.",dev_orphan:"⚠️ The registered admin device no longer has an active subscription — the late alert reaches no one.",dev_this_on:"✅ This device is registered for the late alert.",dev_this_off:"⏸️ This device is registered, but the automatic alert is disabled (checkbox above).",dev_other:"⚠️ <b>Another</b> device is registered for the late alert — not this one.",dev_register_btn:"📍 Make this device my admin device",dev_register_instead:"📍 Register this device instead",dev_remove_this:"🔄 Remove this registration",dev_remove_current:"🔄 Remove the current registration",dev_enable_first:"Enable your notifications above first.",dev_enable_then_register:"Enable your notifications above, then register this device.",dev_home_this_on:"✅ Admin device — late alert active here",dev_home_this_off:"⏸️ Admin device registered here — alert disabled",dev_home_other:"⚠️ Not the registered admin device — no late alert here",dev_home_orphan:"⚠️ Registered admin device no longer subscribed — alert has no recipient",dev_home_none:"⚠️ No admin device registered",
+    late_check_alert_sent:"{n} late game(s) — alert sent to the admin device",late_check_nothing_late:"No late game. Nothing to send.",late_check_proof_sent:"No delay. The weekly check message was sent.",late_check_not_playing:"The tournament is not in a playing phase: no game can be late.",late_check_no_admin_device:"No admin device registered: the alert has no recipient.",late_check_admin_sub_invalid:"The admin device subscription is invalid. Please register it again.",late_check_auto_off:"The automatic alert is disabled (checkbox in the Notifs tab).",late_check_maintenance:"Maintenance mode active: the alert is suspended.",late_check_no_config:"Server configuration incomplete (missing keys on Netlify).",pin_current:"Current PIN",reg_closed:"Registration is closed.",pin_new:"New PIN",pin_confirm:"Confirm",set_semis:"Semi-finals format",set_final:"Final format",whatsapp_title:"📲 WhatsApp reminder",save_seed:"💾 Save",
     tab_home:"Tournament",tab_groups:"Groups",tab_matches:"Matches",tab_finals:"Finals",
     tab_info:"Info",confirm_archive_before_reset:"Archive the current ranking to the hall of fame before resetting?\n\nOK = archive then reset\nCancel = reset without archiving",palmares_admin_title:"🏅 Hall of fame",palmares_edition_name_placeholder:"Edition name",info_rules_btn:"📜 Rules",info_palmares_btn:"🏅 Hall of fame",info_ranking_btn:"📊 Overall ranking",live_rank_title:"Live overall ranking",live_rank_qualified_title:"Qualified players",info_admin_btn:"⚙️ Admin",info_rules_title:"Rules",info_palmares_title:"Hall of fame",
     status_registration:"Registration open",status_playing:"Group stage",status_finals:"Final stage",status_finished:"Finished",
@@ -1093,7 +1112,7 @@ const T = {
     notif_validate_btn:"✅ Confirm and activate",
     change_pin_btn:"Change PIN",
     check_late_btn:"🔍 Check for overdue matches now",
-    open_reg_btn:"📋 Open registration",
+    open_reg_btn:"📋 Open registration",phase_reg_done:"📋 Registration open",phase_pools_done:"⚔️ Group stage launched",phase_finals_done:"🏆 Final stages launched",phase_finished_done:"🏁 Tournament finished",
     start_pools_btn:"⚔️ Launch group stage",
     finish_btn:"🏁 Finish tournament",
     assign_btn_action:"♟ Assign groups & generate matches",
@@ -1132,7 +1151,7 @@ const T = {
 <p>Arbiter: In case of dispute, the organizer decides. Fair play expected from all.</p>`,
     modify:"edit",
     late_badge:"⏰ Late",
-    due_by:"📅 Due by",
+    due_by:"📅 Due by",round_short:"Round",
     late_match:"⏰ Match overdue",
     color_choice:"chooses color",color_pick:"— colour —",color_required:"Choose your colour before confirming the score.",
     presential:"In-person",
@@ -1210,7 +1229,9 @@ const T = {
     winner:"🏆 Winner",
   },
   it:{
-    loading:"Caricamento...",offline:"⚠️ Offline — dati non sincronizzati",pin_current:"PIN attuale",reg_closed:"Le iscrizioni sono chiuse.",pin_new:"Nuovo PIN",pin_confirm:"Confermare",set_semis:"Formato semifinali",set_final:"Formato finale",whatsapp_title:"📲 Promemoria WhatsApp",save_seed:"💾 Salvare",
+    loading:"Caricamento...",offline:"⚠️ Offline — dati non sincronizzati",write_denied:"⛔ Salvataggio rifiutato — ricarica la pagina e riprova.",
+    dev_none:"⚠️ Nessun dispositivo admin registrato per l'avviso di ritardo.",dev_orphan:"⚠️ Il dispositivo admin registrato non ha più un abbonamento attivo — l'avviso non raggiunge nessuno.",dev_this_on:"✅ Questo dispositivo è registrato per l'avviso di ritardo.",dev_this_off:"⏸️ Questo dispositivo è registrato, ma l'avviso automatico è disattivato (casella sopra).",dev_other:"⚠️ Un <b>altro</b> dispositivo è registrato per l'avviso di ritardo — non questo.",dev_register_btn:"📍 Rendere questo dispositivo il mio dispositivo admin",dev_register_instead:"📍 Registrare invece questo dispositivo",dev_remove_this:"🔄 Rimuovere questa registrazione",dev_remove_current:"🔄 Rimuovere la registrazione attuale",dev_enable_first:"Attiva prima le notifiche qui sopra.",dev_enable_then_register:"Attiva le notifiche qui sopra, poi registra questo dispositivo.",dev_home_this_on:"✅ Dispositivo admin — avviso di ritardo attivo qui",dev_home_this_off:"⏸️ Dispositivo admin registrato qui — avviso disattivato",dev_home_other:"⚠️ Non è il dispositivo admin registrato — nessun avviso qui",dev_home_orphan:"⚠️ Dispositivo admin registrato non più abbonato — avviso senza destinatario",dev_home_none:"⚠️ Nessun dispositivo admin registrato",
+    late_check_alert_sent:"{n} partita/e in ritardo — avviso inviato al dispositivo admin",late_check_nothing_late:"Nessuna partita in ritardo. Niente da inviare.",late_check_proof_sent:"Nessun ritardo. Il messaggio settimanale di controllo è stato inviato.",late_check_not_playing:"Il torneo non è in fase di gioco: nessuna partita può essere in ritardo.",late_check_no_admin_device:"Nessun dispositivo admin registrato: l'avviso non ha destinatario.",late_check_admin_sub_invalid:"L'abbonamento del dispositivo admin non è valido. Registralo di nuovo.",late_check_auto_off:"L'avviso automatico è disattivato (casella nella scheda Notifiche).",late_check_maintenance:"Modalità manutenzione attiva: l'avviso è sospeso.",late_check_no_config:"Configurazione server incompleta (chiavi mancanti su Netlify).",pin_current:"PIN attuale",reg_closed:"Le iscrizioni sono chiuse.",pin_new:"Nuovo PIN",pin_confirm:"Confermare",set_semis:"Formato semifinali",set_final:"Formato finale",whatsapp_title:"📲 Promemoria WhatsApp",save_seed:"💾 Salvare",
     tab_home:"Torneo",tab_groups:"Gruppi",tab_matches:"Partite",tab_finals:"Finali",
     tab_info:"Info",confirm_archive_before_reset:"Archiviare la classifica attuale nell'albo d'oro prima di azzerare?\n\nOK = archiviare e azzerare\nAnnulla = azzerare senza archiviare",palmares_admin_title:"🏅 Albo d'oro",palmares_edition_name_placeholder:"Nome dell'edizione",info_rules_btn:"📜 Regolamento",info_palmares_btn:"🏅 Albo d'oro",info_ranking_btn:"📊 Classifica generale",live_rank_title:"Classifica generale in diretta",live_rank_qualified_title:"Giocatori qualificati",info_admin_btn:"⚙️ Admin",info_rules_title:"Regolamento",info_palmares_title:"Albo d'oro",
     status_registration:"Iscrizioni aperte",status_playing:"Fase a gironi",status_finals:"Fase finale",status_finished:"Terminato",
@@ -1225,7 +1246,7 @@ const T = {
     notif_validate_btn:"✅ Conferma e attiva",
     change_pin_btn:"Modificare il PIN",
     check_late_btn:"🔍 Verificare i ritardi adesso",
-    open_reg_btn:"📋 Aprire le iscrizioni",
+    open_reg_btn:"📋 Aprire le iscrizioni",phase_reg_done:"📋 Iscrizioni aperte",phase_pools_done:"⚔️ Fase a gironi avviata",phase_finals_done:"🏆 Fasi finali avviate",phase_finished_done:"🏁 Torneo terminato",
     start_pools_btn:"⚔️ Avviare la fase a gironi",
     finish_btn:"🏁 Terminare il torneo",
     assign_btn_action:"♟ Assegnare i gruppi & generare le partite",
@@ -1262,7 +1283,7 @@ const T = {
 <p>Arbitraggio: In caso di controversia, decide l'organizzatore. Fair play atteso da tutti.</p>`,
     modify:"modificare",
     late_badge:"⏰ Ritardo",
-    due_by:"📅 Scadenza:",
+    due_by:"📅 Scadenza:",round_short:"Turno",
     late_match:"⏰ Partita in ritardo",
     color_choice:"sceglie il colore",color_pick:"— colore —",color_required:"Scegli il tuo colore prima di confermare il risultato.",
     presential:"Presenza",
@@ -1416,17 +1437,6 @@ function applyTranslations() {
   if (pinTitle) pinTitle.textContent = t('pin_section');
   const pcta = document.getElementById('pool-reminder-cta');
   if (pcta) pcta.textContent = t('pool_cta');
-  // Indicateur de phase dans l'onglet Tournoi : l'élément existait dans le HTML
-  // mais rien ne le remplissait — il restait donc vide et invisible.
-  const phaseEl = document.getElementById('current-phase-label');
-  if (phaseEl) {
-    const icones = { registration:'📋', playing:'⚔️', finals:'🏆', finished:'✅' };
-    const st = state?.settings?.status;
-    // statusMap est local à renderHome : on refait la correspondance ici.
-    const libelles = { registration:t('status_registration'), playing:t('status_playing'),
-                       finals:t('status_finals'), finished:t('status_finished') };
-    phaseEl.innerHTML = `${icones[st] || ''} <strong>${esc(libelles[st] || '—')}</strong>`;
-  }
   const prt = document.getElementById('pool-reminder-title');
   const prx = document.getElementById('pool-reminder-text');
   if (prt) prt.textContent = t('pool_reminder_title');
@@ -3342,7 +3352,14 @@ window.checkLateNow = async function() {
     const data = await res.json();
     if (resultEl) {
       if (!res.ok) { resultEl.style.color = 'var(--red)'; resultEl.textContent = '❌ ' + (data.error || 'Erreur'); }
-      else { resultEl.style.color = data.sent ? 'var(--green)' : 'var(--gray)'; resultEl.textContent = (data.sent ? '✅ ' : 'ℹ️ ') + (data.reason || ''); }
+      else {
+        resultEl.style.color = data.sent ? 'var(--green)' : 'var(--gray)';
+        // Le serveur renvoie un code stable, traduit ici ; le texte brut (journaux)
+        // ne sert que de secours si le code est inconnu.
+        const cle = 'late_check_' + (data.code || '');
+        const txt = data.code && T[lang]?.[cle] ? t(cle).replace('{n}', data.total ?? '') : (data.reason || '');
+        resultEl.textContent = (data.sent ? '✅ ' : 'ℹ️ ') + txt;
+      }
     }
   } catch (e) {
     if (resultEl) { resultEl.style.color = 'var(--red)'; resultEl.textContent = '❌ Erreur : ' + e.message; }
@@ -3831,7 +3848,25 @@ function renderMatches(){
   document.getElementById('matches-empty').style.display=games.length===0?'block':'none';
   document.getElementById('matches-empty').textContent=t('matches_empty');
   document.getElementById('matches-pending-title').textContent=pending.length?t('matches_pending')+' ('+pending.length+')':'';
-  document.getElementById('matches-pending').innerHTML=pending.map(g=>matchCardHTML(g)).join('');
+  // Séparateurs de ronde : la liste est triée par échéance, donc par ronde. On
+  // insère un bandeau à chaque changement de ronde, avec sa date limite, pour que
+  // le conseil "priorisez la ronde 1, puis la 2..." soit directement lisible.
+  let derniereRonde = null, htmlPending = '';
+  pending.forEach(g => {
+    if (typeof g.round === 'number' && g.round !== derniereRonde) {
+      derniereRonde = g.round;
+      const due = matchDueDate(g, false);
+      const dueStr = due ? due.toLocaleDateString(lang==='fr'?'fr-CH':lang==='de'?'de-CH':lang==='it'?'it-CH':'en-GB',{day:'numeric',month:'long'}) : '';
+      const enRetard = isMatchLate(g, false);
+      htmlPending += `<div style="display:flex;align-items:center;gap:10px;margin:${htmlPending?'18px':'4px'} 0 10px">
+        <div style="flex:1;height:1px;background:${enRetard?'#E67E22':'var(--gold)'};opacity:0.5"></div>
+        <div style="font-size:12px;font-weight:800;color:${enRetard?'#E67E22':'var(--gold)'};letter-spacing:0.5px;white-space:nowrap">${t('round_short').toUpperCase()} ${g.round}${dueStr?` <span style="font-weight:500;color:#999">· ${dueStr}</span>`:''}</div>
+        <div style="flex:1;height:1px;background:${enRetard?'#E67E22':'var(--gold)'};opacity:0.5"></div>
+      </div>`;
+    }
+    htmlPending += matchCardHTML(g);
+  });
+  document.getElementById('matches-pending').innerHTML=htmlPending;
   document.getElementById('matches-done-title').textContent=done.length?t('matches_done')+' ('+done.length+')':'';
   document.getElementById('matches-done').innerHTML=done.map(g=>matchCardHTML(g)).join('');
 }
@@ -3846,7 +3881,7 @@ function matchCardHTML(g){
   const due = matchDueDate(g, false);
   const dueStr = due ? due.toLocaleDateString(lang==='fr'?'fr-CH':lang==='de'?'de-CH':lang==='it'?'it-CH':'en-GB',{day:'numeric',month:'short'}) : null;
   return `<div class="match-card" style="${late?'border-left:3px solid #E67E22;':''}">
-    <div class="match-grp">${esc(g.group)}${late?` <span style="font-size:13px;font-weight:700;color:#E67E22;background:#FFF3E0;padding:2px 6px;border-radius:5px;margin-left:4px">${t("late_badge")}</span>`:''}</div>
+    <div class="match-grp">${esc(g.group)}${typeof g.round==='number'?` <span style="font-weight:600;color:#aaa">· ${t('round_short')} ${g.round}</span>`:''}${late?` <span style="font-size:13px;font-weight:700;color:#E67E22;background:#FFF3E0;padding:2px 6px;border-radius:5px;margin-left:4px">${t("late_badge")}</span>`:''}</div>
     <div class="match-players">
       <div class="match-player"><div class="match-player-name">${esc(g.playerWhite)}</div><div class="match-player-color" style="display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px;margin-top:4px;background:#F5F5F0;color:#555;border:1px solid #ddd">${t('whites')}</div></div>
       ${played&&!isEditing?`<div style="text-align:center;cursor:pointer" onclick="openScoreEdit('${g.id}')">
@@ -4009,14 +4044,12 @@ function renderAdmin(){
       }
     }
     // Show current phase and highlight active button
-    const phaseLabel = document.getElementById('current-phase-label');
-    const statusMap2 = {
-      registration: t('status_registration'),
-      playing: t('status_playing'),
-      finals: t('status_finals'),
-      finished: t('status_finished')
-    };
-    if (phaseLabel) phaseLabel.innerHTML = `Phase actuelle : <strong style="color:var(--dark)">${statusMap2[s.status]||'—'}</strong>`;
+
+  }
+
+  // Boutons de phase : HORS condition d'onglet — ils vivent dans l'onglet Tournoi,
+  // pas dans Notifs. Ce bloc etait reste coince dans la condition 'notifs' lors du
+  // deplacement des notifications, donc il ne s'executait jamais.
     // Highlight active phase button
     ['open-reg-btn','start-pools-btn','launch-finals-btn','finish-btn'].forEach(id => {
       const btn = document.getElementById(id);
@@ -4028,12 +4061,33 @@ function renderAdmin(){
       const btn = document.getElementById(id);
       if (btn) { btn.style.background = ''; btn.style.color = ''; btn.style.fontWeight = ''; btn.style.borderLeft = ''; }
     });
-    // Mark active with subtle left border indicator only
+    // Le bouton de la phase EN COURS change de libellé (au passé) et reçoit le
+    // repère doré à gauche. Les autres gardent leur libellé d'action.
+    const libellesActifs = {
+      'open-reg-btn': 'phase_reg_done',
+      'start-pools-btn': 'phase_pools_done',
+      'launch-finals-btn': 'phase_finals_done',
+      'finish-btn': 'phase_finished_done'
+    };
+    const libellesActions = {
+      'open-reg-btn': 'open_reg_btn',
+      'start-pools-btn': 'start_pools_btn',
+      'launch-finals-btn': 'launch_finals',
+      'finish-btn': 'finish_btn'
+    };
+    Object.keys(libellesActions).forEach(id => {
+      const b = document.getElementById(id);
+      if (b) b.textContent = t(libellesActions[id]);
+    });
     if (activeBtn) {
       const ab = document.getElementById(activeBtn);
-      if (ab) { ab.style.borderLeft = '3px solid var(--gold)'; ab.style.fontWeight = '700'; }
+      if (ab) {
+        ab.style.borderLeft = '4px solid var(--gold)';
+        ab.style.fontWeight = '700';
+        ab.style.background = 'var(--gold-light)';
+        ab.textContent = t(libellesActifs[activeBtn]);
+      }
     }
-  }
 
   // Classement des finalistes : hors condition d'onglet — il vit dans l'onglet Tournoi,
   // pas dans Notifs, et doit se mettre à jour en direct quel que soit l'onglet consulté.
@@ -4102,13 +4156,22 @@ function renderSeedList(){
 window.setMatchFilter=function(f){currentMatchFilter=f;renderMatches();};
 
 // ── FIREBASE LISTENER ──
-onValue(ref(db),(snapshot)=>{
-  const rawData = snapshot.exists()?snapshot.val():defaultData();
-  // Read and isolate maintenance flag
-  const firebaseMaintenance = rawData.maintenance === true;
-  if (!isAdmin) maintenanceMode = firebaseMaintenance;
-  delete rawData.maintenance;
-  state = rawData;
+// ── ÉCOUTE DES DONNÉES ──
+// Le site écoutait auparavant la RACINE de la base (`onValue(ref(db), ...)`).
+// Or lire un chemin exige le droit de lecture à ce niveau ou au-dessus : une
+// lecture de la racine aurait donc réclamé `.read` à la racine, rendant `adminPin`
+// lisible par tous — exactement ce qu'on veut empêcher.
+// On écoute donc chaque section séparément. `adminPin` n'est jamais lu : sa
+// vérification se fait côté serveur.
+// Sections en lecture PUBLIQUE dans les règles : elles s'écoutent immédiatement.
+const CHEMINS_PUBLICS = ['settings', 'players', 'games', 'finals', 'palmares', 'maintenance'];
+// Les abonnements aux notifications, eux, exigent un jeton dans les règles.
+// ⚠️ Piège documenté (firebase-js-sdk #6280) : un écouteur attaché AVANT que
+// l'authentification aboutisse reçoit permission_denied et ne réessaie pas.
+// On attend donc que le jeton soit là pour attacher celui-ci.
+let ecouteAbonnesActive = false;
+
+function surDonneesChangees() {
   if(!state.settings) state.settings=defaultData().settings;
   // Si on croit être abonné mais que l'entrée Firebase n'existe plus (ex: supprimée
   // manuellement dans le panneau admin) : la volonté du joueur prime. On vérifie si son
@@ -4167,14 +4230,70 @@ onValue(ref(db),(snapshot)=>{
   applyTranslations();
   renderPage(currentPage);
   renderAdminDeviceStatus();
-},(error)=>{
-  console.error('Firebase error:',error);
-  document.getElementById('offline-bar').style.display='block';
+}
+
+function ecouterSection(chemin) {
+  onValue(ref(db, chemin), (snap) => {
+    const val = snap.exists() ? snap.val() : null;
+    if (chemin === 'maintenance') {
+      const m = val === true;
+      if (!isAdmin) maintenanceMode = m;
+    } else {
+      state = state || {};
+      state[chemin] = val;
+    }
+    if (!state) state = defaultData();
+    surDonneesChangees();
+  }, (err) => {
+    console.error('[ABCT] Lecture impossible sur ' + chemin + ' :', err.message);
+    // AUTO-RÉPARATION : un refus de lecture (et non une coupure réseau) signifie
+    // presque toujours que les règles ont changé pendant que la page était ouverte,
+    // ou qu'une version périmée tourne encore. Un rechargement charge la version
+    // à jour et obtient un jeton frais. Une seule fois par session, pour ne jamais
+    // boucler si les règles sont réellement cassées.
+    if (/permission[_ -]?denied/i.test(err.message) && !sessionStorage.getItem('abct-auto-reload')) {
+      sessionStorage.setItem('abct-auto-reload', '1');
+      console.log('[ABCT] Rechargement automatique pour récupérer un accès à jour');
+      location.reload();
+      return;
+    }
+    // Sinon (réseau, ou second refus) : barre hors ligne et on rend ce qu'on a.
+    const bar = document.getElementById('offline-bar');
+    if (bar) bar.style.display = 'block';
+    surDonneesChangees();
+  });
+}
+
+CHEMINS_PUBLICS.forEach(ecouterSection);
+
+// Les abonnements : seulement une fois authentifié. Sur les visites suivantes le
+// jeton est déjà en mémoire locale, donc ce rappel se déclenche immédiatement.
+onAuthStateChanged(fbAuth, (user) => {
+  if (user && !ecouteAbonnesActive) {
+    ecouteAbonnesActive = true;
+    ecouterSection(SUB_PATH);
+  }
 });
 
 window.addEventListener('offline',()=>document.getElementById('offline-bar').style.display='block');
+
+// ── FILET DE SÉCURITÉ : ÉCRITURE REFUSÉE PAR LES RÈGLES ──
+// Avec des règles ouvertes, une écriture n'échoue jamais. Une fois les règles
+// resserrées, un refus ferait échouer l'écriture EN SILENCE : le joueur clique,
+// rien ne se passe, aucun message. On intercepte ici tout refus pour le rendre
+// visible, avec la cause la plus probable (jeton absent = authentification anonyme
+// désactivée ou pas encore aboutie).
+window.addEventListener('unhandledrejection', (ev) => {
+  const msg = String(ev?.reason?.message || ev?.reason || '');
+  if (/permission[_ -]?denied/i.test(msg)) {
+    ev.preventDefault();
+    console.error('[ABCT] Écriture refusée par les règles Firebase :', msg);
+    showToast(t('write_denied'), false);
+  }
+});
 // Init notification button state
 setTimeout(async () => {
+  await authPrete; // écriture possible plus bas : il faut le jeton
   // Recovery: si localStorage effacé mais abonnement push encore actif, restaurer l'état
   // — ET recréer l'entrée Firebase si elle manque (ex: supprimée par l'admin), sinon on
   // ne fait que remettre le bouton sur "actif" sans que rien ne soit réellement reçu.

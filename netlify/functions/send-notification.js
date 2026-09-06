@@ -16,6 +16,14 @@ async function getAdminPin() {
   return fbRead('adminPin');
 }
 
+// En maintenance : on ne garde que l'appareil admin dans la liste des
+// destinataires. Renvoie une liste vide si aucun appareil admin n'est enregistre
+// — mieux vaut n'envoyer a personne que de deranger les joueurs.
+function restreindreSiMaintenance(liste, maintenance, subAdmin) {
+  if (!maintenance) return liste;
+  return subAdmin && subAdmin.endpoint && subAdmin.keys ? [subAdmin] : [];
+}
+
 async function sendToAll(subscriptions, title, body) {
   const payload = JSON.stringify({
     title: title || 'Air Base Chess Tour',
@@ -88,7 +96,18 @@ exports.handler = async function (event) {
     // La liste eventuellement envoyee par le client est ignoree : cela garantit
     // qu'une requete venant de dev ne peut jamais toucher les abonnes de prod.
     const subsObj = await fbRead(SUB_PATH).catch(() => ({}));
-    const subscriptions = Object.values(subsObj || {}).filter(s => s && s.endpoint && s.keys);
+    let subscriptions = Object.values(subsObj || {}).filter(s => s && s.endpoint && s.keys);
+    const adminKey = IS_DEV ? 'adminSubIdDev' : 'adminSubId';
+    const adminSubId = await fbRead('settings/' + adminKey).catch(() => null);
+    const subAdmin = adminSubId ? (subsObj || {})[adminSubId] : null;
+    // En maintenance, l'envoi n'est plus annule : il est restreint a l'appareil
+    // admin. Les joueurs ne sont pas deranges, mais l'admin garde un retour reel
+    // pendant ses tests. Lu ICI, au niveau commun aux deux types d'envoi
+    // (resultat automatique ET annonce manuelle) — la lecture etait auparavant
+    // dans la seule branche "resultat", donc sans effet sur les annonces.
+    // Sur dev, la maintenance est ignoree volontairement.
+    const maintNow = await fbRead('maintenance').catch(() => true);
+    const modeMaintenance = (maintNow === true && !IS_DEV);
 
     if (!subscriptions.length)
       return { statusCode: 200, headers, body: JSON.stringify({ skipped: 'aucun abonne', env: IS_DEV ? 'dev' : 'prod' }) };
@@ -104,12 +123,6 @@ exports.handler = async function (event) {
       const autoEnabled = await fbRead('settings/autoNotifyResults').catch(() => false);
       if (autoEnabled !== true)
         return { statusCode: 200, headers, body: JSON.stringify({ skipped: 'auto-notify desactive' }) };
-
-      // Le mode maintenance protege les joueurs de PROD. Sur dev, on l'ignore
-      // volontairement : c'est justement pendant la maintenance qu'on veut tester.
-      const maint = await fbRead('maintenance').catch(() => true);
-      if (maint === true && !IS_DEV)
-        return { statusCode: 200, headers, body: JSON.stringify({ skipped: 'maintenance active' }) };
 
       const path = isFinal ? 'finals/' + gameId : 'games/' + gameId;
       const game = await fbRead(path).catch(() => null);
@@ -135,7 +148,8 @@ exports.handler = async function (event) {
       // Marquer avant l'envoi pour eviter un double-envoi en cas d'appels rapproches.
       await fbWrite(path + '/notified', true);
 
-      const eligible = subscriptions.filter(s => s?.prefs?.match !== false);
+      const eligible = restreindreSiMaintenance(subscriptions, modeMaintenance, subAdmin)
+        .filter(s => s?.prefs?.match !== false);
       if (!eligible.length)
         return { statusCode: 200, headers, body: JSON.stringify({ skipped: 'aucun abonne pour la categorie Match' }) };
 
@@ -156,7 +170,8 @@ exports.handler = async function (event) {
 
     // Respecte la preference "annonces officielles" cote serveur aussi (le site filtre
     // deja avant l'envoi, mais la preference du joueur doit etre honoree a la source).
-    const eligibleOfficiel = subscriptions.filter(s => s?.prefs?.officiel !== false);
+    const eligibleOfficiel = restreindreSiMaintenance(subscriptions, modeMaintenance, subAdmin)
+      .filter(s => s?.prefs?.officiel !== false);
     if (!eligibleOfficiel.length)
       return { statusCode: 200, headers, body: JSON.stringify({ skipped: 'aucun abonne pour la categorie Officiel' }) };
 

@@ -872,7 +872,7 @@ const T = {
 <p>Arbitrage : En cas de litige, l'organisateur tranche. Fair-play attendu de tous.</p>`,
     modify:"modifier",
     late_badge:"⏰ Retard",
-    due_by:"📅 Échéance :",
+    due_by:"📅 Échéance :",round_short:"Ronde",
     late_match:"⏰ Match en retard",
     color_choice:"choisit sa couleur",color_pick:"— couleur —",color_required:"Choisis ta couleur avant de valider le score.",
     presential:"Présentiel",
@@ -1040,7 +1040,7 @@ const T = {
     rules_full:"<h3 style=\"color:var(--gold);margin:16px 0 6px\">1. Format</h3>\n<p>Alle Spieler werden in Gruppen eingeteilt. Jeder Spieler trifft einmal auf jeden anderen Spieler seiner Gruppe (Round-Robin). Anzahl der Gruppen und Qualifizierter wird vom Organisator festgelegt.</p>\n<h3 style=\"color:var(--gold);margin:16px 0 6px\">2. Punkte</h3>\n<p>1 Punkt f\u00fcr einen Sieg \u00b7 0.5 f\u00fcr ein Remis \u00b7 0 f\u00fcr eine Niederlage.</p>\n<p>Jeder Spieler ist f\u00fcr die Eingabe seines Ergebnisses unmittelbar nach der Partie verantwortlich.</p>\n<h3 style=\"color:var(--gold);margin:16px 0 6px\">3. Tiebreak</h3>\n<p>Bei Punktgleichheit: \u2460 Punkte \u00b7 \u2461 Siege \u00b7 \u2462 Siege mit Schwarz \u00b7 \u2463 Buchholz \u00b7 \u2464 Direkter Vergleich</p>\n<h3 style=\"color:var(--gold);margin:16px 0 6px\">4. Finalrunden</h3>\n<p>Gruppensieger qualifizieren sich direkt f\u00fcr die fortgeschrittene Runde. Zweite und beste Dritte spielen eine Vorrunde.</p>\n<p>Der besser platzierte Finalist w\u00e4hlt seine Farbe. Bei Remis wird mit getauschten Farben wiederholt.</p>\n<h3 style=\"color:var(--gold);margin:16px 0 6px\">5. Spielmodus</h3>\n<p>Partien auf physischem Brett oder Chess.com. Der Chess.com-Benutzername muss dem bei der Anmeldung angegebenen entsprechen.</p>\n<p>Freie Bedenkzeit, maximal <strong>24h pro Zug</strong>. Kein Urlaubsmodus ohne gegenseitige Einigung.</p>\n<p>\u26d4 Verboten: Analysebrett, bedingte Z\u00fcge auf Chess.com.</p>\n<p>Bei unbeabsichtigtem Zeitverlust ist eine Fortsetzung nur mit Zustimmung des Gegners m\u00f6glich. Bei Wiederholung gilt die Partie als verloren.</p>\n<h3 style=\"color:var(--gold);margin:16px 0 6px\">6. Fair Play & Schiedsrichter</h3>\n<p>Fair Play wird von allen Teilnehmern erwartet. Bei Streitigkeiten entscheidet der Organisator. Bei schwerwiegenden Verst\u00f6ssen kann eine Disqualifikation ausgesprochen werden.</p>",
     modify:"ändern",
     late_badge:"⏰ Verspätet",
-    due_by:"📅 Fällig bis",
+    due_by:"📅 Fällig bis",round_short:"Runde",
     late_match:"⏰ Partie verspätet",
     color_choice:"wählt die Farbe",color_pick:"— Farbe —",color_required:"Wähle deine Farbe, bevor du das Ergebnis bestätigst.",
     presential:"Präsenz",
@@ -1138,7 +1138,7 @@ const T = {
 <p>Arbiter: In case of dispute, the organizer decides. Fair play expected from all.</p>`,
     modify:"edit",
     late_badge:"⏰ Late",
-    due_by:"📅 Due by",
+    due_by:"📅 Due by",round_short:"Round",
     late_match:"⏰ Match overdue",
     color_choice:"chooses color",color_pick:"— colour —",color_required:"Choose your colour before confirming the score.",
     presential:"In-person",
@@ -1268,7 +1268,7 @@ const T = {
 <p>Arbitraggio: In caso di controversia, decide l'organizzatore. Fair play atteso da tutti.</p>`,
     modify:"modificare",
     late_badge:"⏰ Ritardo",
-    due_by:"📅 Scadenza:",
+    due_by:"📅 Scadenza:",round_short:"Turno",
     late_match:"⏰ Partita in ritardo",
     color_choice:"sceglie il colore",color_pick:"— colore —",color_required:"Scegli il tuo colore prima di confermare il risultato.",
     presential:"Presenza",
@@ -3826,7 +3826,25 @@ function renderMatches(){
   document.getElementById('matches-empty').style.display=games.length===0?'block':'none';
   document.getElementById('matches-empty').textContent=t('matches_empty');
   document.getElementById('matches-pending-title').textContent=pending.length?t('matches_pending')+' ('+pending.length+')':'';
-  document.getElementById('matches-pending').innerHTML=pending.map(g=>matchCardHTML(g)).join('');
+  // Séparateurs de ronde : la liste est triée par échéance, donc par ronde. On
+  // insère un bandeau à chaque changement de ronde, avec sa date limite, pour que
+  // le conseil "priorisez la ronde 1, puis la 2..." soit directement lisible.
+  let derniereRonde = null, htmlPending = '';
+  pending.forEach(g => {
+    if (typeof g.round === 'number' && g.round !== derniereRonde) {
+      derniereRonde = g.round;
+      const due = matchDueDate(g, false);
+      const dueStr = due ? due.toLocaleDateString(lang==='fr'?'fr-CH':lang==='de'?'de-CH':lang==='it'?'it-CH':'en-GB',{day:'numeric',month:'long'}) : '';
+      const enRetard = isMatchLate(g, false);
+      htmlPending += `<div style="display:flex;align-items:center;gap:10px;margin:${htmlPending?'18px':'4px'} 0 10px">
+        <div style="flex:1;height:1px;background:${enRetard?'#E67E22':'var(--gold)'};opacity:0.5"></div>
+        <div style="font-size:12px;font-weight:800;color:${enRetard?'#E67E22':'var(--gold)'};letter-spacing:0.5px;white-space:nowrap">${t('round_short').toUpperCase()} ${g.round}${dueStr?` <span style="font-weight:500;color:#999">· ${dueStr}</span>`:''}</div>
+        <div style="flex:1;height:1px;background:${enRetard?'#E67E22':'var(--gold)'};opacity:0.5"></div>
+      </div>`;
+    }
+    htmlPending += matchCardHTML(g);
+  });
+  document.getElementById('matches-pending').innerHTML=htmlPending;
   document.getElementById('matches-done-title').textContent=done.length?t('matches_done')+' ('+done.length+')':'';
   document.getElementById('matches-done').innerHTML=done.map(g=>matchCardHTML(g)).join('');
 }
@@ -3841,7 +3859,7 @@ function matchCardHTML(g){
   const due = matchDueDate(g, false);
   const dueStr = due ? due.toLocaleDateString(lang==='fr'?'fr-CH':lang==='de'?'de-CH':lang==='it'?'it-CH':'en-GB',{day:'numeric',month:'short'}) : null;
   return `<div class="match-card" style="${late?'border-left:3px solid #E67E22;':''}">
-    <div class="match-grp">${esc(g.group)}${late?` <span style="font-size:13px;font-weight:700;color:#E67E22;background:#FFF3E0;padding:2px 6px;border-radius:5px;margin-left:4px">${t("late_badge")}</span>`:''}</div>
+    <div class="match-grp">${esc(g.group)}${typeof g.round==='number'?` <span style="font-weight:600;color:#aaa">· ${t('round_short')} ${g.round}</span>`:''}${late?` <span style="font-size:13px;font-weight:700;color:#E67E22;background:#FFF3E0;padding:2px 6px;border-radius:5px;margin-left:4px">${t("late_badge")}</span>`:''}</div>
     <div class="match-players">
       <div class="match-player"><div class="match-player-name">${esc(g.playerWhite)}</div><div class="match-player-color" style="display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px;margin-top:4px;background:#F5F5F0;color:#555;border:1px solid #ddd">${t('whites')}</div></div>
       ${played&&!isEditing?`<div style="text-align:center;cursor:pointer" onclick="openScoreEdit('${g.id}')">

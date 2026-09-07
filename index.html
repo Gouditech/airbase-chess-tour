@@ -160,8 +160,8 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
     <button class="btn btn-gray btn-sm" style="display:inline-block;width:auto;margin-top:8px" onclick="toggleNotifications()" id="notif-toggle-btn">🔕 Activer les notifications</button>
     <button class="btn btn-gray btn-sm" style="display:none;width:auto;margin-top:8px;margin-left:6px;font-size:11px" onclick="testNotification()" id="notif-test-btn">🔔 Test</button>
     <div id="notif-prefs" style="display:none;margin-top:10px;text-align:left">
-      <label style="display:flex;align-items:center;gap:6px;font-size:12px;margin-bottom:5px;cursor:pointer"><input type="checkbox" id="pref-officiel" checked onchange="updateNotifPrefs()"><span id="pref-officiel-label"></span></label>
-      <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;margin-bottom:8px"><input type="checkbox" id="pref-match" checked onchange="updateNotifPrefs()"><span id="pref-match-label"></span></label>
+      <label style="display:flex;align-items:flex-start;gap:6px;font-size:12px;line-height:18px;margin-bottom:6px;cursor:pointer"><input type="checkbox" id="pref-officiel" checked onchange="updateNotifPrefs()" style="margin:2px 0 0 0;flex:none"><span id="pref-officiel-label"></span></label>
+      <label style="display:flex;align-items:flex-start;gap:6px;font-size:12px;line-height:18px;margin-bottom:10px;cursor:pointer"><input type="checkbox" id="pref-match" checked onchange="updateNotifPrefs()" style="margin:2px 0 0 0;flex:none"><span id="pref-match-label"></span></label>
       <div id="prefs-loading" style="display:none;font-size:11px;color:var(--gray);margin-bottom:6px"></div>
       <button class="btn btn-gray" style="display:block;width:auto;margin:0;font-size:13px;padding:6px 20px" onclick="fermerPrefsPanel()" id="prefs-close-btn">✓ OK</button>
       <button class="btn btn-sm" style="display:none;width:auto;background:#FDECEA;color:var(--red);font-size:11px;margin-top:22px" onclick="unsubscribeFromNotifications()" id="notif-disable-btn">🔕 Désactiver les notifications</button>

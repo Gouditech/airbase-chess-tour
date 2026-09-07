@@ -159,12 +159,12 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
     <button class="btn btn-gray btn-sm" style="display:inline-block;width:auto;margin-top:12px" onclick="openInstallModal()" id="install-btn-home">📲 Installer l'app</button>
     <button class="btn btn-gray btn-sm" style="display:inline-block;width:auto;margin-top:8px" onclick="toggleNotifications()" id="notif-toggle-btn">🔕 Activer les notifications</button>
     <button class="btn btn-gray btn-sm" style="display:none;width:auto;margin-top:8px;margin-left:6px;font-size:11px" onclick="testNotification()" id="notif-test-btn">🔔 Test</button>
-    <div id="notif-prefs" style="display:none;margin-top:10px;text-align:left">
-      <label style="display:flex;align-items:flex-start;gap:6px;font-size:12px;line-height:18px;margin-bottom:6px;cursor:pointer"><input type="checkbox" id="pref-officiel" checked onchange="updateNotifPrefs()" style="margin:2px 0 0 0;flex:none"><span id="pref-officiel-label"></span></label>
-      <label style="display:flex;align-items:flex-start;gap:6px;font-size:12px;line-height:18px;margin-bottom:10px;cursor:pointer"><input type="checkbox" id="pref-match" checked onchange="updateNotifPrefs()" style="margin:2px 0 0 0;flex:none"><span id="pref-match-label"></span></label>
+    <div id="notif-prefs" style="display:none;margin:12px auto 0;text-align:left;max-width:290px;background:#f8f8f8;border-radius:10px;padding:12px 14px">
+      <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;line-height:19px;margin:0 0 10px;cursor:pointer"><input type="checkbox" id="pref-officiel" checked onchange="updateNotifPrefs()" style="margin:2px 0 0;flex:none;width:16px;height:16px"><span id="pref-officiel-label"></span></label>
+      <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;line-height:19px;margin:0 0 12px;cursor:pointer"><input type="checkbox" id="pref-match" checked onchange="updateNotifPrefs()" style="margin:2px 0 0;flex:none;width:16px;height:16px"><span id="pref-match-label"></span></label>
       <div id="prefs-loading" style="display:none;font-size:11px;color:var(--gray);margin-bottom:6px"></div>
       <button class="btn btn-gray" style="display:block;width:auto;margin:0;font-size:13px;padding:6px 20px" onclick="fermerPrefsPanel()" id="prefs-close-btn">✓ OK</button>
-      <button class="btn btn-sm" style="display:none;width:auto;background:#FDECEA;color:var(--red);font-size:11px;margin-top:22px" onclick="unsubscribeFromNotifications()" id="notif-disable-btn">🔕 Désactiver les notifications</button>
+      <button class="btn btn-sm" style="display:none;width:auto;margin:22px 0 0;background:#FDECEA;color:var(--red);font-size:11px" onclick="unsubscribeFromNotifications()" id="notif-disable-btn">🔕 Désactiver les notifications</button>
     </div>
     <div id="notif-msg" style="font-size:12px;margin-top:4px"></div>
     <div id="home-admin-device-status" style="display:none;font-size:11px;color:var(--gray);margin-top:6px;padding:5px 10px;background:#f8f8f8;border-radius:6px"></div>
@@ -710,7 +710,7 @@ window.toggleNotifPrefsPanel = function() {
       syncPrefsCases();
     }
   }
-  box.style.display = ouvrir ? 'inline-block' : 'none';
+  box.style.display = ouvrir ? 'block' : 'none';
 }
 
 function renderSubsDetail() {

@@ -62,12 +62,14 @@ exports.handler = async function (event) {
 
   for (const [id, sub] of entrees) {
     try {
-      // TTL 0 : le service push accepte, constate qu'il ne peut pas remettre le
-      // message tout de suite, et le jette. Rien ne s'affiche sur l'appareil.
+      // TTL reel (60 s) et non 0 : avec TTL 0 le service push jette le message sans
+      // reellement tenter la remise, donc sans jamais decouvrir qu'une adresse est
+      // morte. Le service worker, lui, reconnait `ping` et n'affiche RIEN — c'est
+      // ce qui rend la verification invisible pour les abonnes valides.
       await webpush.sendNotification(
         { endpoint: sub.endpoint, keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth } },
         JSON.stringify({ ping: true }),
-        { TTL: 0, urgency: 'very-low' }
+        { TTL: 60, urgency: 'very-low' }
       );
       vivants++;
     } catch (e) {

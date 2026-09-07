@@ -24,7 +24,12 @@ function restreindreSiMaintenance(liste, maintenance, subAdmin) {
   return subAdmin && subAdmin.endpoint && subAdmin.keys ? [subAdmin] : [];
 }
 
-async function sendToAll(subscriptions, title, body) {
+// NETTOYAGE AUTOMATIQUE : un abonnement qui renvoie 404/410 est definitivement mort
+// (app desinstallee, donnees du navigateur effacees, revocation systeme). On le
+// supprime de Firebase sur-le-champ. Sans cela, il restait indefiniment dans la
+// liste : l'admin comptait des destinataires fantomes, et le joueur concerne voyait
+// "notifications activees" alors qu'il ne recevait plus rien — sans jamais l'apprendre.
+async function sendToAll(subscriptions, title, body, subPath) {
   const payload = JSON.stringify({
     title: title || 'Air Base Chess Tour',
     body:  body  || '',
@@ -52,6 +57,17 @@ async function sendToAll(subscriptions, title, body) {
       if (e.statusCode === 404 || e.statusCode === 410) {
         results.expired++;
         results.errors.push('410 abonnement expire');
+        // Suppression immediate. Non bloquant : un echec de nettoyage ne doit
+        // jamais empecher les autres envois d'aboutir.
+        if (subPath && sub.__id) {
+          try {
+            // fbWrite local : (chemin, valeur) — DB_URL est deja integre.
+            await fbWrite(subPath + '/' + sub.__id, null);
+            results.cleaned = (results.cleaned || 0) + 1;
+          } catch (err) {
+            console.log('[ABCT] Nettoyage impossible pour ' + sub.__id + ' : ' + err.message);
+          }
+        }
       } else {
         results.failed++;
         results.errors.push((e.statusCode || '?') + ' ' + String(e.body || e.message).slice(0, 120));
@@ -96,7 +112,11 @@ exports.handler = async function (event) {
     // La liste eventuellement envoyee par le client est ignoree : cela garantit
     // qu'une requete venant de dev ne peut jamais toucher les abonnes de prod.
     const subsObj = await fbRead(SUB_PATH).catch(() => ({}));
-    let subscriptions = Object.values(subsObj || {}).filter(s => s && s.endpoint && s.keys);
+    // __id : identifiant Firebase de l'abonnement, indispensable pour pouvoir le
+    // supprimer s'il s'avere mort a l'envoi.
+    let subscriptions = Object.entries(subsObj || {})
+      .filter(([, s]) => s && s.endpoint && s.keys)
+      .map(([id, s]) => ({ ...s, __id: id }));
     const adminKey = IS_DEV ? 'adminSubIdDev' : 'adminSubId';
     const adminSubId = await fbRead('settings/' + adminKey).catch(() => null);
     const subAdmin = adminSubId ? (subsObj || {})[adminSubId] : null;
@@ -153,7 +173,7 @@ exports.handler = async function (event) {
       if (!eligible.length)
         return { statusCode: 200, headers, body: JSON.stringify({ skipped: 'aucun abonne pour la categorie Match' }) };
 
-      const results = await sendToAll(eligible, tourName || 'Air Base Chess Tour', autoBody);
+      const results = await sendToAll(eligible, tourName || 'Air Base Chess Tour', autoBody, SUB_PATH);
       return { statusCode: 200, headers, body: JSON.stringify(results) };
     }
 
@@ -175,7 +195,7 @@ exports.handler = async function (event) {
     if (!eligibleOfficiel.length)
       return { statusCode: 200, headers, body: JSON.stringify({ skipped: 'aucun abonne pour la categorie Officiel' }) };
 
-    const results = await sendToAll(eligibleOfficiel, title, body);
+    const results = await sendToAll(eligibleOfficiel, title, body, SUB_PATH);
     return { statusCode: 200, headers, body: JSON.stringify(results) };
   } catch (e) {
     return { statusCode: 500, headers, body: JSON.stringify({ error: e.message }) };

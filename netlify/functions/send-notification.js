@@ -37,7 +37,7 @@ async function sendToAll(subscriptions, title, body, subPath) {
     url:   'https://airbasechesstour.netlify.app/'
   });
 
-  const results = { success: 0, failed: 0, expired: 0, errors: [] };
+  const results = { success: 0, failed: 0, expired: 0, cleaned: 0, errors: [] };
 
   for (const sub of subscriptions) {
     if (!sub?.endpoint || !sub?.keys?.p256dh || !sub?.keys?.auth) {
@@ -63,7 +63,7 @@ async function sendToAll(subscriptions, title, body, subPath) {
           try {
             // fbWrite local : (chemin, valeur) — DB_URL est deja integre.
             await fbWrite(subPath + '/' + sub.__id, null);
-            results.cleaned = (results.cleaned || 0) + 1;
+            results.cleaned++;
           } catch (err) {
             console.log('[ABCT] Nettoyage impossible pour ' + sub.__id + ' : ' + err.message);
           }

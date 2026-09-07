@@ -1,5 +1,5 @@
 // Air Base Chess Tour — Service Worker
-const CACHE_NAME = 'abct-v6';
+const CACHE_NAME = 'abct-v7';
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -41,8 +41,35 @@ self.addEventListener('fetch', event => {
   );
 });
 
+// Le navigateur renouvelle parfois l'abonnement de lui-même (rotation de clé,
+// réinitialisation interne). Il le signale par cet événement — sans lui, l'ancienne
+// entrée reste en base comme fantôme et le joueur ne reçoit plus rien.
+// Limite connue : si l'utilisateur EFFACE ses données, le service worker est détruit
+// avec le reste et cet événement ne se déclenche jamais. Ce cas-là ne peut être
+// résolu que par une suppression manuelle dans le panneau admin.
+self.addEventListener('pushsubscriptionchange', event => {
+  event.waitUntil((async () => {
+    try {
+      const nouvelle = event.newSubscription || await self.registration.pushManager.subscribe(
+        { userVisibleOnly: true, applicationServerKey: event.oldSubscription?.options?.applicationServerKey }
+      );
+      const clients = await self.clients.matchAll({ includeUncontrolled: true, type: 'window' });
+      clients.forEach(c => c.postMessage({
+        type: 'push-subscription-change',
+        ancien: event.oldSubscription?.endpoint || null,
+        nouveau: nouvelle ? nouvelle.toJSON() : null
+      }));
+    } catch (e) {
+      console.log('[ABCT SW] Renouvellement d\'abonnement impossible :', e.message);
+    }
+  })());
+});
+
 self.addEventListener('push', event => {
   const data = event.data ? event.data.json() : {};
+  // Message de vérification envoyé par le nettoyage des abonnements : il sert
+  // uniquement à savoir si l'adresse répond encore. Rien à afficher.
+  if (data.ping === true) return;
   const title = data.title || 'Air Base Chess Tour';
   const options = {
     body: data.body || 'Nouveau message du tournoi',

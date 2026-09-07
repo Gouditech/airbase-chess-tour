@@ -77,11 +77,37 @@ async function runLateCheck(siteUrl) {
       icon: '/icon-192.jpg',
       url: isDev ? 'https://dev--airbasechesstour.netlify.app/' : 'https://airbasechesstour.netlify.app/'
     });
-    await webpush.sendNotification(
-      { endpoint: adminSub.endpoint, keys: { p256dh: adminSub.keys.p256dh, auth: adminSub.keys.auth } },
-      payload, { TTL: 86400, urgency }
-    );
+    try {
+      await webpush.sendNotification(
+        { endpoint: adminSub.endpoint, keys: { p256dh: adminSub.keys.p256dh, auth: adminSub.keys.auth } },
+        payload, { TTL: 86400, urgency }
+      );
+    } catch (e) {
+      // APPAREIL ADMIN MORT (404/410) : l'abonnement n'existe plus chez le service
+      // push (donnees du navigateur effacees, app desinstallee). Sans ce bloc, le
+      // fantome restait dans la liste ET le pointeur admin le designait encore :
+      // l'admin voyait "un autre appareil est enregistre" et l'alerte ne partait
+      // jamais. On supprime les deux ; le site affichera "aucun appareil admin".
+      if (e.statusCode === 404 || e.statusCode === 410) {
+        await fbWrite(subPath + '/' + adminSubId, null).catch(() => {});
+        await fbWrite('settings/' + adminKey, null).catch(() => {});
+        const err = new Error('appareil admin mort — nettoye');
+        err.code = 'admin_dead';
+        throw err;
+      }
+      throw e;
+    }
   }
+
+  // Envoi encapsule : un appareil admin mort devient un resultat explicite,
+  // pas une erreur brute.
+  const envoyer = async (body, urgency) => {
+    try { await send(body, urgency); return null; }
+    catch (e) {
+      if (e.code === 'admin_dead') return { sent: false, total, code: 'admin_dead', reason: 'Appareil admin plus joignable — abonnement et enregistrement retires' };
+      throw e;
+    }
+  };
 
   if (!total) {
     // La preuve de vie hebdomadaire n'a de sens QUE si un match pourrait etre en retard.
@@ -94,7 +120,8 @@ async function runLateCheck(siteUrl) {
     const lastPing = await fbRead('settings/lastLateAlertPing').catch(() => 0);
     const daysSincePing = (Date.now() - (lastPing || 0)) / (1000 * 60 * 60 * 24);
     if (daysSincePing >= 7) {
-      await send('✅ Alerte retard active — aucun match en retard actuellement.', 'low');
+      const echec = await envoyer('✅ Alerte retard active — aucun match en retard actuellement.', 'low');
+      if (echec) return echec;
       await fbWrite('settings/lastLateAlertPing', Date.now());
       return { sent: true, total: 0, code: 'proof_sent', reason: 'Aucun retard — preuve de vie hebdomadaire envoyée' };
     }
@@ -106,7 +133,8 @@ async function runLateCheck(siteUrl) {
   lateFinals.slice(0, 8).forEach(f => { body += `• ${f.player1} vs ${f.player2} (${f.round})\n`; });
   if (total > 8) body += `… et ${total - 8} de plus`;
 
-  await send(body.trim(), 'high');
+  const echec = await envoyer(body.trim(), 'high');
+  if (echec) return echec;
   await fbWrite('settings/lastLateAlertPing', Date.now());
   return { sent: true, total, code: 'alert_sent', reason: total + ' match(s) en retard — notification envoyée à l\'appareil admin' };
 }

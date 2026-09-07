@@ -544,11 +544,16 @@ window.unsubscribeFromNotifications = async function unsubscribeFromNotification
     const sub = await reg.pushManager.getSubscription();
     if (sub) await sub.unsubscribe();
     const subId = localStorage.getItem('abct-notif-subid');
-    if (subId) await set(ref(db, SUB_PATH + '/' + subId), null);
+    // Le mémo local d'abord : sinon l'écouteur Firebase réagit à la suppression
+    // AVANT qu'on l'ait effacé, et l'auto-guérison croit que le serveur a coupé
+    // l'abonnement (message faux, puis écrasé). Voulu : un seul message, le bon.
     localStorage.removeItem('abct-notif');
     localStorage.removeItem('abct-notif-subid');
+    if (subId) await set(ref(db, SUB_PATH + '/' + subId), null);
     updateNotifBtn();
-    showMsg('notif-msg', t('notif_disabled'));
+    // Avertissement rouge PERSISTANT : le joueur doit mesurer ce qu'il perd.
+    // Il reste jusqu'à ce qu'il le ferme (✕) ou recharge la page.
+    showMsg('notif-msg', t('notif_disabled_warn'), false, true);
   } catch(e) {
     showMsg('notif-msg', 'Erreur: ' + e.message, false);
   }
@@ -896,7 +901,7 @@ const T = {
     pref_officiel:"📢 Annonces officielles",
     pref_match:"⚔️ Résultats de matchs",
     notif_enabled:"✓ Notifications activées !",
-    notif_disabled:"Notifications désactivées.",
+    notif_disabled_warn:"⚠️ Notifications désactivées. Tu ne recevras plus les annonces du tournoi ni les résultats — tu risques de manquer une échéance et d'être déclaré forfait. Réactive-les dès que possible.",notif_cut_server:"⚠️ Tes notifications ont été coupées côté serveur — réactive-les si tu le souhaites.",notif_lost:"⚠️ Tes notifications ne fonctionnaient plus (abonnement perdu par ton navigateur). Réactive-les pour ne pas manquer d'échéance.",
     notif_test_body:"🔔 Ceci est un test de notification.",
     notif_test_sent:"✓ Notification test envoyée !",
     notif_test_nosub:"Pas d'abonnement actif. Désactive puis réactive les notifications.",
@@ -1066,7 +1071,7 @@ const T = {
     pref_officiel:"📢 Offizielle Ankündigungen",
     pref_match:"⚔️ Spielergebnisse",
     notif_enabled:"✓ Benachrichtigungen aktiviert!",
-    notif_disabled:"Benachrichtigungen deaktiviert.",
+    notif_disabled_warn:"⚠️ Benachrichtigungen deaktiviert. Du erhältst keine Turnierankündigungen und Ergebnisse mehr — du riskierst, eine Frist zu verpassen und kampflos zu verlieren. Aktiviere sie so bald wie möglich wieder.",notif_cut_server:"⚠️ Deine Benachrichtigungen wurden serverseitig abgeschaltet — aktiviere sie bei Bedarf erneut.",notif_lost:"⚠️ Deine Benachrichtigungen funktionierten nicht mehr (Abo vom Browser verloren). Aktiviere sie erneut, um keine Frist zu verpassen.",
     notif_test_body:"🔔 Dies ist eine Testbenachrichtigung.",
     notif_test_sent:"✓ Testbenachrichtigung gesendet!",
     notif_test_nosub:"Kein aktives Abonnement. Deaktiviere und reaktiviere die Benachrichtigungen.",
@@ -1166,7 +1171,7 @@ const T = {
     pref_officiel:"📢 Official announcements",
     pref_match:"⚔️ Match results",
     notif_enabled:"✓ Notifications enabled!",
-    notif_disabled:"Notifications disabled.",
+    notif_disabled_warn:"⚠️ Notifications disabled. You will no longer receive tournament announcements or results — you risk missing a deadline and forfeiting. Re-enable them as soon as possible.",notif_cut_server:"⚠️ Your notifications were cut off server-side — re-enable them if you wish.",notif_lost:"⚠️ Your notifications had stopped working (subscription lost by your browser). Re-enable them so you don't miss a deadline.",
     notif_test_body:"🔔 This is a test notification.",
     notif_test_sent:"✓ Test notification sent!",
     notif_test_nosub:"No active subscription. Disable then re-enable notifications.",
@@ -1298,7 +1303,7 @@ const T = {
     pref_officiel:"📢 Annunci ufficiali",
     pref_match:"⚔️ Risultati delle partite",
     notif_enabled:"✓ Notifiche attivate!",
-    notif_disabled:"Notifiche disattivate.",
+    notif_disabled_warn:"⚠️ Notifiche disattivate. Non riceverai più gli annunci del torneo né i risultati — rischi di perdere una scadenza e di perdere a tavolino. Riattivale appena possibile.",notif_cut_server:"⚠️ Le tue notifiche sono state disattivate lato server — riattivale se lo desideri.",notif_lost:"⚠️ Le tue notifiche non funzionavano più (abbonamento perso dal browser). Riattivale per non perdere una scadenza.",
     notif_test_body:"🔔 Questa è una notifica di prova.",
     notif_test_sent:"✓ Notifica di prova inviata!",
     notif_test_nosub:"Nessun abbonamento attivo. Disattiva e riattiva le notifiche.",
@@ -4170,6 +4175,14 @@ const CHEMINS_PUBLICS = ['settings', 'players', 'games', 'finals', 'palmares', '
 // l'authentification aboutisse reçoit permission_denied et ne réessaie pas.
 // On attend donc que le jeton soit là pour attacher celui-ci.
 let ecouteAbonnesActive = false;
+// Vrai seulement quand l'écouteur des abonnés a livré ses données. Indispensable :
+// avec les sections chargées séparément, `state[SUB_PATH]` est undefined tant que
+// cet écouteur n'a pas répondu — et "undefined" ressemble à "mon abonnement est
+// absent". Sans ce drapeau, l'auto-guérison recréait l'abonnement à chaque
+// ouverture (en écrasant les préférences).
+let abonnesPrets = false;
+let abonnesPretsResolve;
+const abonnesCharges = new Promise(r => { abonnesPretsResolve = r; setTimeout(r, 8000); });
 
 function surDonneesChangees() {
   if(!state.settings) state.settings=defaultData().settings;
@@ -4179,7 +4192,7 @@ function surDonneesChangees() {
   // silence, rien à faire pour lui. Sinon, on l'éteint et on lui redemande activement
   // de se réabonner, plutôt qu'un simple message qu'il peut ignorer. Fonctionne pareil
   // que l'onglet vienne d'être ouvert ou qu'il soit resté ouvert pendant la suppression.
-  if (!recentlySubscribed && localStorage.getItem('abct-notif') === 'on') {
+  if (abonnesPrets && !recentlySubscribed && localStorage.getItem('abct-notif') === 'on') {
     const mySubId = localStorage.getItem('abct-notif-subid');
     if (mySubId && !state?.[SUB_PATH]?.[mySubId]) {
       (async () => {
@@ -4206,7 +4219,7 @@ function surDonneesChangees() {
         localStorage.removeItem('abct-notif');
         localStorage.removeItem('abct-notif-subid');
         updateNotifBtn();
-        showMsg('notif-msg', '⚠️ Tes notifications ont été coupées côté serveur — réactive-les si tu le souhaites.', false, true);
+        showMsg('notif-msg', t('notif_cut_server'), false, true);
       })();
     }
   }
@@ -4241,6 +4254,7 @@ function ecouterSection(chemin) {
     } else {
       state = state || {};
       state[chemin] = val;
+      if (chemin === SUB_PATH && !abonnesPrets) { abonnesPrets = true; abonnesPretsResolve(); }
     }
     if (!state) state = defaultData();
     surDonneesChangees();
@@ -4293,7 +4307,8 @@ window.addEventListener('unhandledrejection', (ev) => {
 });
 // Init notification button state
 setTimeout(async () => {
-  await authPrete; // écriture possible plus bas : il faut le jeton
+  await authPrete;      // il faut le jeton pour écrire
+  await abonnesCharges; // et les abonnés chargés pour ne pas recréer à tort
   // Recovery: si localStorage effacé mais abonnement push encore actif, restaurer l'état
   // — ET recréer l'entrée Firebase si elle manque (ex: supprimée par l'admin), sinon on
   // ne fait que remettre le bouton sur "actif" sans que rien ne soit réellement reçu.
@@ -4319,6 +4334,28 @@ setTimeout(async () => {
         }
       }
     } catch(e) { console.log('Recovery notif (non bloquant) :', e.message); }
+  }
+  // ── VÉRIFICATION D'INTÉGRITÉ À L'OUVERTURE ──
+  // Le cas le plus pernicieux : le bouton affiche "activées", l'entrée existe dans
+  // Firebase, mais le navigateur n'a PLUS d'abonnement technique (app réinstallée,
+  // données effacées, révocation système). Le joueur ne reçoit plus rien et ne peut
+  // pas le savoir. On le détecte ici, à chaque ouverture, et on le lui dit.
+  if (localStorage.getItem('abct-notif') === 'on' && 'serviceWorker' in navigator && 'PushManager' in window) {
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const vivant = await reg.pushManager.getSubscription();
+      if (!vivant || Notification.permission !== 'granted') {
+        // Mort côté navigateur : on retire l'entrée Firebase (sinon elle reste
+        // fantôme et fausse le compte de l'admin) et on prévient le joueur.
+        const orphelin = localStorage.getItem('abct-notif-subid');
+        if (orphelin) await set(ref(db, SUB_PATH + '/' + orphelin), null);
+        localStorage.removeItem('abct-notif');
+        localStorage.removeItem('abct-notif-subid');
+        updateNotifBtn();
+        showMsg('notif-msg', t('notif_lost'), false, true);
+        console.log('[ABCT] Abonnement perdu côté navigateur — entrée nettoyée, joueur prévenu');
+      }
+    } catch(e) { console.log('Vérification abonnement (non bloquant) :', e.message); }
   }
   updateNotifBtn();
   // Migration : ne réabonne QUE si la clé VAPID a réellement changé. Sinon, l'abonnement
@@ -4357,9 +4394,24 @@ setTimeout(async () => {
           localStorage.removeItem('abct-notif-token');
           console.log('Abonnement push migré (clé VAPID différente)');
         } else if (old) {
-          // Deja a jour : juste s'assurer que l'identifiant local correspond bien
           const currentSubId = btoa(old.endpoint).slice(-20);
-          if (localStorage.getItem('abct-notif-subid') !== currentSubId) {
+          const storedSubId = localStorage.getItem('abct-notif-subid');
+          if (storedSubId && storedSubId !== currentSubId) {
+            // ROTATION D'ADRESSE : le navigateur a changé l'adresse de notification
+            // (ça arrive périodiquement). Sans ce bloc, l'ancienne entrée Firebase
+            // restait (doublon) et les préférences étaient perdues. On transfère
+            // les préférences vers la nouvelle entrée, on supprime l'ancienne, et
+            // on met à jour le pointeur "appareil admin" s'il désignait l'ancienne.
+            const o = old.toJSON();
+            const prefs = state?.[SUB_PATH]?.[storedSubId]?.prefs || { officiel: true, match: true };
+            await set(ref(db, SUB_PATH + '/' + currentSubId), { endpoint: o.endpoint, keys: o.keys, timestamp: Date.now(), prefs });
+            await set(ref(db, SUB_PATH + '/' + storedSubId), null);
+            if (state?.settings?.[ADMIN_SUB_KEY] === storedSubId) {
+              await set(ref(db, 'settings/' + ADMIN_SUB_KEY), currentSubId);
+            }
+            localStorage.setItem('abct-notif-subid', currentSubId);
+            console.log('Adresse de notification renouvelée par le navigateur — abonnement migré sans doublon');
+          } else if (!storedSubId) {
             localStorage.setItem('abct-notif-subid', currentSubId);
           }
         }

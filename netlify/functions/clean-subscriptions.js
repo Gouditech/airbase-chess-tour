@@ -72,8 +72,13 @@ exports.handler = async function (event) {
         { TTL: 60, urgency: 'very-low' }
       );
       vivants++;
+      // Journalise la reponse pour chaque abonnement : c'est le seul moyen de voir
+      // si le service push considere une adresse comme encore valide alors que
+      // l'appareil ne recoit plus rien (cas d'un effacement de donnees).
+      console.log('[ABCT] ' + id + ' : accepte par le service push (considere valide)');
     } catch (e) {
       if (e.statusCode === 404 || e.statusCode === 410) {
+        console.log('[ABCT] ' + id + ' : ' + e.statusCode + ' — adresse morte, supprimee');
         await fbWrite(DB_URL, subPath + '/' + id, null).catch(() => {});
         nettoyes++;
         // Si le fantome etait l'appareil admin, retirer aussi le pointeur : sinon

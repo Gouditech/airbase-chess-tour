@@ -492,6 +492,15 @@ const SUB_PATH = IS_DEV ? 'subscriptions-dev' : 'subscriptions';
 // ne doit jamais casser l'alerte retard de prod.
 const ADMIN_SUB_KEY = IS_DEV ? 'adminSubIdDev' : 'adminSubId';
 
+// Vrai seulement quand l'écouteur des abonnés a livré ses données. Indispensable :
+// avec les sections chargées séparément, `state[SUB_PATH]` est undefined tant que
+// cet écouteur n'a pas répondu — et "undefined" ressemble à "mon abonnement est
+// absent". Sans ce drapeau, l'auto-guérison recréait l'abonnement à chaque
+// ouverture (en écrasant les préférences).
+let abonnesPrets = false;
+let abonnesPretsResolve;
+const abonnesCharges = new Promise(r => { abonnesPretsResolve = r; setTimeout(r, 8000); });
+
 
 
 function urlBase64ToUint8Array(base64String) {
@@ -656,10 +665,12 @@ function adminDeviceState() {
   // L'appareil enregistré a-t-il encore un abonnement ? Quand l'admin coupe ses
   // notifications, son abonnement disparaît mais le pointeur reste. Sans ce test,
   // on affichait "un AUTRE appareil est enregistré" — faux : ce n'est plus personne.
-  // (state[SUB_PATH] n'est chargé qu'après le jeton : tant qu'il est absent, on ne
-  // conclut pas à l'orphelin.)
-  const abonnes = state?.[SUB_PATH];
-  if (abonnes && !abonnes[adminSubId]) return { kind: 'orphan', thisIsSubscribed };
+  //
+  // On s'appuie sur `abonnesPrets` (posé quand l'écouteur a livré ses données), et
+  // NON sur la présence de `state[SUB_PATH]` : quand la liste est vide, Firebase
+  // renvoie `null`, ce qui est indiscernable de "pas encore chargé". C'est
+  // précisément le cas après un désabonnement — le plus fréquent.
+  if (abonnesPrets && !state?.[SUB_PATH]?.[adminSubId]) return { kind: 'orphan', thisIsSubscribed };
   return { kind: 'other', thisIsSubscribed };
 }
 
@@ -4175,14 +4186,7 @@ const CHEMINS_PUBLICS = ['settings', 'players', 'games', 'finals', 'palmares', '
 // l'authentification aboutisse reçoit permission_denied et ne réessaie pas.
 // On attend donc que le jeton soit là pour attacher celui-ci.
 let ecouteAbonnesActive = false;
-// Vrai seulement quand l'écouteur des abonnés a livré ses données. Indispensable :
-// avec les sections chargées séparément, `state[SUB_PATH]` est undefined tant que
-// cet écouteur n'a pas répondu — et "undefined" ressemble à "mon abonnement est
-// absent". Sans ce drapeau, l'auto-guérison recréait l'abonnement à chaque
-// ouverture (en écrasant les préférences).
-let abonnesPrets = false;
-let abonnesPretsResolve;
-const abonnesCharges = new Promise(r => { abonnesPretsResolve = r; setTimeout(r, 8000); });
+
 
 function surDonneesChangees() {
   if(!state.settings) state.settings=defaultData().settings;

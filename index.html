@@ -229,7 +229,14 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
   </div>
   <div id="notif-invite-text" style="font-size:11px;color:var(--gray);text-align:center;margin-bottom:12px;line-height:1.5"></div>
   <div class="card" id="info-ranking-section" style="display:none">
-    <h2 id="info-ranking-title">Classement général en direct</h2>
+    <h2 id="info-ranking-title">Classement du tournoi</h2>
+    <!-- Deux lectures du MÊME tournoi : tous les joueurs, ou seulement ceux qui
+         passent en finales. Elles étaient auparavant dispersées entre cette section
+         et le palmarès, ce qui prêtait à confusion. -->
+    <div style="display:flex;gap:3px;background:#f2f2f2;border-radius:9px;padding:3px;margin-bottom:12px">
+      <button onclick="setVueClassement('tous')" id="vue-tous-btn" style="flex:1;padding:7px 4px;font-size:12px;border:none;border-radius:7px;cursor:pointer"></button>
+      <button onclick="setVueClassement('qualifies')" id="vue-qualifies-btn" style="flex:1;padding:7px 4px;font-size:12px;border:none;border-radius:7px;cursor:pointer"></button>
+    </div>
     <div id="live-ranking-content"></div>
   </div>
   <div class="card" id="info-palmares-section" style="display:none">
@@ -422,7 +429,6 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
       </div>
     <div style="text-align:center;margin-top:28px;margin-bottom:12px;padding-top:16px;border-top:1px solid #eee">
       <button class="btn btn-gray btn-sm" style="display:inline-block;width:auto" onclick="adminLogout()" id="logout-btn">Déconnexion</button>
-    </div>
     </div>
   </div>
 </div>
@@ -970,7 +976,7 @@ const T = {
     dev_none:"⚠️ Aucun appareil admin enregistré pour l'alerte retard.",dev_orphan:"⚠️ L'appareil admin enregistré n'a plus d'abonnement actif — l'alerte retard ne parvient à personne.",dev_this_on:"✅ C'est cet appareil qui est enregistré pour l'alerte retard.",dev_this_off:"⏸️ Cet appareil est enregistré, mais l'alerte automatique est désactivée (case ci-dessus).",dev_other:"⚠️ Un <b>autre</b> appareil est enregistré pour l'alerte retard — pas celui-ci.",dev_register_btn:"📍 Faire de cet appareil mon appareil admin",dev_register_instead:"📍 Enregistrer cet appareil à la place",dev_remove_this:"🔄 Retirer cet enregistrement",dev_remove_current:"🔄 Retirer l'enregistrement actuel",dev_enable_first:"Active tes notifications ci-dessus d'abord.",dev_enable_then_register:"Active tes notifications ci-dessus, puis enregistre cet appareil.",dev_home_this_on:"✅ Appareil admin — alerte retard active ici",dev_home_this_off:"⏸️ Appareil admin enregistré ici — alerte désactivée",dev_home_other:"⚠️ Pas l'appareil admin enregistré — aucune alerte retard ici",dev_home_orphan:"⚠️ L'appareil admin enregistré n'est plus abonné — alerte sans destinataire",dev_home_none:"⚠️ Aucun appareil admin enregistré",
     late_check_alert_sent:"{n} match(s) en retard — alerte envoyée à l'appareil admin",late_check_nothing_late:"Aucun match en retard. Rien à envoyer.",late_check_proof_sent:"Aucun retard. Le message hebdomadaire de contrôle a été envoyé.",late_check_not_playing:"Le tournoi n'est pas en phase de jeu : aucun match ne peut être en retard.",late_check_no_admin_device:"Aucun appareil admin enregistré : l'alerte n'a pas de destinataire.",late_check_admin_sub_invalid:"L'abonnement de l'appareil admin est invalide. Réenregistre-le.",late_check_auto_off:"L'alerte automatique est désactivée (case dans l'onglet Notifs).",late_check_maintenance:"Mode maintenance actif : l'alerte est suspendue.",late_check_no_config:"Configuration serveur incomplète (clés manquantes sur Netlify).",notif_cleaned:"🧹 {n} abonnement(s) inactif(s) retiré(s).",clean_subs_btn:"🧹 Retirer les abonnements inactifs",subs_section_title:"👥 Abonnés",clean_subs_hint:"Vérifie chaque abonnement et retire ceux qui ne peuvent plus rien recevoir (navigateur réinstallé, données effacées). Personne n'est notifié, les abonnés valides ne sont pas touchés.",reset_subs_warn:"⚠️ Efface TOUS les abonnements, y compris les valides. Chacun devra rouvrir le site pour être réabonné, et ses préférences seront remises par défaut. À réserver aux cas de désordre : le nettoyage ci-dessus suffit d'ordinaire.",clean_running:"🔎 Vérification de chaque abonnement… (personne n'est notifié)",late_checking:"⏳ Vérification en cours…",notif_muted:"🔕 Aucune notification ne te parviendra",notif_all_muted:"⚠️ Tu as décoché les deux catégories : plus aucune notification ne te parviendra. Tu risques de manquer une échéance et d'être déclaré forfait. Recoche au moins une case.",prefs_loading:"Chargement de tes préférences…",prefs_close_btn:"✓ OK",auto_notif_title:"⚙️ Réglages automatiques",prefs_title:"🔔 Mes notifications",clean_done:"✓ {n} abonnement(s) inactif(s) retiré(s). {a} encore valide(s).",clean_admin_cleared:"L'appareil admin en faisait partie : enregistre-en un nouveau.",clean_none:"✓ Les {a} abonnement(s) sont acceptés par le service de notification — aucun à retirer. Un appareil dont les données ont été effacées peut rester considéré comme valide plusieurs jours : supprime-le à la main ci-dessous si tu sais qu'il ne sert plus.",late_check_admin_dead:"L'appareil admin n'était plus joignable : abonnement et enregistrement retirés. Enregistre un appareil ci-dessus.",pin_current:"PIN actuel",reg_closed:"Les inscriptions sont fermées.",pin_new:"Nouveau PIN",pin_confirm:"Confirmer",set_semis:"Format demi-finales",set_final:"Format finale",whatsapp_title:"📲 Rappel WhatsApp",save_seed:"💾 Sauvegarder",
     tab_home:"Tournoi",tab_groups:"Groupes",tab_matches:"Matchs",tab_finals:"Finales",
-    tab_info:"Infos",confirm_archive_before_reset:"Archiver le classement actuel dans le palmarès avant de réinitialiser ?\n\nOK = archiver puis réinitialiser\nAnnuler = réinitialiser sans archiver",palmares_admin_title:"🏅 Palmarès",palmares_edition_name_placeholder:"Nom de l'édition",info_rules_btn:"📜 Règlement",info_palmares_btn:"🏅 Palmarès",info_ranking_btn:"📊 Classement général",live_rank_title:"Classement général en direct",live_rank_qualified_title:"Joueurs qualifiés",info_admin_btn:"⚙️ Admin",info_rules_title:"Règlement",info_palmares_title:"Palmarès",
+    tab_info:"Infos",confirm_archive_before_reset:"⚠️ ARCHIVER LE TOURNOI ?\n\nLe classement final de {n} joueur(s) va être rangé dans le palmarès, avec toutes les statistiques.\n\n✅ OK = archiver, puis réinitialiser\n❌ Annuler = réinitialiser SANS archiver\n\n(Une copie de sécurité du tournoi est conservée dans tous les cas.)",palmares_admin_title:"🏅 Palmarès",palmares_edition_name_placeholder:"Nom de l'édition",info_rules_btn:"📜 Règlement",info_palmares_btn:"🏅 Palmarès",info_ranking_btn:"📊 Classement général",vue_tous:"👥 Tous les joueurs",vue_qualifies:"🎯 Qualifiés ({n})",vue_virtuel:"🎯 Virtuel ({n})",live_rank_title:"Classement du tournoi",info_admin_btn:"⚙️ Admin",info_rules_title:"Règlement",info_palmares_title:"Palmarès",
     status_registration:"Inscriptions ouvertes",status_playing:"Phase de poules",status_finals:"Phases finales",status_finished:"Terminé",
     players_count_1:"joueur inscrit",players_count_n:"joueurs inscrits",
     reg_title:"S'inscrire au tournoi",reg_nick:"Pseudo Chess.com *",
@@ -1009,7 +1015,7 @@ const T = {
     palmares_pseudo_placeholder:"Pseudo Chess.com",
     palmares_name_optional_placeholder:"Nom (optionnel)",
     palmares_bulk_placeholder:"Un joueur par ligne : pseudo-Nom, ou juste le pseudo",
-    palmares_bulk_btn:"➕ Ajouter la liste",palmares_fill_names_btn:"🔗 Retrouver les noms",palmares_search_ph:"🔎 Rechercher un joueur…",palmares_player_none:"Aucun joueur trouvé.",palmares_edition:"édition",palmares_editions:"éditions",palmares_podium:"podium",palmares_podiums:"podiums",palmares_best:"meilleur rang :",palmares_of:" sur ",palmares_stats_btn:"Statistiques des joueurs",palmares_stats_desc:"Tous les joueurs ayant participé, classés sur l'ensemble des éditions.",palmares_ongoing:"en cours",palmares_pick:"Choisis un tournoi ci-dessus.",palmares_no_result_yet:"Aucun match encore joué.",palmares_provisional:"⏳ Classement provisoire — le tournoi est en cours",palmares_qualified:"Qualifiés",palmares_virtual:"Classement virtuel",palmares_virtual_desc:"⏳ Qui serait qualifié si les poules s'arrêtaient maintenant",palmares_qualified_desc:"✅ Joueurs qualifiés pour les phases finales",palmares_grp:"groupe",palmares_player:"joueur",palmares_players:"joueurs",palmares_format_help:"<b>Un joueur par ligne, dans l'ordre du classement :</b><br><code>pseudo-Nom</code> &nbsp;— sans statistiques<br><code>pseudo-Nom;V;N;D;V;N;D</code> &nbsp;— avec statistiques<br>Les 3 premiers chiffres = victoires, nulles, défaites <b>avec les Blancs</b> ⬜<br>Les 3 suivants = victoires, nulles, défaites <b>avec les Noirs</b> ⬛<br>Exemple : <code>Goudi8-Romain;1;3;1;4;0;1</code><br>Matchs joués et points se calculent automatiquement.",qual_rg:"Rg",qual_grp:"Grp",qual_ptsm:"Pts/M",qual_vm:"V/M",qual_vnm:"VN/M",qual_tbm:"TB/M",qual_seed:"Seed",qual_legend:"Départage, dans l'ordre : Pts/M (points par match) → V/M (victoires par match) → VN/M (victoires avec les Noirs par match) → TB/M (Buchholz par match) → Seed (tête de série). Rg = rang dans le groupe.",palmares_pts:"pts",palmares_m:"m",palmares_v:"V",palmares_n:"N",palmares_d:"D",palmares_white:"Blancs",palmares_black:"Noirs",palmares_total:"Total",palmares_on:"sur",palmares_names_filled:"✓ {n} nom(s) retrouvé(s) !",palmares_no_name_found:"Aucun nom à retrouver.",
+    palmares_bulk_btn:"➕ Ajouter la liste",palmares_fill_names_btn:"🔗 Retrouver les noms",palmares_search_ph:"🔎 Rechercher un joueur…",palmares_player_none:"Aucun joueur trouvé.",palmares_edition:"édition",palmares_editions:"éditions",palmares_podium:"podium",palmares_podiums:"podiums",palmares_best:"meilleur rang :",palmares_of:" sur ",palmares_stats_btn:"Statistiques des joueurs",tri_points:"📊 Points",tri_ratio:"⚡ Par match",tri_titres:"🏆 Titres",legende_general_poules:"ℹ️ <b>Ordre du classement :</b> 1) rang dans le groupe — tous les 1ers de groupe, puis tous les 2es, etc. 2) points par match 3) victoires par match 4) victoires avec les Noirs par match 5) Buchholz par match — la force des adversaires rencontrés en poules 6) tête de série.<br>Les valeurs sont ramenées au match car les groupes n'ont pas tous la même taille.",legende_general_finales:"ℹ️ <b>Ordre du classement :</b> 1) le tour atteint en phases finales passe avant tout — un demi-finaliste devance un quart de finaliste, même avec moins de points 2) puis le rang dans le groupe 3) puis points, victoires et victoires avec les Noirs, par match 4) puis le Buchholz, figé sur les poules 5) puis tête de série.<br>Un joueur peut donc afficher plus de points qu'un autre placé au-dessus de lui : c'est le parcours en finales qui décide.",legende_edition:"ℹ️ <b>Ordre du classement final :</b> le tour atteint en phases finales passe avant tout, puis le rang dans le groupe, puis les statistiques par match et le Buchholz. Un joueur peut donc afficher plus de points qu'un autre placé au-dessus de lui.",palmares_stats_desc:"Tous les joueurs ayant participé, classés sur l'ensemble des éditions.",palmares_ongoing:"en cours",palmares_pick:"Choisis un tournoi ci-dessus.",palmares_no_result_yet:"Aucun match encore joué.",palmares_provisional:"⏳ Classement provisoire — le tournoi est en cours",palmares_qualified:"Qualifiés",palmares_virtual:"Classement virtuel",palmares_virtual_desc:"⏳ Qui serait qualifié si les poules s'arrêtaient maintenant",palmares_qualified_desc:"✅ Joueurs qualifiés pour les phases finales",palmares_grp:"groupe",palmares_player:"joueur",palmares_players:"joueurs",palmares_format_help:"<b>Un joueur par ligne, dans l'ordre du classement :</b><br><code>pseudo-Nom</code> &nbsp;— sans statistiques<br><code>pseudo-Nom;V;N;D;V;N;D</code> &nbsp;— avec statistiques<br>Les 3 premiers chiffres = victoires, nulles, défaites <b>avec les Blancs</b> ⬜<br>Les 3 suivants = victoires, nulles, défaites <b>avec les Noirs</b> ⬛<br>Exemple : <code>Goudi8-Romain;1;3;1;4;0;1</code><br>Matchs joués et points se calculent automatiquement.",qual_rg:"Rg",qual_grp:"Grp",qual_ptsm:"Pts/M",qual_vm:"V/M",qual_vnm:"VN/M",qual_tbm:"TB/M",qual_seed:"Seed",qual_legend:"Départage, dans l'ordre : Pts/M (points par match) → V/M (victoires par match) → VN/M (victoires avec les Noirs par match) → TB/M (Buchholz par match) → Seed (tête de série). Rg = rang dans le groupe.",palmares_pts:"pts",palmares_m:"m",palmares_v:"V",palmares_n:"N",palmares_d:"D",palmares_white:"Blancs",palmares_black:"Noirs",palmares_total:"Total",palmares_on:"sur",palmares_names_filled:"✓ {n} nom(s) retrouvé(s) !",palmares_no_name_found:"Aucun nom à retrouver.",
     rules:`<p>🚀 Consultez l'onglet Matchs pour voir vos parties dès que la phase de poules est lancée. Envoyez une invitation à votre adversaire sur Chess.com (pseudo visible dans l'onglet Tournoi) ou jouez sur échiquier physique. Inscrivez le résultat dès la fin de chaque partie directement dans l'app.</p><br>
 <p>⏰ <strong>Commencez vos parties dès le début du tournoi</strong> et terminez-les avant l'échéance affichée sur chaque match. Vous pouvez jouer plusieurs parties en parallèle, mais <strong>respectez l'ordre des rondes</strong> : traitez d'abord celles dont l'échéance est la plus proche. Même à cadence lente, enchaînez vos coups pour finir dans les délais.</p><br>
 <p>Format : Poules round-robin, puis phases finales à élimination directe.</p><br>
@@ -1105,7 +1111,7 @@ const T = {
     dev_none:"⚠️ Kein Admin-Gerät für die Verspätungswarnung registriert.",dev_orphan:"⚠️ Das registrierte Admin-Gerät hat kein aktives Abonnement mehr — die Warnung erreicht niemanden.",dev_this_on:"✅ Dieses Gerät ist für die Verspätungswarnung registriert.",dev_this_off:"⏸️ Dieses Gerät ist registriert, aber die automatische Warnung ist deaktiviert (Kästchen oben).",dev_other:"⚠️ Ein <b>anderes</b> Gerät ist für die Verspätungswarnung registriert — nicht dieses.",dev_register_btn:"📍 Dieses Gerät zu meinem Admin-Gerät machen",dev_register_instead:"📍 Stattdessen dieses Gerät registrieren",dev_remove_this:"🔄 Diese Registrierung entfernen",dev_remove_current:"🔄 Aktuelle Registrierung entfernen",dev_enable_first:"Aktiviere zuerst oben deine Benachrichtigungen.",dev_enable_then_register:"Aktiviere oben deine Benachrichtigungen und registriere dann dieses Gerät.",dev_home_this_on:"✅ Admin-Gerät — Verspätungswarnung hier aktiv",dev_home_this_off:"⏸️ Admin-Gerät hier registriert — Warnung deaktiviert",dev_home_other:"⚠️ Nicht das registrierte Admin-Gerät — keine Warnung hier",dev_home_orphan:"⚠️ Registriertes Admin-Gerät nicht mehr abonniert — Warnung ohne Empfänger",dev_home_none:"⚠️ Kein Admin-Gerät registriert",
     late_check_alert_sent:"{n} verspätete Partie(n) — Warnung an das Admin-Gerät gesendet",late_check_nothing_late:"Keine verspätete Partie. Nichts zu senden.",late_check_proof_sent:"Keine Verspätung. Die wöchentliche Kontrollnachricht wurde gesendet.",late_check_not_playing:"Das Turnier ist nicht in der Spielphase: keine Partie kann verspätet sein.",late_check_no_admin_device:"Kein Admin-Gerät registriert: die Warnung hat keinen Empfänger.",late_check_admin_sub_invalid:"Das Abonnement des Admin-Geräts ist ungültig. Bitte neu registrieren.",late_check_auto_off:"Die automatische Warnung ist deaktiviert (Kästchen im Tab Benachrichtigungen).",late_check_maintenance:"Wartungsmodus aktiv: die Warnung ist ausgesetzt.",late_check_no_config:"Serverkonfiguration unvollständig (fehlende Schlüssel auf Netlify).",notif_cleaned:"🧹 {n} inaktive(s) Abonnement(s) entfernt.",clean_subs_btn:"🧹 Inaktive Abonnements entfernen",subs_section_title:"👥 Abonnenten",clean_subs_hint:"Prüft jedes Abonnement und entfernt jene, die nichts mehr empfangen können (Browser neu installiert, Daten gelöscht). Niemand wird benachrichtigt, gültige Abonnements bleiben unberührt.",reset_subs_warn:"⚠️ Löscht ALLE Abonnements, auch die gültigen. Jeder muss die Website erneut öffnen, um wieder angemeldet zu werden, und seine Einstellungen werden zurückgesetzt. Nur bei Problemen verwenden: die Bereinigung oben genügt normalerweise.",clean_running:"🔎 Jedes Abonnement wird geprüft… (niemand wird benachrichtigt)",late_checking:"⏳ Prüfung läuft…",notif_muted:"🔕 Du erhältst keine Benachrichtigungen",notif_all_muted:"⚠️ Du hast beide Kategorien abgewählt: du erhältst keine Benachrichtigung mehr. Du riskierst, eine Frist zu verpassen und kampflos zu verlieren. Wähle mindestens eine wieder aus.",prefs_loading:"Deine Einstellungen werden geladen…",prefs_close_btn:"✓ OK",auto_notif_title:"⚙️ Automatische Einstellungen",prefs_title:"🔔 Meine Benachrichtigungen",clean_done:"✓ {n} inaktive(s) Abonnement(s) entfernt. {a} noch gültig.",clean_admin_cleared:"Das Admin-Gerät war dabei: registriere ein neues.",clean_none:"✓ Die {a} Abonnement(s) werden vom Benachrichtigungsdienst akzeptiert — keines zu entfernen. Ein Gerät, dessen Daten gelöscht wurden, kann tagelang als gültig gelten: entferne es unten von Hand, wenn du weißt, dass es nicht mehr dient.",late_check_admin_dead:"Das Admin-Gerät war nicht mehr erreichbar: Abonnement und Registrierung entfernt. Registriere oben ein Gerät.",pin_current:"Aktueller PIN",reg_closed:"Die Anmeldung ist geschlossen.",pin_new:"Neuer PIN",pin_confirm:"Bestätigen",set_semis:"Format Halbfinale",set_final:"Format Finale",whatsapp_title:"📲 WhatsApp-Erinnerung",save_seed:"💾 Speichern",
     tab_home:"Turnier",tab_groups:"Gruppen",tab_matches:"Partien",tab_finals:"Finale",
-    tab_info:"Infos",confirm_archive_before_reset:"Aktuelle Rangliste vor dem Zurücksetzen in der Siegerliste archivieren?\n\nOK = archivieren und zurücksetzen\nAbbrechen = ohne Archivierung zurücksetzen",palmares_admin_title:"🏅 Siegerliste",palmares_edition_name_placeholder:"Name der Ausgabe",info_rules_btn:"📜 Reglement",info_palmares_btn:"🏅 Siegerliste",info_ranking_btn:"📊 Gesamtrangliste",live_rank_title:"Gesamtrangliste live",live_rank_qualified_title:"Qualifizierte Spieler",info_admin_btn:"⚙️ Admin",info_rules_title:"Reglement",info_palmares_title:"Siegerliste",
+    tab_info:"Infos",confirm_archive_before_reset:"⚠️ TURNIER ARCHIVIEREN?\n\nDie Endrangliste von {n} Spieler(n) wird mit allen Statistiken in der Siegerliste abgelegt.\n\n✅ OK = archivieren, dann zurücksetzen\n❌ Abbrechen = zurücksetzen OHNE Archivierung\n\n(Eine Sicherungskopie des Turniers bleibt in jedem Fall erhalten.)",palmares_admin_title:"🏅 Siegerliste",palmares_edition_name_placeholder:"Name der Ausgabe",info_rules_btn:"📜 Reglement",info_palmares_btn:"🏅 Siegerliste",info_ranking_btn:"📊 Gesamtrangliste",vue_tous:"👥 Alle Spieler",vue_qualifies:"🎯 Qualifiziert ({n})",vue_virtuel:"🎯 Virtuell ({n})",live_rank_title:"Turnierrangliste",info_admin_btn:"⚙️ Admin",info_rules_title:"Reglement",info_palmares_title:"Siegerliste",
     status_registration:"Anmeldung offen",status_playing:"Gruppenphase",status_finals:"Finalphase",status_finished:"Beendet",
     players_count_1:"Spieler angemeldet",players_count_n:"Spieler angemeldet",
     reg_title:"Zum Turnier anmelden",reg_nick:"Chess.com-Benutzername *",
@@ -1144,7 +1150,7 @@ const T = {
     palmares_pseudo_placeholder:"Chess.com-Benutzername",
     palmares_name_optional_placeholder:"Name (optional)",
     palmares_bulk_placeholder:"Ein Spieler pro Zeile: Pseudo-Name, oder nur das Pseudo",
-    palmares_bulk_btn:"➕ Liste hinzufügen",palmares_fill_names_btn:"🔗 Namen ergänzen",palmares_search_ph:"🔎 Spieler suchen…",palmares_player_none:"Kein Spieler gefunden.",palmares_edition:"Ausgabe",palmares_editions:"Ausgaben",palmares_podium:"Podium",palmares_podiums:"Podien",palmares_best:"beste Platzierung:",palmares_of:" von ",palmares_stats_btn:"Spielerstatistiken",palmares_stats_desc:"Alle Teilnehmer, über alle Ausgaben hinweg gewertet.",palmares_ongoing:"laufend",palmares_pick:"Wähle oben ein Turnier.",palmares_no_result_yet:"Noch keine Partie gespielt.",palmares_provisional:"⏳ Vorläufige Rangliste — das Turnier läuft",palmares_qualified:"Qualifiziert",palmares_virtual:"Virtuelle Rangliste",palmares_virtual_desc:"⏳ Wer sich qualifizieren würde, wenn die Gruppenphase jetzt endete",palmares_qualified_desc:"✅ Für die Finalrunden qualifizierte Spieler",palmares_grp:"Gruppe",palmares_player:"Spieler",palmares_players:"Spieler",palmares_format_help:"<b>Ein Spieler pro Zeile, in der Reihenfolge der Rangliste:</b><br><code>Pseudo-Name</code> &nbsp;— ohne Statistik<br><code>Pseudo-Name;S;R;N;S;R;N</code> &nbsp;— mit Statistik<br>Die ersten 3 Zahlen = Siege, Remis, Niederlagen <b>mit Weiß</b> ⬜<br>Die nächsten 3 = Siege, Remis, Niederlagen <b>mit Schwarz</b> ⬛<br>Beispiel: <code>Goudi8-Romain;1;3;1;4;0;1</code><br>Partien und Punkte werden automatisch berechnet.",qual_rg:"Rg",qual_grp:"Gr",qual_ptsm:"Pkt/P",qual_vm:"S/P",qual_vnm:"SS/P",qual_tbm:"TB/P",qual_seed:"Setz",qual_legend:"Tiebreak in dieser Reihenfolge: Pkt/P (Punkte pro Partie) → S/P (Siege pro Partie) → SS/P (Siege mit Schwarz pro Partie) → TB/P (Buchholz pro Partie) → Setzrang. Rg = Rang in der Gruppe.",palmares_pts:"Pkt",palmares_m:"P",palmares_v:"S",palmares_n:"R",palmares_d:"N",palmares_white:"Weiß",palmares_black:"Schwarz",palmares_total:"Gesamt",palmares_on:"von",palmares_names_filled:"✓ {n} Name(n) ergänzt!",palmares_no_name_found:"Keine Namen zu ergänzen.",
+    palmares_bulk_btn:"➕ Liste hinzufügen",palmares_fill_names_btn:"🔗 Namen ergänzen",palmares_search_ph:"🔎 Spieler suchen…",palmares_player_none:"Kein Spieler gefunden.",palmares_edition:"Ausgabe",palmares_editions:"Ausgaben",palmares_podium:"Podium",palmares_podiums:"Podien",palmares_best:"beste Platzierung:",palmares_of:" von ",palmares_stats_btn:"Spielerstatistiken",tri_points:"📊 Punkte",tri_ratio:"⚡ Pro Partie",tri_titres:"🏆 Titel",legende_general_poules:"ℹ️ <b>Reihenfolge:</b> 1) Rang in der Gruppe — zuerst alle Gruppenersten, dann alle Zweiten usw. 2) Punkte pro Partie 3) Siege pro Partie 4) Siege mit Schwarz pro Partie 5) Buchholz pro Partie — die Stärke der Gegner aus der Gruppenphase 6) Setzrang.<br>Die Werte sind auf die Partie umgerechnet, da die Gruppen unterschiedlich gross sind.",legende_general_finales:"ℹ️ <b>Reihenfolge:</b> 1) die erreichte Finalrunde zählt zuerst — ein Halbfinalist steht vor einem Viertelfinalisten, auch mit weniger Punkten 2) dann der Rang in der Gruppe 3) dann Punkte, Siege und Siege mit Schwarz, pro Partie 4) dann Buchholz, auf die Gruppenphase eingefroren 5) dann Setzrang.<br>Ein Spieler kann also mehr Punkte haben als jemand über ihm: entscheidend ist der Weg in den Finalrunden.",legende_edition:"ℹ️ <b>Endrangliste:</b> die erreichte Finalrunde zählt zuerst, dann der Rang in der Gruppe, dann die Statistiken pro Partie und Buchholz. Ein Spieler kann also mehr Punkte haben als jemand über ihm.",palmares_stats_desc:"Alle Teilnehmer, über alle Ausgaben hinweg gewertet.",palmares_ongoing:"laufend",palmares_pick:"Wähle oben ein Turnier.",palmares_no_result_yet:"Noch keine Partie gespielt.",palmares_provisional:"⏳ Vorläufige Rangliste — das Turnier läuft",palmares_qualified:"Qualifiziert",palmares_virtual:"Virtuelle Rangliste",palmares_virtual_desc:"⏳ Wer sich qualifizieren würde, wenn die Gruppenphase jetzt endete",palmares_qualified_desc:"✅ Für die Finalrunden qualifizierte Spieler",palmares_grp:"Gruppe",palmares_player:"Spieler",palmares_players:"Spieler",palmares_format_help:"<b>Ein Spieler pro Zeile, in der Reihenfolge der Rangliste:</b><br><code>Pseudo-Name</code> &nbsp;— ohne Statistik<br><code>Pseudo-Name;S;R;N;S;R;N</code> &nbsp;— mit Statistik<br>Die ersten 3 Zahlen = Siege, Remis, Niederlagen <b>mit Weiß</b> ⬜<br>Die nächsten 3 = Siege, Remis, Niederlagen <b>mit Schwarz</b> ⬛<br>Beispiel: <code>Goudi8-Romain;1;3;1;4;0;1</code><br>Partien und Punkte werden automatisch berechnet.",qual_rg:"Rg",qual_grp:"Gr",qual_ptsm:"Pkt/P",qual_vm:"S/P",qual_vnm:"SS/P",qual_tbm:"TB/P",qual_seed:"Setz",qual_legend:"Tiebreak in dieser Reihenfolge: Pkt/P (Punkte pro Partie) → S/P (Siege pro Partie) → SS/P (Siege mit Schwarz pro Partie) → TB/P (Buchholz pro Partie) → Setzrang. Rg = Rang in der Gruppe.",palmares_pts:"Pkt",palmares_m:"P",palmares_v:"S",palmares_n:"R",palmares_d:"N",palmares_white:"Weiß",palmares_black:"Schwarz",palmares_total:"Gesamt",palmares_on:"von",palmares_names_filled:"✓ {n} Name(n) ergänzt!",palmares_no_name_found:"Keine Namen zu ergänzen.",
     rules:`<p>🚀 Sieh dir deine Partien im Tab <strong>Partien</strong> an, sobald die Gruppenphase gestartet ist. Sende deinem Gegner eine Einladung auf Chess.com (Benutzername im Tab <strong>Turnier</strong>) oder spiele auf dem Brett. Trage das Ergebnis direkt im Tab <strong>Partien</strong> ein.</p><br>
 <p>⏰ <strong>Beginnt eure Partien gleich zu Turnierbeginn</strong> und beendet sie vor der bei jeder Partie angezeigten Frist. Ihr dürft mehrere Partien parallel spielen, aber <strong>haltet die Reihenfolge der Runden ein</strong>: spielt zuerst die Partien mit der nächstliegenden Frist. Auch bei langsamem Tempo: zieht zügig weiter, um fristgerecht fertig zu werden.</p><br>
 <p>Format: Round-Robin-Gruppen, dann K.o.-Finalrunden.</p><br>
@@ -1239,7 +1245,7 @@ const T = {
     dev_none:"⚠️ No admin device registered for the late alert.",dev_orphan:"⚠️ The registered admin device no longer has an active subscription — the late alert reaches no one.",dev_this_on:"✅ This device is registered for the late alert.",dev_this_off:"⏸️ This device is registered, but the automatic alert is disabled (checkbox above).",dev_other:"⚠️ <b>Another</b> device is registered for the late alert — not this one.",dev_register_btn:"📍 Make this device my admin device",dev_register_instead:"📍 Register this device instead",dev_remove_this:"🔄 Remove this registration",dev_remove_current:"🔄 Remove the current registration",dev_enable_first:"Enable your notifications above first.",dev_enable_then_register:"Enable your notifications above, then register this device.",dev_home_this_on:"✅ Admin device — late alert active here",dev_home_this_off:"⏸️ Admin device registered here — alert disabled",dev_home_other:"⚠️ Not the registered admin device — no late alert here",dev_home_orphan:"⚠️ Registered admin device no longer subscribed — alert has no recipient",dev_home_none:"⚠️ No admin device registered",
     late_check_alert_sent:"{n} late game(s) — alert sent to the admin device",late_check_nothing_late:"No late game. Nothing to send.",late_check_proof_sent:"No delay. The weekly check message was sent.",late_check_not_playing:"The tournament is not in a playing phase: no game can be late.",late_check_no_admin_device:"No admin device registered: the alert has no recipient.",late_check_admin_sub_invalid:"The admin device subscription is invalid. Please register it again.",late_check_auto_off:"The automatic alert is disabled (checkbox in the Notifs tab).",late_check_maintenance:"Maintenance mode active: the alert is suspended.",late_check_no_config:"Server configuration incomplete (missing keys on Netlify).",notif_cleaned:"🧹 {n} inactive subscription(s) removed.",clean_subs_btn:"🧹 Remove inactive subscriptions",subs_section_title:"👥 Subscribers",clean_subs_hint:"Checks every subscription and removes those that can no longer receive anything (browser reinstalled, data cleared). Nobody is notified, valid subscribers are untouched.",reset_subs_warn:"⚠️ Erases ALL subscriptions, including valid ones. Everyone will have to reopen the site to be resubscribed, and their preferences will be reset. Reserve this for real trouble: the cleanup above is usually enough.",clean_running:"🔎 Checking each subscription… (nobody is notified)",late_checking:"⏳ Checking…",notif_muted:"🔕 You will receive no notifications",notif_all_muted:"⚠️ You unchecked both categories: you will receive no notification at all. You risk missing a deadline and forfeiting. Check at least one box again.",prefs_loading:"Loading your preferences…",prefs_close_btn:"✓ OK",auto_notif_title:"⚙️ Automatic settings",prefs_title:"🔔 My notifications",clean_done:"✓ {n} inactive subscription(s) removed. {a} still valid.",clean_admin_cleared:"The admin device was one of them: register a new one.",clean_none:"✓ All {a} subscription(s) are accepted by the push service — none to remove. A device whose data was cleared can still count as valid for days: remove it manually below if you know it is no longer in use.",late_check_admin_dead:"The admin device was no longer reachable: subscription and registration removed. Register a device above.",pin_current:"Current PIN",reg_closed:"Registration is closed.",pin_new:"New PIN",pin_confirm:"Confirm",set_semis:"Semi-finals format",set_final:"Final format",whatsapp_title:"📲 WhatsApp reminder",save_seed:"💾 Save",
     tab_home:"Tournament",tab_groups:"Groups",tab_matches:"Matches",tab_finals:"Finals",
-    tab_info:"Info",confirm_archive_before_reset:"Archive the current ranking to the hall of fame before resetting?\n\nOK = archive then reset\nCancel = reset without archiving",palmares_admin_title:"🏅 Hall of fame",palmares_edition_name_placeholder:"Edition name",info_rules_btn:"📜 Rules",info_palmares_btn:"🏅 Hall of fame",info_ranking_btn:"📊 Overall ranking",live_rank_title:"Live overall ranking",live_rank_qualified_title:"Qualified players",info_admin_btn:"⚙️ Admin",info_rules_title:"Rules",info_palmares_title:"Hall of fame",
+    tab_info:"Info",confirm_archive_before_reset:"⚠️ ARCHIVE THE TOURNAMENT?\n\nThe final ranking of {n} player(s) will be filed in the hall of fame, with all statistics.\n\n✅ OK = archive, then reset\n❌ Cancel = reset WITHOUT archiving\n\n(A safety copy of the tournament is kept either way.)",palmares_admin_title:"🏅 Hall of fame",palmares_edition_name_placeholder:"Edition name",info_rules_btn:"📜 Rules",info_palmares_btn:"🏅 Hall of fame",info_ranking_btn:"📊 Overall ranking",vue_tous:"👥 All players",vue_qualifies:"🎯 Qualified ({n})",vue_virtuel:"🎯 Virtual ({n})",live_rank_title:"Tournament ranking",info_admin_btn:"⚙️ Admin",info_rules_title:"Rules",info_palmares_title:"Hall of fame",
     status_registration:"Registration open",status_playing:"Group stage",status_finals:"Final stage",status_finished:"Finished",
     players_count_1:"player registered",players_count_n:"players registered",
     reg_title:"Register for the tournament",reg_nick:"Chess.com username *",
@@ -1280,7 +1286,7 @@ const T = {
     palmares_pseudo_placeholder:"Chess.com username",
     palmares_name_optional_placeholder:"Name (optional)",
     palmares_bulk_placeholder:"One player per line: username-Name, or just the username",
-    palmares_bulk_btn:"➕ Add the list",palmares_fill_names_btn:"🔗 Find names",palmares_search_ph:"🔎 Search a player…",palmares_player_none:"No player found.",palmares_edition:"edition",palmares_editions:"editions",palmares_podium:"podium",palmares_podiums:"podiums",palmares_best:"best rank:",palmares_of:" of ",palmares_stats_btn:"Player statistics",palmares_stats_desc:"Every player who took part, ranked across all editions.",palmares_ongoing:"ongoing",palmares_pick:"Pick a tournament above.",palmares_no_result_yet:"No match played yet.",palmares_provisional:"⏳ Provisional ranking — tournament in progress",palmares_qualified:"Qualified",palmares_virtual:"Virtual ranking",palmares_virtual_desc:"⏳ Who would qualify if the group stage ended now",palmares_qualified_desc:"✅ Players qualified for the final stages",palmares_grp:"group",palmares_player:"player",palmares_players:"players",palmares_format_help:"<b>One player per line, in ranking order:</b><br><code>username-Name</code> &nbsp;— without stats<br><code>username-Name;W;D;L;W;D;L</code> &nbsp;— with stats<br>First 3 numbers = wins, draws, losses <b>with White</b> ⬜<br>Next 3 = wins, draws, losses <b>with Black</b> ⬛<br>Example: <code>Goudi8-Romain;1;3;1;4;0;1</code><br>Games played and points are calculated automatically.",qual_rg:"Rk",qual_grp:"Grp",qual_ptsm:"Pts/G",qual_vm:"W/G",qual_vnm:"BW/G",qual_tbm:"TB/G",qual_seed:"Seed",qual_legend:"Tiebreak order: Pts/G (points per game) → W/G (wins per game) → BW/G (wins with Black per game) → TB/G (Buchholz per game) → Seed. Rk = rank within the group.",palmares_pts:"pts",palmares_m:"m",palmares_v:"W",palmares_n:"D",palmares_d:"L",palmares_white:"White",palmares_black:"Black",palmares_total:"Total",palmares_on:"of",palmares_names_filled:"✓ {n} name(s) found!",palmares_no_name_found:"No names to fill in.",
+    palmares_bulk_btn:"➕ Add the list",palmares_fill_names_btn:"🔗 Find names",palmares_search_ph:"🔎 Search a player…",palmares_player_none:"No player found.",palmares_edition:"edition",palmares_editions:"editions",palmares_podium:"podium",palmares_podiums:"podiums",palmares_best:"best rank:",palmares_of:" of ",palmares_stats_btn:"Player statistics",tri_points:"📊 Points",tri_ratio:"⚡ Per game",tri_titres:"🏆 Titles",legende_general_poules:"ℹ️ <b>Ranking order:</b> 1) rank within the group — all group winners first, then all runners-up, etc. 2) points per game 3) wins per game 4) wins with Black per game 5) Buchholz per game — the strength of opponents faced in the groups 6) seed.<br>Values are per game because groups are not all the same size.",legende_general_finales:"ℹ️ <b>Ranking order:</b> 1) the round reached in the final stages comes first — a semi-finalist ranks above a quarter-finalist, even with fewer points 2) then rank within the group 3) then points, wins and wins with Black, per game 4) then Buchholz, frozen on the group stage 5) then seed.<br>A player may therefore show more points than someone ranked above them: the final-stage run decides.",legende_edition:"ℹ️ <b>Final ranking order:</b> the round reached in the final stages comes first, then rank within the group, then per-game statistics and Buchholz. A player may therefore show more points than someone ranked above them.",palmares_stats_desc:"Every player who took part, ranked across all editions.",palmares_ongoing:"ongoing",palmares_pick:"Pick a tournament above.",palmares_no_result_yet:"No match played yet.",palmares_provisional:"⏳ Provisional ranking — tournament in progress",palmares_qualified:"Qualified",palmares_virtual:"Virtual ranking",palmares_virtual_desc:"⏳ Who would qualify if the group stage ended now",palmares_qualified_desc:"✅ Players qualified for the final stages",palmares_grp:"group",palmares_player:"player",palmares_players:"players",palmares_format_help:"<b>One player per line, in ranking order:</b><br><code>username-Name</code> &nbsp;— without stats<br><code>username-Name;W;D;L;W;D;L</code> &nbsp;— with stats<br>First 3 numbers = wins, draws, losses <b>with White</b> ⬜<br>Next 3 = wins, draws, losses <b>with Black</b> ⬛<br>Example: <code>Goudi8-Romain;1;3;1;4;0;1</code><br>Games played and points are calculated automatically.",qual_rg:"Rk",qual_grp:"Grp",qual_ptsm:"Pts/G",qual_vm:"W/G",qual_vnm:"BW/G",qual_tbm:"TB/G",qual_seed:"Seed",qual_legend:"Tiebreak order: Pts/G (points per game) → W/G (wins per game) → BW/G (wins with Black per game) → TB/G (Buchholz per game) → Seed. Rk = rank within the group.",palmares_pts:"pts",palmares_m:"m",palmares_v:"W",palmares_n:"D",palmares_d:"L",palmares_white:"White",palmares_black:"Black",palmares_total:"Total",palmares_on:"of",palmares_names_filled:"✓ {n} name(s) found!",palmares_no_name_found:"No names to fill in.",
     rules:`<p>🚀 Check the <strong>Matches</strong> tab to see your games when the group stage starts. Send an invitation to your opponent on Chess.com (username in the <strong>Tournament</strong> tab) or play on a physical board. Enter the result directly in the <strong>Matches</strong> tab.</p><br>
 <p>⏰ <strong>Start your games as soon as the tournament begins</strong> and finish them before the deadline shown on each match. You may play several games in parallel, but <strong>respect the order of the rounds</strong>: deal first with those whose deadline is closest. Even at a slow pace, keep making your moves so you finish on time.</p><br>
 <p>Format: Round-robin groups, then knockout finals.</p><br>
@@ -1373,7 +1379,7 @@ const T = {
     dev_none:"⚠️ Nessun dispositivo admin registrato per l'avviso di ritardo.",dev_orphan:"⚠️ Il dispositivo admin registrato non ha più un abbonamento attivo — l'avviso non raggiunge nessuno.",dev_this_on:"✅ Questo dispositivo è registrato per l'avviso di ritardo.",dev_this_off:"⏸️ Questo dispositivo è registrato, ma l'avviso automatico è disattivato (casella sopra).",dev_other:"⚠️ Un <b>altro</b> dispositivo è registrato per l'avviso di ritardo — non questo.",dev_register_btn:"📍 Rendere questo dispositivo il mio dispositivo admin",dev_register_instead:"📍 Registrare invece questo dispositivo",dev_remove_this:"🔄 Rimuovere questa registrazione",dev_remove_current:"🔄 Rimuovere la registrazione attuale",dev_enable_first:"Attiva prima le notifiche qui sopra.",dev_enable_then_register:"Attiva le notifiche qui sopra, poi registra questo dispositivo.",dev_home_this_on:"✅ Dispositivo admin — avviso di ritardo attivo qui",dev_home_this_off:"⏸️ Dispositivo admin registrato qui — avviso disattivato",dev_home_other:"⚠️ Non è il dispositivo admin registrato — nessun avviso qui",dev_home_orphan:"⚠️ Dispositivo admin registrato non più abbonato — avviso senza destinatario",dev_home_none:"⚠️ Nessun dispositivo admin registrato",
     late_check_alert_sent:"{n} partita/e in ritardo — avviso inviato al dispositivo admin",late_check_nothing_late:"Nessuna partita in ritardo. Niente da inviare.",late_check_proof_sent:"Nessun ritardo. Il messaggio settimanale di controllo è stato inviato.",late_check_not_playing:"Il torneo non è in fase di gioco: nessuna partita può essere in ritardo.",late_check_no_admin_device:"Nessun dispositivo admin registrato: l'avviso non ha destinatario.",late_check_admin_sub_invalid:"L'abbonamento del dispositivo admin non è valido. Registralo di nuovo.",late_check_auto_off:"L'avviso automatico è disattivato (casella nella scheda Notifiche).",late_check_maintenance:"Modalità manutenzione attiva: l'avviso è sospeso.",late_check_no_config:"Configurazione server incompleta (chiavi mancanti su Netlify).",notif_cleaned:"🧹 {n} abbonamento/i inattivo/i rimosso/i.",clean_subs_btn:"🧹 Rimuovere gli abbonamenti inattivi",subs_section_title:"👥 Abbonati",clean_subs_hint:"Verifica ogni abbonamento e rimuove quelli che non possono più ricevere nulla (browser reinstallato, dati cancellati). Nessuno viene notificato, gli abbonati validi non vengono toccati.",reset_subs_warn:"⚠️ Cancella TUTTI gli abbonamenti, compresi quelli validi. Ognuno dovrà riaprire il sito per essere riabbonato e le sue preferenze verranno ripristinate. Da riservare ai casi problematici: la pulizia qui sopra basta di solito.",clean_running:"🔎 Verifica di ogni abbonamento… (nessuno viene notificato)",late_checking:"⏳ Verifica in corso…",notif_muted:"🔕 Non riceverai alcuna notifica",notif_all_muted:"⚠️ Hai deselezionato entrambe le categorie: non riceverai più alcuna notifica. Rischi di perdere una scadenza e di perdere a tavolino. Seleziona almeno una casella.",prefs_loading:"Caricamento delle tue preferenze…",prefs_close_btn:"✓ OK",auto_notif_title:"⚙️ Impostazioni automatiche",prefs_title:"🔔 Le mie notifiche",clean_done:"✓ {n} abbonamento/i inattivo/i rimosso/i. {a} ancora valido/i.",clean_admin_cleared:"Il dispositivo admin era tra questi: registrane uno nuovo.",clean_none:"✓ I {a} abbonamento/i sono accettati dal servizio di notifica — nessuno da rimuovere. Un dispositivo i cui dati sono stati cancellati può restare valido per giorni: rimuovilo a mano qui sotto se sai che non serve più.",late_check_admin_dead:"Il dispositivo admin non era più raggiungibile: abbonamento e registrazione rimossi. Registra un dispositivo qui sopra.",pin_current:"PIN attuale",reg_closed:"Le iscrizioni sono chiuse.",pin_new:"Nuovo PIN",pin_confirm:"Confermare",set_semis:"Formato semifinali",set_final:"Formato finale",whatsapp_title:"📲 Promemoria WhatsApp",save_seed:"💾 Salvare",
     tab_home:"Torneo",tab_groups:"Gruppi",tab_matches:"Partite",tab_finals:"Finali",
-    tab_info:"Info",confirm_archive_before_reset:"Archiviare la classifica attuale nell'albo d'oro prima di azzerare?\n\nOK = archiviare e azzerare\nAnnulla = azzerare senza archiviare",palmares_admin_title:"🏅 Albo d'oro",palmares_edition_name_placeholder:"Nome dell'edizione",info_rules_btn:"📜 Regolamento",info_palmares_btn:"🏅 Albo d'oro",info_ranking_btn:"📊 Classifica generale",live_rank_title:"Classifica generale in diretta",live_rank_qualified_title:"Giocatori qualificati",info_admin_btn:"⚙️ Admin",info_rules_title:"Regolamento",info_palmares_title:"Albo d'oro",
+    tab_info:"Info",confirm_archive_before_reset:"⚠️ ARCHIVIARE IL TORNEO?\n\nLa classifica finale di {n} giocatore/i verrà inserita nell'albo d'oro, con tutte le statistiche.\n\n✅ OK = archiviare, poi azzerare\n❌ Annulla = azzerare SENZA archiviare\n\n(Una copia di sicurezza del torneo viene conservata in ogni caso.)",palmares_admin_title:"🏅 Albo d'oro",palmares_edition_name_placeholder:"Nome dell'edizione",info_rules_btn:"📜 Regolamento",info_palmares_btn:"🏅 Albo d'oro",info_ranking_btn:"📊 Classifica generale",vue_tous:"👥 Tutti i giocatori",vue_qualifies:"🎯 Qualificati ({n})",vue_virtuel:"🎯 Virtuale ({n})",live_rank_title:"Classifica del torneo",info_admin_btn:"⚙️ Admin",info_rules_title:"Regolamento",info_palmares_title:"Albo d'oro",
     status_registration:"Iscrizioni aperte",status_playing:"Fase a gironi",status_finals:"Fase finale",status_finished:"Terminato",
     players_count_1:"giocatore iscritto",players_count_n:"giocatori iscritti",
     reg_title:"Iscriversi al torneo",reg_nick:"Nome utente Chess.com *",
@@ -1412,7 +1418,7 @@ const T = {
     palmares_pseudo_placeholder:"Nome utente Chess.com",
     palmares_name_optional_placeholder:"Nome (facoltativo)",
     palmares_bulk_placeholder:"Un giocatore per riga: nomeutente-Nome, o solo il nome utente",
-    palmares_bulk_btn:"➕ Aggiungi la lista",palmares_fill_names_btn:"🔗 Ritrovare i nomi",palmares_search_ph:"🔎 Cercare un giocatore…",palmares_player_none:"Nessun giocatore trovato.",palmares_edition:"edizione",palmares_editions:"edizioni",palmares_podium:"podio",palmares_podiums:"podi",palmares_best:"miglior posizione:",palmares_of:" su ",palmares_stats_btn:"Statistiche giocatori",palmares_stats_desc:"Tutti i partecipanti, classificati su tutte le edizioni.",palmares_ongoing:"in corso",palmares_pick:"Scegli un torneo qui sopra.",palmares_no_result_yet:"Nessuna partita ancora giocata.",palmares_provisional:"⏳ Classifica provvisoria — torneo in corso",palmares_qualified:"Qualificati",palmares_virtual:"Classifica virtuale",palmares_virtual_desc:"⏳ Chi si qualificherebbe se i gironi finissero ora",palmares_qualified_desc:"✅ Giocatori qualificati per le fasi finali",palmares_grp:"girone",palmares_player:"giocatore",palmares_players:"giocatori",palmares_format_help:"<b>Un giocatore per riga, in ordine di classifica:</b><br><code>nomeutente-Nome</code> &nbsp;— senza statistiche<br><code>nomeutente-Nome;V;P;S;V;P;S</code> &nbsp;— con statistiche<br>I primi 3 numeri = vittorie, patte, sconfitte <b>con i Bianchi</b> ⬜<br>I 3 successivi = vittorie, patte, sconfitte <b>con i Neri</b> ⬛<br>Esempio: <code>Goudi8-Romain;1;3;1;4;0;1</code><br>Partite e punti si calcolano automaticamente.",qual_rg:"Pos",qual_grp:"Gir",qual_ptsm:"Pt/P",qual_vm:"V/P",qual_vnm:"VN/P",qual_tbm:"TB/P",qual_seed:"Testa",qual_legend:"Spareggio nell'ordine: Pt/P (punti per partita) → V/P (vittorie per partita) → VN/P (vittorie con i Neri per partita) → TB/P (Buchholz per partita) → testa di serie. Pos = posizione nel girone.",palmares_pts:"pt",palmares_m:"p",palmares_v:"V",palmares_n:"P",palmares_d:"S",palmares_white:"Bianchi",palmares_black:"Neri",palmares_total:"Totale",palmares_on:"su",palmares_names_filled:"✓ {n} nome(i) ritrovato(i)!",palmares_no_name_found:"Nessun nome da ritrovare.",
+    palmares_bulk_btn:"➕ Aggiungi la lista",palmares_fill_names_btn:"🔗 Ritrovare i nomi",palmares_search_ph:"🔎 Cercare un giocatore…",palmares_player_none:"Nessun giocatore trovato.",palmares_edition:"edizione",palmares_editions:"edizioni",palmares_podium:"podio",palmares_podiums:"podi",palmares_best:"miglior posizione:",palmares_of:" su ",palmares_stats_btn:"Statistiche giocatori",tri_points:"📊 Punti",tri_ratio:"⚡ Per partita",tri_titres:"🏆 Titoli",legende_general_poules:"ℹ️ <b>Ordine della classifica:</b> 1) posizione nel girone — prima tutti i primi, poi tutti i secondi, ecc. 2) punti per partita 3) vittorie per partita 4) vittorie con i Neri per partita 5) Buchholz per partita — la forza degli avversari affrontati nei gironi 6) testa di serie.<br>I valori sono per partita perché i gironi non hanno tutti la stessa dimensione.",legende_general_finales:"ℹ️ <b>Ordine della classifica:</b> 1) il turno raggiunto nelle fasi finali viene prima di tutto — un semifinalista precede un quartofinalista, anche con meno punti 2) poi la posizione nel girone 3) poi punti, vittorie e vittorie con i Neri, per partita 4) poi il Buchholz, congelato sui gironi 5) poi testa di serie.<br>Un giocatore può quindi mostrare più punti di uno collocato sopra di lui: decide il percorso nelle finali.",legende_edition:"ℹ️ <b>Classifica finale:</b> il turno raggiunto nelle fasi finali viene prima di tutto, poi la posizione nel girone, poi le statistiche per partita e il Buchholz. Un giocatore può quindi mostrare più punti di uno collocato sopra di lui.",palmares_stats_desc:"Tutti i partecipanti, classificati su tutte le edizioni.",palmares_ongoing:"in corso",palmares_pick:"Scegli un torneo qui sopra.",palmares_no_result_yet:"Nessuna partita ancora giocata.",palmares_provisional:"⏳ Classifica provvisoria — torneo in corso",palmares_qualified:"Qualificati",palmares_virtual:"Classifica virtuale",palmares_virtual_desc:"⏳ Chi si qualificherebbe se i gironi finissero ora",palmares_qualified_desc:"✅ Giocatori qualificati per le fasi finali",palmares_grp:"girone",palmares_player:"giocatore",palmares_players:"giocatori",palmares_format_help:"<b>Un giocatore per riga, in ordine di classifica:</b><br><code>nomeutente-Nome</code> &nbsp;— senza statistiche<br><code>nomeutente-Nome;V;P;S;V;P;S</code> &nbsp;— con statistiche<br>I primi 3 numeri = vittorie, patte, sconfitte <b>con i Bianchi</b> ⬜<br>I 3 successivi = vittorie, patte, sconfitte <b>con i Neri</b> ⬛<br>Esempio: <code>Goudi8-Romain;1;3;1;4;0;1</code><br>Partite e punti si calcolano automaticamente.",qual_rg:"Pos",qual_grp:"Gir",qual_ptsm:"Pt/P",qual_vm:"V/P",qual_vnm:"VN/P",qual_tbm:"TB/P",qual_seed:"Testa",qual_legend:"Spareggio nell'ordine: Pt/P (punti per partita) → V/P (vittorie per partita) → VN/P (vittorie con i Neri per partita) → TB/P (Buchholz per partita) → testa di serie. Pos = posizione nel girone.",palmares_pts:"pt",palmares_m:"p",palmares_v:"V",palmares_n:"P",palmares_d:"S",palmares_white:"Bianchi",palmares_black:"Neri",palmares_total:"Totale",palmares_on:"su",palmares_names_filled:"✓ {n} nome(i) ritrovato(i)!",palmares_no_name_found:"Nessun nome da ritrovare.",
     rules:`<p>🚀 Consulta la scheda <strong>Partite</strong> per vedere le tue partite non appena inizia la fase a gironi. Invia un invito al tuo avversario su Chess.com (nome utente nella scheda <strong>Torneo</strong>) o gioca su una scacchiera. Inserisci il risultato nella scheda <strong>Partite</strong>.</p><br>
 <p>⏰ <strong>Iniziate le vostre partite fin dall'inizio del torneo</strong> e concludetele entro la scadenza indicata su ogni partita. Potete giocare più partite in parallelo, ma <strong>rispettate l'ordine dei turni</strong>: affrontate per prime quelle con la scadenza più vicina. Anche con un ritmo lento, continuate a muovere per finire nei tempi.</p><br>
 <p>Formato: Gironi round-robin, poi fasi finali ad eliminazione diretta.</p><br>
@@ -1820,6 +1826,67 @@ function renderInfo() {
 let palmaresSection = null; // 'stats' | 'current' | id d'édition
 
 // Classement du tournoi EN COURS, avec les statistiques réelles calculées en direct.
+// ── ORDRE DU CLASSEMENT GÉNÉRAL ──
+// Un seul et même ordre, utilisé pendant le tournoi ET pour le classement final,
+// pour qu'ils ne se contredisent jamais.
+//   1. TOUR ATTEINT en finales (seulement une fois les finales lancées)
+//   2. RANG DANS LE GROUPE — tous les 1ers de groupe, puis tous les 2es, etc.
+//   3. Points par match, victoires par match, victoires aux Noirs par match
+//   4. Tête de série
+// Les valeurs sont "par match" car les groupes n'ont pas tous la même taille :
+// comparer des totaux bruts avantagerait les joueurs des plus grands groupes.
+function ordreClassementGeneral(seedParPseudo) {
+  // Rang dans le groupe, calculé une fois pour tous.
+  const rangGroupe = {}, buchholz = {}, matchsPoule = {};
+  try {
+    const st = computeStandings();
+    Object.keys(st).forEach(grp => {
+      sortGroup(st[grp]).forEach((pseudo, i) => { rangGroupe[pseudo] = i + 1; });
+      Object.entries(st[grp]).forEach(([pseudo, s]) => {
+        // Buchholz FIGÉ sur les poules : il mesure la force des adversaires
+        // rencontrés en phase de groupes. L'étendre aux finales n'aurait pas de
+        // sens — on y affronte les meilleurs par construction, ce qui récompenserait
+        // simplement d'être allé loin, déjà pris en compte par le tour atteint.
+        buchholz[pseudo] = s.tieBreak || 0;
+        matchsPoule[pseudo] = s.matches || 0;
+      });
+    });
+  } catch (e) { /* poules pas encore générées */ }
+
+  // Tour atteint, uniquement si les finales ont commencé.
+  const finalesLancees = ['finals','finished'].includes(state?.settings?.status);
+  const SEQ = ['16èmes', '8èmes', 'Quarts', 'Demis', 'Finale'];
+  const atteint = {}, gagne = {};
+  if (finalesLancees) {
+    getFinals().forEach(f => {
+      const idx = SEQ.indexOf(f.round);
+      if (idx < 0 || !f.player1 || !f.player2) return;
+      [f.player1, f.player2].forEach(p => {
+        if (atteint[p] === undefined || idx > atteint[p]) atteint[p] = idx;
+      });
+      if (f.winner && (gagne[f.winner] === undefined || idx > gagne[f.winner])) gagne[f.winner] = idx;
+    });
+  }
+  const niveau = p => {
+    const a = atteint[p];
+    if (a === undefined) return -1;
+    return (gagne[p] === a) ? a + 1 : a + 0.5;
+  };
+
+  const parM = (x, champ) => x.m > 0 ? x[champ] / x.m : 0;
+  // Buchholz par match de POULE (et non par match total) : il n'est calculé que
+  // sur les poules, le diviser par les matchs de finales le fausserait.
+  const buchM = pseudo => (matchsPoule[pseudo] > 0) ? buchholz[pseudo] / matchsPoule[pseudo] : 0;
+  return (a, b) =>
+       (niveau(b.pseudo) - niveau(a.pseudo))
+    || ((rangGroupe[a.pseudo] ?? 999) - (rangGroupe[b.pseudo] ?? 999))
+    || (parM(b,'pts') - parM(a,'pts'))
+    || (parM(b,'v') - parM(a,'v'))
+    || (parM(b,'vN') - parM(a,'vN'))
+    || (buchM(b.pseudo) - buchM(a.pseudo))
+    || ((seedParPseudo[a.pseudo] ?? 999) - (seedParPseudo[b.pseudo] ?? 999));
+}
+
 function classementEnCours() {
   // Le détail par couleur est calculé depuis les vrais matchs : ils portent playerWhite
   // et playerBlack, donc rien n'est estimé.
@@ -1861,8 +1928,13 @@ function classementEnCours() {
     }
   });
 
-  const noms = {};
-  getPlayers().forEach(p => { noms[p.nickname] = p.name || null; });
+  const noms = {}, seedParPseudo = {};
+  getPlayers().forEach(p => {
+    noms[p.nickname] = p.name || null;
+    // ⚠️ `typeof` et non `||` : la tête de série n°1 vaut 0 en interne, et
+    // `0 || 999` donnerait 999 — elle deviendrait la pire au lieu de la meilleure.
+    seedParPseudo[p.nickname] = typeof p.seed === 'number' ? p.seed : 999;
+  });
   const joueurs = Object.values(d).map(x => {
     const mCouleurs = x.vB+x.nB+x.dB+x.vN+x.nN+x.dN;
     const m = mCouleurs + x.mF;
@@ -1870,11 +1942,38 @@ function classementEnCours() {
              v: x.vB + x.vN + x.vF,
              pts: x.vB + x.vN + x.vF + 0.5*(x.nB + x.nN + x.nF) };
   });
-  joueurs.sort((a,b) => (b.pts-a.pts) || (b.v-a.v) || (b.vN-a.vN));
+  joueurs.sort(ordreClassementGeneral(seedParPseudo));
   return joueurs.map((j,i) => ({ ...j, rank: i+1 }));
 }
 
 // Cumul de tous les joueurs, toutes éditions confondues (tournoi en cours inclus).
+// Mode de tri de la vue Statistiques. Local à l'appareil : chacun consulte comme
+// il préfère sans influencer les autres.
+let triStatsMode = 'points';
+
+// Trois lectures possibles d'un même palmarès :
+//  points  — ce qu'on a accompli en tout (défaut). Récompense performance ET fidélité,
+//            mais un joueur d'une seule édition part avec un handicap mécanique.
+//  ratio   — le niveau pur, indépendant du nombre d'éditions jouées.
+//  titres  — le palmarès au sens strict : ce qu'on a gagné.
+function triStats(mode) {
+  const parM = (x) => x.m > 0 ? x.pts / x.m : 0;
+  if (mode === 'ratio') return (a,b) =>
+    (parM(b) - parM(a)) || (b.victoires - a.victoires) || (b.podiums - a.podiums) || (b.editions - a.editions);
+  if (mode === 'titres') return (a,b) =>
+    (b.victoires - a.victoires) || (b.podiums - a.podiums) || (a.meilleur - b.meilleur) ||
+    (b.pts - a.pts) || (b.editions - a.editions);
+  // 'points' : total cumulé, puis victoires, victoires aux Noirs, puis les médailles.
+  return (a,b) =>
+    (b.pts - a.pts) || (b.v - a.v) || (b.vN - a.vN) ||
+    (b.victoires - a.victoires) || (b.podiums - a.podiums) || (b.editions - a.editions);
+}
+
+window.setTriStats = function(mode) {
+  triStatsMode = mode;
+  renderPalmares();
+};
+
 function statsCumulees() {
   const acc = {};
   const cle = p => p.trim().toLowerCase();
@@ -1915,9 +2014,7 @@ function statsCumulees() {
     vB:j.vB, nB:j.nB, dB:j.dB, vN:j.vN, nN:j.nN, dN:j.dN
   }));
 
-  return Object.values(acc).sort((a,b) =>
-    (b.victoires - a.victoires) || (b.podiums - a.podiums) ||
-    (a.meilleur - b.meilleur) || (b.editions - a.editions) || (b.pts - a.pts));
+  return Object.values(acc).sort(triStats(triStatsMode));
 }
 
 window.togglePalmaresSection = function(cle) {
@@ -1957,14 +2054,22 @@ function lignePalmares(e, surligne, medailles = true) {
   const affichage = e.name
     ? `${esc(e.name)} <span style="color:#bbb">(${esc(e.pseudo)})</span>`
     : esc(e.pseudo);
+  // Les points sont l'information principale : ils sont mis en avant, le reste
+  // (matchs, victoires) reste secondaire mais redevient lisible.
   const stats = (e.m || e.pts || e.v)
-    ? `<span style="font-size:10px;color:var(--gray);white-space:nowrap">${e.pts??0} ${t('palmares_pts')} · ${e.m??0} ${t('palmares_m')} · ${e.v??0}${t('palmares_v')}</span>`
+    ? `<span style="font-size:12px;color:var(--gray);white-space:nowrap;text-align:right;line-height:1.35">
+         <strong style="font-size:14px;color:var(--dark)">${e.pts??0}</strong> ${t('palmares_pts')}<br>
+         <span style="font-size:11px">${e.m??0} ${t('palmares_m')} · ${e.v??0}${t('palmares_v')}</span>
+       </span>`
     : '';
   const fond = gagnant ? 'background:var(--gold-light);border-radius:8px'
     : surligne ? 'background:#E8F5E9;border-radius:8px' : '';
-  return `<div onclick="voirJoueurPalmares('${esc(e.pseudo).replace(/'/g,"\\'")}')" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:${gagnant||surligne?'8px':'5px'} 8px;${fond};margin-bottom:2px">
-    <span style="width:24px;text-align:center;font-weight:${gagnant?'800':'600'};font-size:${gagnant?'15px':'12px'}">${medaille || e.rank}</span>
-    <span style="flex:1;min-width:0;font-size:${gagnant?'14px':'12px'};font-weight:${gagnant||surligne?'700':'500'}">${affichage}</span>
+  // Le rang/médaille occupe une colonne plus large : une médaille rendue à 12px
+  // était illisible, et les chiffres se serraient.
+  const tailleRang = medaille ? (gagnant ? '22px' : '19px') : (gagnant ? '17px' : '15px');
+  return `<div onclick="voirJoueurPalmares('${esc(e.pseudo).replace(/'/g,"\\'")}')" style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:${gagnant||surligne?'10px':'8px'} 8px;${fond};margin-bottom:3px;border-bottom:1px solid #f2f2f2">
+    <span style="width:32px;text-align:center;font-weight:${gagnant?'800':'700'};font-size:${tailleRang};line-height:1">${medaille || e.rank}</span>
+    <span style="flex:1;min-width:0;font-size:${gagnant?'15px':'14px'};font-weight:${gagnant||surligne?'700':'500'}">${affichage}</span>
     ${stats}
   </div>`;
 }
@@ -1972,6 +2077,10 @@ function lignePalmares(e, surligne, medailles = true) {
 // ── CLASSEMENT GÉNÉRAL EN DIRECT ──
 // Section propre dans l'onglet Infos, indépendante du palmarès : il s'agit du tournoi
 // en cours, pas d'un historique.
+// Vue affichée dans la section Classement. Locale à l'appareil.
+let vueClassement = 'tous';
+window.setVueClassement = function(v) { vueClassement = v; renderLiveRanking(); };
+
 function renderLiveRanking() {
   const el = document.getElementById('live-ranking-content');
   if (!el) return;
@@ -1979,9 +2088,38 @@ function renderLiveRanking() {
   const recherche = '';
   const correspond = () => false;
   const titre = document.getElementById('info-ranking-title');
-  if (titre) titre.textContent = t(finalesLancees ? 'live_rank_qualified_title' : 'live_rank_title');
+  if (titre) titre.textContent = t('live_rank_title');
+
+  // Libellés et état des deux onglets
+  const nbQualifies = state?.settings?.finalistsCount || 8;
+  const bTous = document.getElementById('vue-tous-btn');
+  const bQual = document.getElementById('vue-qualifies-btn');
+  const styleOnglet = (b, actif) => {
+    if (!b) return;
+    b.style.background = actif ? 'var(--gold)' : 'transparent';
+    b.style.color = actif ? '#fff' : 'var(--gray)';
+    b.style.fontWeight = actif ? '700' : '500';
+  };
+  if (bTous) bTous.textContent = t('vue_tous');
+  // Le nombre affiché suit TOUJOURS le réglage admin, jamais une valeur figée.
+  if (bQual) bQual.textContent = t(finalesLancees ? 'vue_qualifies' : 'vue_virtuel').replace('{n}', nbQualifies);
+  styleOnglet(bTous, vueClassement === 'tous');
+  styleOnglet(bQual, vueClassement === 'qualifies');
+
   if (!getGames().length) {
     el.innerHTML = `<div style="color:var(--gray);font-size:12px;text-align:center;padding:8px">${t('palmares_no_result_yet')}</div>`;
+    return;
+  }
+
+  // ── VUE « TOUS LES JOUEURS » : le classement général complet ──
+  if (vueClassement === 'tous') {
+    const tous = classementEnCours().filter(j => j.m > 0);
+    const termine = state?.settings?.status === 'finished';
+    const legende = `<div style="font-size:11.5px;color:var(--gray);margin-top:12px;padding-top:10px;border-top:1px solid #eee;line-height:1.6">${t(finalesLancees ? 'legende_general_finales' : 'legende_general_poules')}</div>`;
+    el.innerHTML = tous.length
+      ? (termine ? '' : `<div style="font-size:11px;color:var(--gray);text-align:center;padding:4px 0 8px">${t('palmares_provisional')}</div>`)
+        + tous.map(e => lignePalmares(e, false, termine)).join('') + legende
+      : `<div style="color:var(--gray);font-size:12px;text-align:center;padding:8px">${t('palmares_no_result_yet')}</div>`;
     return;
   }
     const standings = computeStandings();
@@ -2018,7 +2156,7 @@ function renderLiveRanking() {
             <td style="color:var(--gray)">${seedMap[f.player] ?? '—'}</td>
           </tr>`;
         }).join('')}</tbody></table></div>
-        <div style="font-size:10px;color:var(--gray);margin-top:8px;line-height:1.5">${t('qual_legend')}</div>`
+        <div style="font-size:11.5px;color:var(--gray);margin-top:10px;line-height:1.6">${t('qual_legend')}</div>`
       : `<div style="color:var(--gray);font-size:12px;text-align:center;padding:8px">${t('palmares_no_result_yet')}</div>`;
 
 }
@@ -2039,11 +2177,6 @@ function renderPalmares() {
     `<button class="btn ${actif ? 'btn-gold' : 'btn-gray'}" style="text-align:left;padding:10px 14px;font-size:13px" onclick="togglePalmaresSection('${cle}')">${libelle}</button>`;
 
   let html = btn('stats', '📊 ' + t('palmares_stats_btn'), palmaresSection === 'stats');
-  // Toujours affiché : s'il n'y a pas encore de résultat, la section l'indique.
-  {
-    const nomT = state?.settings?.name || 'Air Base Chess Tour';
-    html += btn('current', '⚔️ ' + esc(nomT) + ' — ' + t('palmares_ongoing'), palmaresSection === 'current');
-  }
   editions.forEach(([id, ed]) => {
     html += btn(id, '🗓️ ' + esc(ed.name || '') + (ed.year ? ' (' + esc(String(ed.year)) + ')' : ''), palmaresSection === id);
   });
@@ -2062,44 +2195,44 @@ function renderPalmares() {
   if (palmaresSection === 'stats') {
     const s = statsCumulees();
     if (!s.length) { el.innerHTML = `<div style="color:var(--gray);font-size:13px;text-align:center">${t('palmares_empty')}</div>`; return; }
-    el.innerHTML = `<div style="font-size:11px;color:var(--gray);margin-bottom:8px">${t('palmares_stats_desc')}</div>` +
+    // Sélecteur de tri : trois lectures d'un même palmarès, au choix du lecteur.
+    const ongletTri = (mode, cle) => `<button onclick="setTriStats('${mode}')" style="flex:1;padding:6px 4px;font-size:11px;font-weight:${triStatsMode===mode?'700':'500'};border:none;border-radius:7px;cursor:pointer;background:${triStatsMode===mode?'var(--gold)':'transparent'};color:${triStatsMode===mode?'#fff':'var(--gray)'}">${t(cle)}</button>`;
+    el.innerHTML = `<div style="font-size:11.5px;color:var(--gray);margin-bottom:8px;line-height:1.5">${t('palmares_stats_desc')}</div>
+      <div style="display:flex;gap:3px;background:#f2f2f2;border-radius:9px;padding:3px;margin-bottom:10px">
+        ${ongletTri('points','tri_points')}${ongletTri('ratio','tri_ratio')}${ongletTri('titres','tri_titres')}
+      </div>` +
       s.map((a,i) => {
         const affichage = a.name ? `${esc(a.name)} <span style="color:#bbb">(${esc(a.pseudo)})</span>` : esc(a.pseudo);
         const surligne = correspond(a);
-        const couleurs = a.aCouleurs ? `<div style="font-size:10px;color:var(--gray);margin-top:2px">
-            ⬜ ${a.vB}${t('palmares_v')} ${a.nB}${t('palmares_n')} ${a.dB}${t('palmares_d')}
-            &nbsp;·&nbsp; ⬛ ${a.vN}${t('palmares_v')} ${a.nN}${t('palmares_n')} ${a.dN}${t('palmares_d')}
+        // 10px était illisible, surtout pour les icônes de couleur. Même échelle
+        // que le reste du palmarès : 12px, avec les chiffres en gras.
+        const couleurs = a.aCouleurs ? `<div style="font-size:12px;color:var(--gray);margin-top:4px;line-height:1.4">
+            <span style="font-size:13px">⬜</span> <strong style="color:var(--dark)">${a.vB}</strong>${t('palmares_v')} ${a.nB}${t('palmares_n')} ${a.dB}${t('palmares_d')}
+            &nbsp;·&nbsp; <span style="font-size:13px">⬛</span> <strong style="color:var(--dark)">${a.vN}</strong>${t('palmares_v')} ${a.nN}${t('palmares_n')} ${a.dN}${t('palmares_d')}
           </div>` : '';
         const detail = a.aStats ? ` · ${a.pts} ${t('palmares_pts')} · ${a.v}${t('palmares_v')}` : '';
         return `<div onclick="voirJoueurPalmares('${esc(a.pseudo).replace(/'/g,"\\'")}')" style="cursor:pointer;padding:6px 8px;${surligne?'background:#E8F5E9;border-radius:8px;':''}border-bottom:1px solid #f0f0f0">
-          <div style="display:flex;align-items:center;gap:8px">
-            <span style="width:24px;text-align:center;font-weight:700;color:var(--gold);font-size:12px">${i+1}</span>
-            <span style="flex:1;min-width:0;font-size:12px;font-weight:${surligne?'700':'500'}">${affichage}</span>
-            <span style="font-size:10px;color:var(--gray);white-space:nowrap;text-align:right">
-              ${a.editions} ${t(a.editions>1?'palmares_editions':'palmares_edition')}${a.victoires?' · 🏆'+a.victoires:''}${detail}
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="width:32px;text-align:center;font-weight:700;color:var(--gold);font-size:15px">${i+1}</span>
+            <span style="flex:1;min-width:0;font-size:14px;font-weight:${surligne?'700':'500'}">${affichage}</span>
+            <span style="font-size:12px;color:var(--gray);white-space:nowrap;text-align:right;line-height:1.35">
+              <strong style="color:var(--dark);font-size:14px">${a.pts??0}</strong> ${t('palmares_pts')}${a.m?' · <strong style="color:var(--dark)">'+(a.pts/a.m).toFixed(2)+'</strong>/'+t('palmares_m'):''}<br>
+              <span style="font-size:11px">${a.editions} ${t(a.editions>1?'palmares_editions':'palmares_edition')}${a.victoires?' · <span style="font-size:13px">🏆</span>'+a.victoires:''}${a.podiums?' · 🎖'+a.podiums:''}</span>
             </span>
           </div>
-          ${couleurs ? '<div style="padding-left:32px">' + couleurs + '</div>' : ''}
+          ${couleurs ? '<div style="padding-left:42px">' + couleurs + '</div>' : ''}
         </div>`;
       }).join('');
     return;
   }
 
-  if (palmaresSection === 'current') {
-    const termine = state?.settings?.status === 'finished';
-    const entete = termine ? '' :
-      `<div style="font-size:11px;color:var(--gray);text-align:center;padding:4px 0 8px">${t('palmares_provisional')}</div>`;
-    el.innerHTML = enCours.length
-      ? entete + enCours.map(e => lignePalmares(e, correspond(e), termine)).join('')
-      : `<div style="color:var(--gray);font-size:12px;text-align:center;padding:8px">${t('palmares_no_result_yet')}</div>`;
-    return;
-  }
 
   const ed = palmares[palmaresSection];
   if (!ed) { el.innerHTML = ''; return; }
   const entries = Object.values(ed.entries || {}).sort((a,b) => (a.rank||999)-(b.rank||999));
+  const legendeEdition = `<div style="font-size:11.5px;color:var(--gray);margin-top:12px;padding-top:10px;border-top:1px solid #eee;line-height:1.6">${t('legende_edition')}</div>`;
   el.innerHTML = entries.length
-    ? entries.map(e => lignePalmares(e, correspond(e))).join('')
+    ? entries.map(e => lignePalmares(e, correspond(e))).join('') + legendeEdition
     : `<div style="color:var(--gray);font-size:12px">${t('palmares_empty_edition')}</div>`;
 }
 
@@ -3713,38 +3846,42 @@ window.resetScores = async function() {
 // Ordre : vainqueur et finalistes d'abord (d'après le bracket), puis le reste des
 // joueurs selon le classement global des poules.
 function buildCurrentRanking() {
-  const finals = getFinals();
-  const ordered = [];
-  const seen = new Set();
-  const add = nick => { if (nick && !seen.has(nick)) { seen.add(nick); ordered.push(nick); } };
+  // Le classement final EST le classement général en direct, une fois le tournoi
+  // terminé : même ordre, sans contradiction possible entre ce que les joueurs ont
+  // vu pendant le tournoi et ce qui est archivé.
+  const ordonne = [...classementEnCours()];
 
-  const finale = finals.find(f => f.round === 'Finale');
-  if (finale && finale.winner) {
-    add(finale.winner);
-    add(finale.winner === finale.player1 ? finale.player2 : finale.player1);
+  // Seule exception : la petite finale, si elle a été jouée, tranche explicitement
+  // les 3e et 4e. Si elle ne l'a pas été, l'ordre général les a déjà départagés —
+  // c'est l'usage des éditions précédentes, où elle n'est pas toujours disputée.
+  const petite = getFinals().find(f => f.round === '3ème place' && f.winner);
+  if (petite) {
+    const perdant = petite.winner === petite.player1 ? petite.player2 : petite.player1;
+    const iW = ordonne.findIndex(x => x.pseudo === petite.winner);
+    const iL = ordonne.findIndex(x => x.pseudo === perdant);
+    if (iW > iL && iW >= 0 && iL >= 0) {
+      const [w] = ordonne.splice(iW, 1);
+      ordonne.splice(iL, 0, w);
+    }
   }
-  const troisieme = finals.find(f => f.round === '3ème place');
-  if (troisieme && troisieme.winner) {
-    add(troisieme.winner);
-    add(troisieme.winner === troisieme.player1 ? troisieme.player2 : troisieme.player1);
-  }
-  // Puis les autres joueurs, dans l'ordre du classement global des poules.
-  const standings = computeStandings();
-  const tous = [];
-  Object.values(standings).forEach(grp => {
-    Object.entries(grp).forEach(([nick, st]) => tous.push({ nick, st }));
-  });
-  tous.sort((a, b) => (b.st.points - a.st.points) || (b.st.totalWins - a.st.totalWins));
-  tous.forEach(x => add(x.nick));
 
   const playersByNick = {};
   getPlayers().forEach(p => { playersByNick[p.nickname] = p; });
-  return ordered.map((nick, i) => ({
-    pseudo: nick,
-    name: playersByNick[nick]?.name || null,
-    rank: i + 1
+  // Statistiques COMPLÈTES archivées : sans elles, les cumuls ne compteraient que
+  // la participation et le détail par couleur serait perdu.
+  return ordonne.map((g, i) => ({
+    pseudo: g.pseudo,
+    name: playersByNick[g.pseudo]?.name || g.name || null,
+    rank: i + 1,
+    vB: g.vB || 0, nB: g.nB || 0, dB: g.dB || 0,
+    vN: g.vN || 0, nN: g.nN || 0, dN: g.dN || 0,
+    m: g.m || 0, v: g.v || 0, pts: g.pts || 0
   }));
 }
+
+
+
+
 
 window.resetAll = async function() {
   if (!isAdmin) return;
@@ -3757,7 +3894,21 @@ window.resetAll = async function() {
   // d'effacer, sinon il serait définitivement perdu.
   const ranking = buildCurrentRanking();
   const palmares = { ...prevPalmares };
-  if (ranking.length && confirm(t('confirm_archive_before_reset'))) {
+  // FILET DE SÉCURITÉ : avant toute réinitialisation, on dépose une copie complète
+  // du tournoi dans `backup/`. Si l'archivage est refusé par erreur, ou si quelque
+  // chose se passe mal, tout reste récupérable. Écrasée à chaque réinitialisation.
+  try {
+    await set(ref(db, 'backup'), {
+      date: new Date().toISOString(),
+      settings: prevSettings || {},
+      players: await get(ref(db,'players')).then(s=>s.exists()?s.val():null),
+      games: await get(ref(db,'games')).then(s=>s.exists()?s.val():null),
+      finals: await get(ref(db,'finals')).then(s=>s.exists()?s.val():null),
+      ranking
+    });
+  } catch(e) { console.log('[ABCT] Sauvegarde avant réinitialisation impossible :', e.message); }
+
+  if (ranking.length && confirm(t('confirm_archive_before_reset').replace('{n}', ranking.length))) {
     const entries = {};
     ranking.forEach((r, i) => { entries['e_' + Date.now() + '_' + i] = r; });
     palmares['ed_' + Date.now()] = {

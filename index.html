@@ -163,8 +163,8 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
       <label style="display:flex;align-items:center;gap:6px;font-size:12px;margin-bottom:5px;cursor:pointer"><input type="checkbox" id="pref-officiel" checked onchange="updateNotifPrefs()"><span id="pref-officiel-label"></span></label>
       <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;margin-bottom:8px"><input type="checkbox" id="pref-match" checked onchange="updateNotifPrefs()"><span id="pref-match-label"></span></label>
       <div id="prefs-loading" style="display:none;font-size:11px;color:var(--gray);margin-bottom:6px"></div>
-      <button class="btn btn-sm" style="width:auto;font-size:11px;padding:3px 12px;background:#EBEBEB;color:#555;margin-bottom:8px" onclick="fermerPrefsPanel()" id="prefs-close-btn">✓ OK</button>
-      <button class="btn btn-sm" style="display:none;width:auto;background:#FDECEA;color:var(--red);font-size:11px" onclick="unsubscribeFromNotifications()" id="notif-disable-btn">🔕 Désactiver les notifications</button>
+      <button class="btn btn-gold" style="width:auto;font-size:13px;padding:7px 22px" onclick="fermerPrefsPanel()" id="prefs-close-btn">✓ OK</button>
+      <button class="btn btn-sm" style="display:none;width:auto;background:#FDECEA;color:var(--red);font-size:11px;margin-top:22px" onclick="unsubscribeFromNotifications()" id="notif-disable-btn">🔕 Désactiver les notifications</button>
     </div>
     <div id="notif-msg" style="font-size:12px;margin-top:4px"></div>
     <div id="home-admin-device-status" style="display:none;font-size:11px;color:var(--gray);margin-top:6px;padding:5px 10px;background:#f8f8f8;border-radius:6px"></div>
@@ -759,14 +759,14 @@ window.cleanGhostSubscriptions = async function() {
       body: JSON.stringify({ pin: sessionStorage.getItem('abct-session-pin') || '' })
     });
     const d = await res.json();
-    if (!res.ok) { showMsg('clean-subs-result', d.error || 'Erreur', false); return; }
+    if (!res.ok) { showMsg('clean-subs-result', d.error || 'Erreur', false, true); return; }
     // Quand rien n'est retiré, dire POURQUOI : le service push peut considérer une
     // adresse comme valide alors que l'appareil ne reçoit plus rien (données
     // effacées). Sans cette explication, on croit que le bouton ne marche pas.
     const txt = (d.cleaned ? t('clean_done').replace('{n}', d.cleaned).replace('{a}', d.alive ?? 0)
                            : t('clean_none').replace('{a}', d.alive ?? 0))
       + (d.adminCleared ? ' ' + t('clean_admin_cleared') : '');
-    showMsg('clean-subs-result', txt);
+    showMsg('clean-subs-result', txt, true, true);
     renderSubsDetail();
     // Rien retiré : on ouvre le détail, car la suppression manuelle est alors la
     // seule voie. Éviter que l'admin ait à deviner l'étape suivante.
@@ -775,7 +775,7 @@ window.cleanGhostSubscriptions = async function() {
       if (box) box.style.display = 'block';
     }
   } catch(e) {
-    showMsg('clean-subs-result', 'Erreur: ' + e.message, false);
+    showMsg('clean-subs-result', 'Erreur: ' + e.message, false, true);
   } finally {
     if (btn) btn.disabled = false;
   }

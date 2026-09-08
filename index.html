@@ -2247,7 +2247,10 @@ function renderPalmares() {
 // Fiche d'un joueur : son parcours à travers toutes les éditions, avec récapitulatif.
 window.ouvrirEditionJoueur = function(id) {
   editionOuverte = (editionOuverte === id) ? null : id;
-  renderPalmaresPlayerCard(document.getElementById('palmares-search')?.value || '');
+  // MÊME source que renderPalmares : la fiche peut avoir été ouverte en cliquant
+  // un joueur (joueurSelectionne) ET NON par la recherche. Ne lire que le champ
+  // de recherche renvoyait une chaîne vide, et la fiche se refermait aussitôt.
+  renderPalmaresPlayerCard((joueurSelectionne || document.getElementById('palmares-search')?.value || '').trim().toLowerCase());
 };
 
 function renderPalmaresPlayerCard(recherche) {

@@ -614,6 +614,11 @@ async function subscribeToNotifications() {
     });
     localStorage.setItem('abct-notif-subid', subId);
     localStorage.setItem('abct-notif', 'on');
+    // Le bandeau d'invitation n'a plus lieu d'être : le joueur vient de s'abonner.
+    // Fermé ICI et non dans le bouton du bandeau, car l'activation peut aussi
+    // venir du bouton de la carte d'accueil — le bandeau restait alors affiché à
+    // proposer ce qui venait d'être fait.
+    masquerInvite();
     recentlySubscribed = true;
     setTimeout(() => { recentlySubscribed = false; }, 5000);
     updateNotifBtn();
@@ -833,6 +838,8 @@ window.fermerInviteNotif = function() {
 };
 
 window.accepterInviteNotif = async function() {
+  // Masqué tout de suite pour libérer l'écran ; en cas d'échec de l'abonnement,
+  // le message d'erreur s'affiche sur la carte, pas dans le bandeau.
   masquerInvite();
   // Le clic est le geste utilisateur qui rend la demande recevable par TOUS les
   // navigateurs. subscribeToNotifications s'occupe de la permission et de
@@ -1055,9 +1062,18 @@ window.toggleNotifications = async function() {
     // désabonne pas quelqu'un sans confirmation.
     toggleNotifPrefsPanel();
   } else {
-    // Vérifier la compatibilité AVANT de montrer le panneau — sinon sur iPhone (onglet
-    // normal, app pas installée) on afficherait des cases à cocher qui ne mèneraient
-    // à rien, et la personne ne le découvrirait qu'après avoir cliqué Valider.
+    // FILET iPhone, EN PREMIER : sur iOS hors app installée, PushManager n'existe
+    // pas — le test ci-dessous sortirait avec un message générique, sans dire
+    // comment faire. Ici on réaffiche la marche à suivre et on rouvre le bandeau,
+    // même s'il avait été fermé trois fois : c'est une demande explicite du joueur.
+    if (estIOS() && !estInstallee()) {
+      showMsg('notif-msg', t('notif_ios_install_first'), false, true);
+      proposerNotifications(true);
+      return;
+    }
+    // Vérifier la compatibilité AVANT de montrer le panneau — sinon on afficherait
+    // des cases à cocher qui ne mèneraient à rien, et la personne ne le
+    // découvrirait qu'après avoir cliqué Valider.
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
       showMsg('notif-msg', t('notif_install_hint'), false, true);
       return;

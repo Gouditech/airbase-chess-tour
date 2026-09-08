@@ -592,6 +592,7 @@ async function subscribeToNotifications() {
       endpoint: subObj.endpoint,
       keys: subObj.keys,
       timestamp: Date.now(),
+      lang: langueCourante(),
       prefs: { officiel: cbO ? cbO.checked : true, match: cbM ? cbM.checked : true }
     });
     localStorage.setItem('abct-notif-subid', subId);
@@ -677,7 +678,7 @@ if ('serviceWorker' in navigator) {
     const nouvelId = btoa(nouveau.endpoint).slice(-20);
     if (ancienId === nouvelId) return;
     const prefs = state?.[SUB_PATH]?.[ancienId]?.prefs || { officiel: true, match: true };
-    await set(ref(db, SUB_PATH + '/' + nouvelId), { endpoint: nouveau.endpoint, keys: nouveau.keys, timestamp: Date.now(), prefs });
+    await set(ref(db, SUB_PATH + '/' + nouvelId), { endpoint: nouveau.endpoint, keys: nouveau.keys, timestamp: Date.now(), lang: langueCourante(), prefs });
     if (ancienId) await set(ref(db, SUB_PATH + '/' + ancienId), null);
     if (state?.settings?.[ADMIN_SUB_KEY] === ancienId) await set(ref(db, 'settings/' + ADMIN_SUB_KEY), nouvelId);
     localStorage.setItem('abct-notif-subid', nouvelId);
@@ -1520,6 +1521,10 @@ const T = {
 
 // ── LANG ──
 let lang = localStorage.getItem('abct-lang') || 'fr';
+// Lecture directe depuis le stockage : utilisable AVANT la déclaration ci-dessus,
+// donc partout. Sert à enregistrer la langue dans l'abonnement, pour que le
+// serveur envoie à chaque joueur la notification dans sa langue.
+window.langueCourante = () => localStorage.getItem('abct-lang') || 'fr';
 function t(key) { return T[lang][key] || T['fr'][key] || key; }
 
 window.setLang = function(l) {
@@ -1531,6 +1536,13 @@ window.setLang = function(l) {
   applyMaintenanceOverlay();
   applyTranslations();
   renderPage(currentPage);
+  // Répercuter la langue sur l'abonnement : sans cela, un joueur qui change de
+  // langue continuerait de recevoir ses notifications dans l'ancienne.
+  const subId = localStorage.getItem('abct-notif-subid');
+  if (subId && localStorage.getItem('abct-notif') === 'on') {
+    set(ref(db, SUB_PATH + '/' + subId + '/lang'), l)
+      .catch(e => console.log('[ABCT] Langue de l\'abonnement non mise à jour :', e.message));
+  }
 };
 
 function applyTranslations() {
@@ -4254,8 +4266,10 @@ function renderHome(){
   const regDeadlineEl = document.getElementById('home-reg-deadline');
   if (regDeadlineEl) {
     if (s.status === 'registration' && s.registrationDeadline) {
-      const d = new Date(s.registrationDeadline);
-      regDeadlineEl.textContent = isNaN(d.getTime()) ? '' : '⏳ ' + t('reg_deadline_until') + ' ' + formatEstimate(d);
+      // Analyse en heure LOCALE : new Date('2026-09-30') vaut minuit UTC, ce qui
+      // affiche la veille sur un appareil réglé sur un fuseau en retard sur UTC.
+      const d = ABCT_DATES.parseDateLocale(s.registrationDeadline);
+      regDeadlineEl.textContent = !d ? '' : '⏳ ' + t('reg_deadline_until') + ' ' + formatEstimate(d);
       regDeadlineEl.style.display = isNaN(d.getTime()) ? 'none' : 'block';
     } else {
       regDeadlineEl.style.display = 'none';
@@ -4666,7 +4680,7 @@ function surDonneesChangees() {
               const o = existing.toJSON();
               const currentSubId = btoa(o.endpoint).slice(-20);
               await set(ref(db, SUB_PATH + '/' + currentSubId), {
-                endpoint: o.endpoint, keys: o.keys, timestamp: Date.now(),
+                endpoint: o.endpoint, keys: o.keys, timestamp: Date.now(), lang: langueCourante(),
                 prefs: { officiel: true, match: true }
               });
               if (currentSubId !== mySubId) localStorage.setItem('abct-notif-subid', currentSubId);
@@ -4786,7 +4800,7 @@ setTimeout(async () => {
           localStorage.setItem('abct-notif-subid', subId);
           if (!state?.[SUB_PATH]?.[subId]) {
             await set(ref(db, SUB_PATH + '/' + subId), {
-              endpoint: o.endpoint, keys: o.keys, timestamp: Date.now(),
+              endpoint: o.endpoint, keys: o.keys, timestamp: Date.now(), lang: langueCourante(),
               prefs: { officiel: true, match: true }
             });
             console.log('État restauré ET entrée Firebase recréée (était absente)');
@@ -4851,7 +4865,7 @@ setTimeout(async () => {
           });
           const o = sub.toJSON();
           const subId = btoa(o.endpoint).slice(-20);
-          await set(ref(db, SUB_PATH + '/' + subId), { endpoint: o.endpoint, keys: o.keys, timestamp: Date.now(), prefs: carriedPrefs || { officiel: true, match: true } });
+          await set(ref(db, SUB_PATH + '/' + subId), { endpoint: o.endpoint, keys: o.keys, timestamp: Date.now(), lang: langueCourante(), prefs: carriedPrefs || { officiel: true, match: true } });
           localStorage.setItem('abct-notif-subid', subId);
           localStorage.removeItem('abct-notif-token');
           console.log('Abonnement push migré (clé VAPID différente)');
@@ -4866,7 +4880,7 @@ setTimeout(async () => {
             // on met à jour le pointeur "appareil admin" s'il désignait l'ancienne.
             const o = old.toJSON();
             const prefs = state?.[SUB_PATH]?.[storedSubId]?.prefs || { officiel: true, match: true };
-            await set(ref(db, SUB_PATH + '/' + currentSubId), { endpoint: o.endpoint, keys: o.keys, timestamp: Date.now(), prefs });
+            await set(ref(db, SUB_PATH + '/' + currentSubId), { endpoint: o.endpoint, keys: o.keys, timestamp: Date.now(), lang: langueCourante(), prefs });
             await set(ref(db, SUB_PATH + '/' + storedSubId), null);
             if (state?.settings?.[ADMIN_SUB_KEY] === storedSubId) {
               await set(ref(db, 'settings/' + ADMIN_SUB_KEY), currentSubId);

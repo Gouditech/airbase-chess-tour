@@ -695,11 +695,20 @@ if ('serviceWorker' in navigator) {
     const nouvelId = btoa(nouveau.endpoint).slice(-20);
     if (ancienId === nouvelId) return;
     const prefs = state?.[SUB_PATH]?.[ancienId]?.prefs || { officiel: true, match: true };
-    await set(ref(db, SUB_PATH + '/' + nouvelId), { endpoint: nouveau.endpoint, keys: nouveau.keys, timestamp: Date.now(), lang: langueCourante(), prefs });
-    if (ancienId) await set(ref(db, SUB_PATH + '/' + ancienId), null);
-    if (state?.settings?.[ADMIN_SUB_KEY] === ancienId) await set(ref(db, 'settings/' + ADMIN_SUB_KEY), nouvelId);
-    localStorage.setItem('abct-notif-subid', nouvelId);
-    console.log('[ABCT] Abonnement renouvelé par le navigateur — migré sans doublon');
+    try {
+      // La NOUVELLE entrée d'abord : si elle échoue, l'ancienne reste en place et
+      // le joueur continue de recevoir. Supprimer avant d'écrire le couperait.
+      await set(ref(db, SUB_PATH + '/' + nouvelId), { endpoint: nouveau.endpoint, keys: nouveau.keys, timestamp: Date.now(), lang: langueCourante(), prefs });
+      // Le pointeur local ensuite : il ne doit désigner que ce qui existe.
+      localStorage.setItem('abct-notif-subid', nouvelId);
+      if (ancienId) await set(ref(db, SUB_PATH + '/' + ancienId), null);
+      if (state?.settings?.[ADMIN_SUB_KEY] === ancienId) await set(ref(db, 'settings/' + ADMIN_SUB_KEY), nouvelId);
+      console.log('[ABCT] Abonnement renouvelé par le navigateur — migré sans doublon');
+    } catch (e) {
+      // Migration incomplète : le bloc « rotation d'adresse » du prochain
+      // démarrage la reprendra, en comparant l'adresse réelle au pointeur local.
+      console.log('[ABCT] Migration d\'abonnement interrompue, reprise au prochain démarrage :', e.message);
+    }
   });
 }
 
@@ -979,21 +988,34 @@ window.updateNotifPrefs = async function() {
 }
 
 window.testNotification = async function() {
+  // TEST DE BOUCLE COMPLÈTE : on demande au SERVEUR d'envoyer une vraie
+  // notification à cet appareil. L'ancien test se contentait d'un affichage local
+  // — il réussissait même si l'entrée Firebase manquait ou si l'adresse était
+  // périmée, donc même quand aucune notification réelle ne serait jamais arrivée.
+  const subId = localStorage.getItem('abct-notif-subid');
+  if (!subId) { showMsg('notif-msg', '❌ ' + t('notif_test_nosub'), false, true); return; }
+  const btn = document.getElementById('notif-test-btn');
+  if (btn) btn.disabled = true;
+  showMsg('notif-msg', t('notif_test_sending'));
   try {
-    const reg = await navigator.serviceWorker.ready;
-    const sub = await reg.pushManager.getSubscription();
-    if (!sub) { showMsg('notif-msg', '❌ ' + t('notif_test_nosub'), false, true); return; }
-    await reg.showNotification(state?.settings?.name || 'Air Base Chess Tour', {
-      body: t('notif_test_body'),
-      icon: '/icon-192.jpg',
-      badge: '/icon-192.jpg',
-      vibrate: [200, 100, 200],
-      tag: 'abct-test',
-      requireInteraction: true
+    const res = await fetch('/.netlify/functions/send-notification', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'test', subId })
     });
-    showMsg('notif-msg', t('notif_test_sent'));
+    const d = await res.json();
+    if (d.ok) {
+      showMsg('notif-msg', t('notif_test_sent'));
+    } else {
+      // Chaque échec dit CE QUI est cassé, pas seulement qu'il y a un problème.
+      const cle = 'notif_' + (d.code || 'test_error');
+      showMsg('notif-msg', '❌ ' + (T[lang]?.[cle] ? t(cle) : (d.detail || 'Erreur')), false, true);
+      updateNotifBtn();   // l'entrée a pu être nettoyée côté serveur
+    }
   } catch(e) {
-    showMsg('notif-msg', '❌ Erreur: ' + e.message, false);
+    showMsg('notif-msg', '❌ ' + t('notif_test_network'), false, true);
+  } finally {
+    if (btn) btn.disabled = false;
   }
 };
 
@@ -1141,7 +1163,7 @@ const T = {
     notif_enabled:"✓ Notifications activées !",
     notif_disabled_warn:"⚠️ Notifications désactivées. Tu ne recevras plus les annonces du tournoi ni les résultats — tu risques de manquer une échéance et d'être déclaré forfait. Réactive-les dès que possible.",notif_cut_server:"⚠️ Tes notifications ont été coupées côté serveur — réactive-les si tu le souhaites.",notif_lost:"⚠️ Tes notifications ne fonctionnaient plus (abonnement perdu par ton navigateur). Réactive-les pour ne pas manquer d'échéance.",
     notif_test_body:"🔔 Ceci est un test de notification.",
-    notif_test_sent:"✓ Notification test envoyée !",
+    notif_test_sending:"📤 Envoi du test en cours…",notif_test_no_entry:"❌ Aucune entrée sur le serveur pour cet appareil. Désactive puis réactive tes notifications.",notif_test_dead:"❌ Ton abonnement n'est plus valide (adresse expirée). Il a été retiré : réactive tes notifications.",notif_test_error:"❌ Le serveur n'a pas pu envoyer. Réessaie dans un instant.",notif_test_network:"❌ Serveur injoignable. Vérifie ta connexion.",notif_test_sent:"✓ Notification test envoyée !",
     notif_test_nosub:"Pas d'abonnement actif. Désactive puis réactive les notifications.",
     notif_enter_msg:"Entrez un message.",
     notif_sent:"✓ Notification enregistrée !",
@@ -1311,7 +1333,7 @@ const T = {
     notif_enabled:"✓ Benachrichtigungen aktiviert!",
     notif_disabled_warn:"⚠️ Benachrichtigungen deaktiviert. Du erhältst keine Turnierankündigungen und Ergebnisse mehr — du riskierst, eine Frist zu verpassen und kampflos zu verlieren. Aktiviere sie so bald wie möglich wieder.",notif_cut_server:"⚠️ Deine Benachrichtigungen wurden serverseitig abgeschaltet — aktiviere sie bei Bedarf erneut.",notif_lost:"⚠️ Deine Benachrichtigungen funktionierten nicht mehr (Abo vom Browser verloren). Aktiviere sie erneut, um keine Frist zu verpassen.",
     notif_test_body:"🔔 Dies ist eine Testbenachrichtigung.",
-    notif_test_sent:"✓ Testbenachrichtigung gesendet!",
+    notif_test_sending:"📤 Test wird gesendet…",notif_test_no_entry:"❌ Kein Eintrag auf dem Server für dieses Gerät. Deaktiviere und aktiviere deine Benachrichtigungen erneut.",notif_test_dead:"❌ Dein Abo ist nicht mehr gültig (Adresse abgelaufen). Es wurde entfernt: aktiviere die Benachrichtigungen erneut.",notif_test_error:"❌ Der Server konnte nicht senden. Versuche es gleich noch einmal.",notif_test_network:"❌ Server nicht erreichbar. Prüfe deine Verbindung.",notif_test_sent:"✓ Testbenachrichtigung gesendet!",
     notif_test_nosub:"Kein aktives Abonnement. Deaktiviere und reaktiviere die Benachrichtigungen.",
     notif_enter_msg:"Bitte eine Nachricht eingeben.",
     notif_sent:"✓ Benachrichtigung gespeichert!",
@@ -1411,7 +1433,7 @@ const T = {
     notif_enabled:"✓ Notifications enabled!",
     notif_disabled_warn:"⚠️ Notifications disabled. You will no longer receive tournament announcements or results — you risk missing a deadline and forfeiting. Re-enable them as soon as possible.",notif_cut_server:"⚠️ Your notifications were cut off server-side — re-enable them if you wish.",notif_lost:"⚠️ Your notifications had stopped working (subscription lost by your browser). Re-enable them so you don't miss a deadline.",
     notif_test_body:"🔔 This is a test notification.",
-    notif_test_sent:"✓ Test notification sent!",
+    notif_test_sending:"📤 Sending test…",notif_test_no_entry:"❌ No entry on the server for this device. Turn your notifications off and on again.",notif_test_dead:"❌ Your subscription is no longer valid (address expired). It was removed: enable notifications again.",notif_test_error:"❌ The server could not send. Try again in a moment.",notif_test_network:"❌ Server unreachable. Check your connection.",notif_test_sent:"✓ Test notification sent!",
     notif_test_nosub:"No active subscription. Disable then re-enable notifications.",
     notif_enter_msg:"Please enter a message.",
     notif_sent:"✓ Notification saved!",
@@ -1543,7 +1565,7 @@ const T = {
     notif_enabled:"✓ Notifiche attivate!",
     notif_disabled_warn:"⚠️ Notifiche disattivate. Non riceverai più gli annunci del torneo né i risultati — rischi di perdere una scadenza e di perdere a tavolino. Riattivale appena possibile.",notif_cut_server:"⚠️ Le tue notifiche sono state disattivate lato server — riattivale se lo desideri.",notif_lost:"⚠️ Le tue notifiche non funzionavano più (abbonamento perso dal browser). Riattivale per non perdere una scadenza.",
     notif_test_body:"🔔 Questa è una notifica di prova.",
-    notif_test_sent:"✓ Notifica di prova inviata!",
+    notif_test_sending:"📤 Invio del test…",notif_test_no_entry:"❌ Nessuna voce sul server per questo dispositivo. Disattiva e riattiva le notifiche.",notif_test_dead:"❌ Il tuo abbonamento non è più valido (indirizzo scaduto). È stato rimosso: riattiva le notifiche.",notif_test_error:"❌ Il server non è riuscito a inviare. Riprova tra poco.",notif_test_network:"❌ Server irraggiungibile. Controlla la connessione.",notif_test_sent:"✓ Notifica di prova inviata!",
     notif_test_nosub:"Nessun abbonamento attivo. Disattiva e riattiva le notifiche.",
     notif_enter_msg:"Inserire un messaggio.",
     notif_sent:"✓ Notifica salvata!",
@@ -4896,8 +4918,10 @@ setTimeout(async () => {
         if (existing) {
           const o = existing.toJSON();
           const subId = btoa(o.endpoint).slice(-20);
-          localStorage.setItem('abct-notif', 'on');
-          localStorage.setItem('abct-notif-subid', subId);
+          // L'écriture Firebase D'ABORD, le drapeau ENSUITE — même ordre que
+          // subscribeToNotifications. Si l'écriture échoue, le catch se déclenche
+          // et le bouton reste gris : mieux vaut demander un clic de plus que
+          // d'afficher « activées » à quelqu'un qui ne recevra rien.
           if (!state?.[SUB_PATH]?.[subId]) {
             await set(ref(db, SUB_PATH + '/' + subId), {
               endpoint: o.endpoint, keys: o.keys, timestamp: Date.now(), lang: langueCourante(),
@@ -4907,6 +4931,8 @@ setTimeout(async () => {
           } else {
             console.log('État notifications restauré depuis le service worker');
           }
+          localStorage.setItem('abct-notif', 'on');
+          localStorage.setItem('abct-notif-subid', subId);
         }
       }
     } catch(e) { console.log('Recovery notif (non bloquant) :', e.message); }

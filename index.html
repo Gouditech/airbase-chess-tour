@@ -4502,7 +4502,21 @@ function renderAdmin(){
     // Show subscriber count
     const subsCount = Object.values(state?.[SUB_PATH] || {}).filter(s => s?.endpoint && s?.keys).length;
     const subsEl = document.getElementById('notif-subscribers-count');
-    if (subsEl) subsEl.textContent = subsCount + (subsCount > 1 ? t('notif_subscribers') : t('notif_subscriber')) + ' aux notifications';
+    if (subsEl) {
+      // Répartition par langue : indique si une annonce mérite d'être écrite
+      // bilingue. Les abonnements antérieurs n'ont pas de langue enregistrée —
+      // ils apparaissent sous « ? » et se résoudront à leur prochaine ouverture.
+      const parLangue = {};
+      Object.values(state?.[SUB_PATH] || {}).forEach(s => {
+        const l = (s && s.lang) ? String(s.lang).toUpperCase() : '?';
+        parLangue[l] = (parLangue[l] || 0) + 1;
+      });
+      const detail = Object.entries(parLangue)
+        .sort((a, b) => b[1] - a[1])
+        .map(([l, n]) => n + ' ' + l).join(' · ');
+      subsEl.textContent = subsCount + (subsCount > 1 ? t('notif_subscribers') : t('notif_subscriber')) + ' aux notifications'
+        + (detail && subsCount ? '  —  ' + detail : '');
+    }
     // Sync auto-notify toggle with Firebase (source of truth)
     const autoNotifCb = document.getElementById('auto-notify-toggle');
     if (autoNotifCb) autoNotifCb.checked = state?.settings?.autoNotifyResults === true;

@@ -462,6 +462,21 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
 </div>
 
 <!-- INSTALL MODAL -->
+<!-- Reconnaissance d'un ancien participant : trois issues claires, dont annuler
+     complètement. Un simple OK/Annuler était trop risqué — un joueur pouvait
+     renommer tout son historique par erreur sans comprendre ce qu'il validait. -->
+<div id="known-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;align-items:center;justify-content:center;padding:16px">
+  <div onclick="event.stopPropagation()" style="background:#fff;border-radius:16px;padding:20px;max-width:400px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.2);max-height:90vh;overflow-y:auto">
+    <div style="font-size:17px;font-weight:800;margin-bottom:14px" id="known-title">👋 On se connaît ?</div>
+    <div style="font-size:13px;line-height:1.65;color:#444" id="known-body"></div>
+    <div style="margin-top:18px;display:flex;flex-direction:column;gap:8px">
+      <button class="btn btn-gold" style="font-size:13px" onclick="knownChoix('garder')" id="known-keep"></button>
+      <button class="btn btn-gray" style="font-size:13px" onclick="knownChoix('changer')" id="known-update"></button>
+      <button class="btn btn-sm" style="width:auto;margin:6px auto 0;font-size:12px;background:#FDECEA;color:var(--red)" onclick="knownChoix('annuler')" id="known-cancel"></button>
+    </div>
+  </div>
+</div>
+
 <div id="install-modal" onclick="closeInstallModal()">
   <div id="install-box" onclick="event.stopPropagation()">
     <h3 id="install-modal-title">Installer l'application</h3>
@@ -975,7 +990,7 @@ const T = {
     reg_title:"S'inscrire au tournoi",reg_nick:"Pseudo Chess.com *",
     reg_nick_hint:"Utilisé pour vous retrouver et vous inviter sur Chess.com",reg_name:"Nom / Nickname *",
     reg_name_hint:"Prénom, surnom ou nom réel — à votre choix",reg_sector:"Secteur / Unité (optionnel)",reg_btn:"S'inscrire",
-    reg_known_player:"👋 Ce pseudo a déjà participé au tournoi ({n} édition(s)), sous le nom « {ancien} ».\n\nTu viens de saisir « {nouveau} ».\n\n✅ OK = utiliser « {nouveau} » partout, y compris dans les éditions passées\n❌ Annuler = ne rien changer aux éditions passées\n\n(Seul le nom affiché change ; les classements et statistiques restent intacts.)",reg_name_updated:"✓ Nom mis à jour dans {n} édition(s) du palmarès.",reg_ok:"Inscription réussie ! Bienvenue ",reg_err_fields:"Pseudo et nom requis.",reg_err_exists:"Ce pseudo est déjà pris.",
+    edition_moved:"✓ Ordre des éditions mis à jour",known_title:"👋 On se connaît ?",known_body:"Le pseudo Chess.com <b>{pseudo}</b> a déjà participé au tournoi (<b>{n}</b> édition(s)), sous le nom <b>« {ancien} »</b>.<br><br>Tu viens de saisir <b>« {nouveau} »</b>.<br><br>Que faire ?",known_keep:"✅ Garder « {ancien} »",known_update:"✏️ Utiliser « {nouveau} » partout",known_cancel:"✕ Annuler l'inscription",reg_name_updated:"✓ Nom mis à jour dans {n} édition(s) du palmarès.",reg_ok:"Inscription réussie ! Bienvenue ",reg_err_fields:"Pseudo et nom requis.",reg_err_exists:"Ce pseudo est déjà pris.",
     players_title:"Joueurs inscrits",
     admin_players_title:"Joueurs",
     notif_prefs_link:"⚙️ Préférences de notification",
@@ -1110,7 +1125,7 @@ const T = {
     reg_title:"Zum Turnier anmelden",reg_nick:"Chess.com-Benutzername *",
     reg_nick_hint:"Wird verwendet, um Sie auf Chess.com zu finden und einzuladen",reg_name:"Name / Nickname *",
     reg_name_hint:"Vorname, Spitzname oder echter Name — Ihre Wahl",reg_sector:"Sektor / Einheit (optional)",reg_btn:"Anmelden",
-    reg_known_player:"👋 Dieses Pseudo hat bereits am Turnier teilgenommen ({n} Ausgabe(n)), unter dem Namen « {ancien} ».\n\nDu hast « {nouveau} » eingegeben.\n\n✅ OK = « {nouveau} » überall verwenden, auch in vergangenen Ausgaben\n❌ Abbrechen = vergangene Ausgaben unverändert lassen\n\n(Nur der angezeigte Name ändert sich; Ranglisten und Statistiken bleiben unberührt.)",reg_name_updated:"✓ Name in {n} Ausgabe(n) der Siegerliste aktualisiert.",reg_ok:"Erfolgreich angemeldet! Willkommen ",reg_err_fields:"Spitzname und Name erforderlich.",reg_err_exists:"Dieser Spitzname ist bereits vergeben.",
+    edition_moved:"✓ Reihenfolge der Ausgaben aktualisiert",known_title:"👋 Kennen wir uns?",known_body:"Das Chess.com-Pseudo <b>{pseudo}</b> hat bereits am Turnier teilgenommen (<b>{n}</b> Ausgabe(n)), unter dem Namen <b>« {ancien} »</b>.<br><br>Du hast <b>« {nouveau} »</b> eingegeben.<br><br>Was möchtest du tun?",known_keep:"✅ « {ancien} » behalten",known_update:"✏️ Überall « {nouveau} » verwenden",known_cancel:"✕ Anmeldung abbrechen",reg_name_updated:"✓ Name in {n} Ausgabe(n) der Siegerliste aktualisiert.",reg_ok:"Erfolgreich angemeldet! Willkommen ",reg_err_fields:"Spitzname und Name erforderlich.",reg_err_exists:"Dieser Spitzname ist bereits vergeben.",
     players_title:"Angemeldete Spieler",
     admin_players_title:"Spieler",
     notif_prefs_link:"⚙️ Benachrichtigungseinstellungen",
@@ -1244,7 +1259,7 @@ const T = {
     reg_title:"Register for the tournament",reg_nick:"Chess.com username *",
     reg_nick_hint:"Used to find and invite you on Chess.com",reg_name:"Name / Nickname *",
     reg_name_hint:"First name, nickname or real name — your choice",reg_sector:"Sector / Unit (optional)",reg_btn:"Register",
-    reg_known_player:"👋 This username has already taken part ({n} edition(s)), under the name « {ancien} ».\n\nYou entered « {nouveau} ».\n\n✅ OK = use « {nouveau} » everywhere, including past editions\n❌ Cancel = leave past editions unchanged\n\n(Only the displayed name changes; rankings and statistics stay intact.)",reg_name_updated:"✓ Name updated in {n} edition(s) of the hall of fame.",reg_ok:"Registration successful! Welcome ",reg_err_fields:"Nickname and name are required.",reg_err_exists:"This nickname is already taken.",
+    edition_moved:"✓ Edition order updated",known_title:"👋 Do we know each other?",known_body:"The Chess.com username <b>{pseudo}</b> has already taken part (<b>{n}</b> edition(s)), under the name <b>« {ancien} »</b>.<br><br>You entered <b>« {nouveau} »</b>.<br><br>What would you like to do?",known_keep:"✅ Keep « {ancien} »",known_update:"✏️ Use « {nouveau} » everywhere",known_cancel:"✕ Cancel registration",reg_name_updated:"✓ Name updated in {n} edition(s) of the hall of fame.",reg_ok:"Registration successful! Welcome ",reg_err_fields:"Nickname and name are required.",reg_err_exists:"This nickname is already taken.",
     players_title:"Registered players",
     admin_players_title:"Players",
     notif_prefs_link:"⚙️ Notification preferences",
@@ -1378,7 +1393,7 @@ const T = {
     reg_title:"Iscriversi al torneo",reg_nick:"Nome utente Chess.com *",
     reg_nick_hint:"Utilizzato per trovarti e invitarti su Chess.com",reg_name:"Nome / Nickname *",
     reg_name_hint:"Nome, soprannome o nome reale — a tua scelta",reg_sector:"Settore / Unità (opzionale)",reg_btn:"Iscriversi",
-    reg_known_player:"👋 Questo pseudonimo ha già partecipato al torneo ({n} edizione/i), con il nome « {ancien} ».\n\nHai inserito « {nouveau} ».\n\n✅ OK = usare « {nouveau} » ovunque, anche nelle edizioni passate\n❌ Annulla = lasciare invariate le edizioni passate\n\n(Cambia solo il nome visualizzato; classifiche e statistiche restano intatte.)",reg_name_updated:"✓ Nome aggiornato in {n} edizione/i dell'albo d'oro.",reg_ok:"Iscrizione riuscita! Benvenuto/a ",reg_err_fields:"Soprannome e nome richiesti.",reg_err_exists:"Questo soprannome è già utilizzato.",
+    edition_moved:"✓ Ordine delle edizioni aggiornato",known_title:"👋 Ci conosciamo?",known_body:"Lo pseudonimo Chess.com <b>{pseudo}</b> ha già partecipato al torneo (<b>{n}</b> edizione/i), con il nome <b>« {ancien} »</b>.<br><br>Hai inserito <b>« {nouveau} »</b>.<br><br>Cosa vuoi fare?",known_keep:"✅ Mantenere « {ancien} »",known_update:"✏️ Usare « {nouveau} » ovunque",known_cancel:"✕ Annullare l'iscrizione",reg_name_updated:"✓ Nome aggiornato in {n} edizione/i dell'albo d'oro.",reg_ok:"Iscrizione riuscita! Benvenuto/a ",reg_err_fields:"Soprannome e nome richiesti.",reg_err_exists:"Questo soprannome è già utilizzato.",
     players_title:"Giocatori iscritti",
     admin_players_title:"Giocatori",
     notif_prefs_link:"⚙️ Preferenze di notifica",
@@ -2567,6 +2582,31 @@ async function renumberPalmaresEntries(editionId) {
 // les listes complètes sont longues, on n'en affiche qu'une à la fois.
 let editionAdminOuverte = null;
 
+// Déplace une édition d'un cran. On réécrit le champ `order` des DEUX éditions
+// échangées uniquement : aucune autre donnée n'est touchée.
+window.deplacerEdition = async function(id, dir) {
+  if (!isAdmin) return;
+  const liste = Object.entries(state?.palmares || {})
+    .sort((a,b) => (a[1].order ?? 0) - (b[1].order ?? 0));
+  const i = liste.findIndex(([x]) => x === id);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= liste.length) return;
+  // Réattribuer des rangs propres (0,1,2...) évite les ex æquo si les `order`
+  // d'origine étaient identiques ou absents.
+  liste.forEach(([, ed], k) => { ed.order = k; });
+  const tmp = liste[i][1].order;
+  liste[i][1].order = liste[j][1].order;
+  liste[j][1].order = tmp;
+  try {
+    for (const [idEd, ed] of liste) {
+      await set(ref(db, 'palmares/' + idEd + '/order'), ed.order);
+    }
+    showToast(t('edition_moved'), true);
+  } catch (e) {
+    showToast('Erreur: ' + e.message, false);
+  }
+};
+
 window.togglePalmaresAdminEdition = function(id) {
   editionAdminOuverte = (editionAdminOuverte === id) ? null : id;
   renderPalmaresAdmin();
@@ -2585,11 +2625,21 @@ function renderPalmaresAdmin() {
     const entries = Object.entries(ed.entries||{}).sort((a,b)=>(a[1].rank||999)-(b[1].rank||999));
     const ouverte = editionAdminOuverte === id;
     if (!ouverte) {
-      // Repliée : juste un bouton avec le nom, l'année et le nombre de joueurs.
-      return `<button class="btn btn-gray" style="text-align:left;padding:10px 14px;font-size:13px;margin-bottom:6px;width:100%" onclick="togglePalmaresAdminEdition('${id}')">
-        🗓️ ${esc(ed.name||'')}${ed.year ? ' (' + esc(String(ed.year)) + ')' : ''}
-        <span style="color:var(--gray);font-size:11px">— ${entries.length} ${t(entries.length>1?'palmares_players':'palmares_player')}</span>
-      </button>`;
+      // Repliée : le nom, l'année, le nombre de joueurs, et deux flèches pour
+      // réordonner. L'ordre choisi ici vaut partout : boutons du palmarès,
+      // fiches des joueurs, sélection du nom le plus récent à l'inscription.
+      const i = editions.findIndex(([x]) => x === id);
+      const fl = (dir, dis, sym) => `<button onclick="event.stopPropagation();deplacerEdition('${id}',${dir})" ${dis?'disabled':''} style="border:none;background:none;font-size:15px;line-height:1;padding:2px 5px;cursor:${dis?'default':'pointer'};color:${dis?'#ddd':'#333'}">${sym}</button>`;
+      return `<div style="display:flex;align-items:center;gap:4px;margin-bottom:6px">
+        <button class="btn btn-gray" style="text-align:left;padding:10px 14px;font-size:13px;flex:1;margin:0" onclick="togglePalmaresAdminEdition('${id}')">
+          🗓️ ${esc(ed.name||'')}${ed.year ? ' (' + esc(String(ed.year)) + ')' : ''}
+          <span style="color:var(--gray);font-size:11px">— ${entries.length} ${t(entries.length>1?'palmares_players':'palmares_player')}</span>
+        </button>
+        <div style="display:flex;flex-direction:column">
+          ${fl(-1, i === 0, '▲')}
+          ${fl(1, i === editions.length - 1, '▼')}
+        </div>
+      </div>`;
     }
     const champStat = (eid, k, v) =>
       `<input id="pe-${k}-${eid}" type="number" min="0" inputmode="numeric" value="${v ?? 0}" onchange="updatePalmaresEntry('${id}','${eid}')" style="width:30px;padding:3px 2px;border:1px solid #e5e5e5;border-radius:4px;font-size:10px;text-align:center">`;
@@ -2821,6 +2871,32 @@ window.confirmUnregister = function(id, nickname) {
 
 // Cherche un pseudo dans le palmarès. Renvoie le nom le plus récemment utilisé et
 // le nombre d'éditions, ou null si le joueur n'y figure pas.
+// Ouvre la fenêtre et renvoie le choix du joueur : 'garder', 'changer' ou 'annuler'.
+// Une promesse plutôt qu'un confirm() : trois issues au lieu de deux, et un texte
+// lisible où chaque bouton dit exactement ce qu'il fait.
+let knownResolve = null;
+function demanderReconnaissance(pseudo, ancienNom, nouveauNom, nbEditions) {
+  return new Promise(resolve => {
+    knownResolve = resolve;
+    const rempl = s => String(s)
+      .replace(/\{pseudo\}/g, esc(pseudo))
+      .replace(/\{ancien\}/g, esc(ancienNom))
+      .replace(/\{nouveau\}/g, esc(nouveauNom))
+      .replace(/\{n\}/g, nbEditions);
+    document.getElementById('known-title').textContent = t('known_title');
+    document.getElementById('known-body').innerHTML = rempl(t('known_body'));
+    document.getElementById('known-keep').textContent = rempl(t('known_keep'));
+    document.getElementById('known-update').textContent = rempl(t('known_update'));
+    document.getElementById('known-cancel').textContent = t('known_cancel');
+    const m = document.getElementById('known-modal');
+    m.style.display = 'flex';
+  });
+}
+window.knownChoix = function(choix) {
+  document.getElementById('known-modal').style.display = 'none';
+  if (knownResolve) { const r = knownResolve; knownResolve = null; r(choix); }
+};
+
 function trouverDansPalmares(pseudo) {
   const q = pseudo.trim().toLowerCase();
   const editions = Object.entries(state?.palmares || {})
@@ -2872,21 +2948,23 @@ window.registerPlayer = async function() {
   // se regroupent sur le pseudo), mais le palmarès afficherait des noms différents
   // pour la même personne. On propose donc d'harmoniser.
   const ancien = trouverDansPalmares(nick);
+  let nomFinal = name;
   if (ancien && ancien.name && ancien.name.trim().toLowerCase() !== name.toLowerCase()) {
-    const msg = t('reg_known_player')
-      .replace('{ancien}', ancien.name)
-      .replace('{nouveau}', name)
-      .replace('{n}', ancien.editions);
-    if (confirm(msg)) {
-      // OK = harmoniser sur le nom saisi aujourd'hui, dans toutes les éditions.
-      // Seul le champ `name` est touché : rangs et statistiques restent intacts.
+    const choix = await demanderReconnaissance(nick, ancien.name, name, ancien.editions);
+    if (choix === 'annuler') { btn.disabled = false; return; }   // inscription abandonnée
+    if (choix === 'garder') {
+      // Le joueur confirme son ancien nom : on l'utilise pour cette inscription,
+      // et on ne touche à rien dans le palmarès.
+      nomFinal = ancien.name;
+    } else {
+      // Harmonisation : seul le champ `name` est réécrit, entrée par entrée.
       const n = await harmoniserNomPalmares(nick, name);
-      showMsg('reg-msg', t('reg_name_updated').replace('{n}', n), true, true);
+      showMsg('reg-msg', t('reg_name_updated').replace(/\{n\}/g, n), true, true);
     }
   }
 
   const id=genId();
-  await set(ref(db,'players/'+id),{nickname:nick,name,sector,group:null,seed:Object.keys(players).length});
+  await set(ref(db,'players/'+id),{nickname:nick,name:nomFinal,sector,group:null,seed:Object.keys(players).length});
   document.getElementById('reg-nick').value='';
   document.getElementById('reg-name').value='';
   document.getElementById('reg-sector').value='';

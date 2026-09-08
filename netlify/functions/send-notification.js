@@ -6,10 +6,10 @@ const webpush = require('web-push');
 // les destinataires par langue et on envoie a chacun le texte qui lui convient.
 // Les abonnements anterieurs, sans langue, recoivent le francais.
 const TEXTES = {
-  fr: { victoire: '🏆 Victoire : ', nul: '🤝 Match nul' },
-  de: { victoire: '🏆 Sieg: ',      nul: '🤝 Remis' },
-  en: { victoire: '🏆 Winner: ',    nul: '🤝 Draw' },
-  it: { victoire: '🏆 Vittoria: ',  nul: '🤝 Patta' }
+  fr: { victoire: '🏆 Victoire : ', nul: '🤝 Match nul', test: '✅ Test réussi — tes notifications fonctionnent.' },
+  de: { victoire: '🏆 Sieg: ',      nul: '🤝 Remis', test: '✅ Test erfolgreich — deine Benachrichtigungen funktionieren.' },
+  en: { victoire: '🏆 Winner: ',    nul: '🤝 Draw', test: '✅ Test successful — your notifications are working.' },
+  it: { victoire: '🏆 Vittoria: ',  nul: '🤝 Patta', test: '✅ Test riuscito — le tue notifiche funzionano.' }
 };
 function txt(lang, cle) { return (TEXTES[lang] || TEXTES.fr)[cle]; }
 
@@ -135,6 +135,38 @@ exports.handler = async function (event) {
     let subscriptions = Object.entries(subsObj || {})
       .filter(([, s]) => s && s.endpoint && s.keys)
       .map(([id, s]) => ({ ...s, __id: id }));
+    // ── TEST DE BOUCLE COMPLETE ──
+    // Envoie une VRAIE notification push au seul appareil qui la demande, par le
+    // meme circuit qu'une annonce : Firebase -> cette fonction -> cles VAPID ->
+    // service push -> telephone. Contrairement a un affichage local, ce test
+    // detecte une entree Firebase absente, une adresse perimee ou une cle mal
+    // configuree — c'est-a-dire tout ce qui empecherait vraiment de recevoir.
+    if (parsed.action === 'test') {
+      const cible = (subsObj || {})[parsed.subId];
+      if (!cible || !cible.endpoint || !cible.keys)
+        return { statusCode: 200, headers, body: JSON.stringify({ ok: false, code: 'test_no_entry' }) };
+      try {
+        await webpush.sendNotification(
+          { endpoint: cible.endpoint, keys: { p256dh: cible.keys.p256dh, auth: cible.keys.auth } },
+          JSON.stringify({
+            title: 'Air Base Chess Tour',
+            body: txt(cible.lang || 'fr', 'test'),
+            icon: '/icon-192.jpg',
+            url: 'https://airbasechesstour.netlify.app/'
+          }),
+          { TTL: 60, urgency: 'high' }
+        );
+        return { statusCode: 200, headers, body: JSON.stringify({ ok: true, code: 'test_sent' }) };
+      } catch (e) {
+        // 404/410 : l'adresse est morte. On nettoie, comme a chaque envoi reel.
+        if (e.statusCode === 404 || e.statusCode === 410) {
+          await fbWrite(SUB_PATH + '/' + parsed.subId, null).catch(() => {});
+          return { statusCode: 200, headers, body: JSON.stringify({ ok: false, code: 'test_dead' }) };
+        }
+        return { statusCode: 200, headers, body: JSON.stringify({ ok: false, code: 'test_error', detail: String(e.statusCode || e.message) }) };
+      }
+    }
+
     const adminKey = IS_DEV ? 'adminSubIdDev' : 'adminSubId';
     const adminSubId = await fbRead('settings/' + adminKey).catch(() => null);
     const subAdmin = adminSubId ? (subsObj || {})[adminSubId] : null;

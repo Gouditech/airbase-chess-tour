@@ -2419,7 +2419,10 @@ function renderPalmaresPlayerCard(recherche) {
   if (!q) { box.style.display = 'none'; return; }
 
   const palmares = state?.palmares || {};
-  const editions = Object.entries(palmares).sort((a,b)=>(a[1].order||0)-(b[1].order||0));
+  // MÊME ordre que les boutons du palmarès (order décroissant) : deux vues du
+  // même historique ne doivent pas se contredire. C'est l'ordre choisi par l'admin
+  // avec les flèches ▲▼.
+  const editions = Object.entries(palmares).sort((a,b) => (b[1].order||0) - (a[1].order||0));
   const parcours = [];
   // On retient le nom ET le pseudo : chercher un pseudo pour ne voir qu'un nom
   // ne permet pas de savoir si on est tombé sur le bon joueur.
@@ -2574,6 +2577,12 @@ function findKnownName(pseudo, excludeEditionId) {
   return joueur?.name || null;
 }
 
+// Rang le plus élevé du palmarès, ou -1 s'il est vide.
+function maxOrderPalmares() {
+  const vals = Object.values(state?.palmares || {}).map(e => typeof e?.order === 'number' ? e.order : 0);
+  return vals.length ? Math.max(...vals) : -1;
+}
+
 window.addPalmaresEdition = async function() {
   if (!isAdmin) return;
   const nameEl = document.getElementById('new-edition-name');
@@ -2581,7 +2590,11 @@ window.addPalmaresEdition = async function() {
   const name = nameEl?.value?.trim();
   if (!name) { showMsg('palmares-admin-msg', t('palmares_name_required'), false); return; }
   const year = yearEl?.value?.trim() || null;
-  const existing = Object.keys(state?.palmares || {}).length;
+  // Le plus récent en haut : on prend le MAXIMUM existant + 1, pas le nombre
+  // d'éditions. Après une suppression, les numéros ne sont plus contigus et
+  // compter les entrées donnerait un rang déjà pris — la nouvelle édition
+  // atterrirait au milieu de la liste.
+  const existing = maxOrderPalmares() + 1;
   const id = 'ed_' + Date.now();
   await set(ref(db, 'palmares/' + id), { name, year, order: existing, entries: {} });
   if (nameEl) nameEl.value = '';
@@ -2729,14 +2742,17 @@ let editionAdminOuverte = null;
 // échangées uniquement : aucune autre donnée n'est touchée.
 window.deplacerEdition = async function(id, dir) {
   if (!isAdmin) return;
+  // Trié comme l'affichage : « monter » doit faire monter à l'écran.
   const liste = Object.entries(state?.palmares || {})
-    .sort((a,b) => (a[1].order ?? 0) - (b[1].order ?? 0));
+    .sort((a,b) => (b[1].order ?? 0) - (a[1].order ?? 0));
   const i = liste.findIndex(([x]) => x === id);
   const j = i + dir;
   if (i < 0 || j < 0 || j >= liste.length) return;
   // Réattribuer des rangs propres (0,1,2...) évite les ex æquo si les `order`
   // d'origine étaient identiques ou absents.
-  liste.forEach(([, ed], k) => { ed.order = k; });
+  // Rangs réattribués à l'envers de l'affichage : le premier de la liste doit
+  // porter l'order le PLUS ÉLEVÉ, puisque l'affichage est décroissant.
+  liste.forEach(([, ed], k) => { ed.order = liste.length - 1 - k; });
   const tmp = liste[i][1].order;
   liste[i][1].order = liste[j][1].order;
   liste[j][1].order = tmp;
@@ -2759,7 +2775,11 @@ function renderPalmaresAdmin() {
   const el = document.getElementById('palmares-admin-content');
   if (!el) return;
   const palmares = state?.palmares || {};
-  const editions = Object.entries(palmares).sort((a,b) => (a[1].order||0)-(b[1].order||0));
+  const editions = Object.entries(palmares)
+    // MÊME ordre que le palmarès public : sans cela, l'admin ordonne dans un sens
+    // et les joueurs voient l'inverse. Les flèches ▲▼ agissent donc sur ce que
+    // l'admin a réellement sous les yeux.
+    .sort((a,b) => (b[1].order||0) - (a[1].order||0));
   if (!editions.length) {
     el.innerHTML = `<div style="color:var(--gray);font-size:12px">${t('palmares_empty')}</div>`;
     return;
@@ -4228,7 +4248,7 @@ window.resetAll = async function() {
     palmares['ed_' + Date.now()] = {
       name: prevSettings?.name || 'Air Base Chess Tour',
       year: String(new Date().getFullYear()),
-      order: Object.keys(prevPalmares).length,
+      order: (Object.values(prevPalmares).length ? Math.max(...Object.values(prevPalmares).map(e => typeof e?.order === 'number' ? e.order : 0)) : -1) + 1,
       entries
     };
   }

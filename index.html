@@ -975,7 +975,7 @@ const T = {
     reg_title:"S'inscrire au tournoi",reg_nick:"Pseudo Chess.com *",
     reg_nick_hint:"Utilisé pour vous retrouver et vous inviter sur Chess.com",reg_name:"Nom / Nickname *",
     reg_name_hint:"Prénom, surnom ou nom réel — à votre choix",reg_sector:"Secteur / Unité (optionnel)",reg_btn:"S'inscrire",
-    reg_ok:"Inscription réussie ! Bienvenue ",reg_err_fields:"Pseudo et nom requis.",reg_err_exists:"Ce pseudo est déjà pris.",
+    reg_known_player:"👋 Ce pseudo a déjà participé au tournoi ({n} édition(s)), sous le nom « {ancien} ».\n\nTu viens de saisir « {nouveau} ».\n\n✅ OK = utiliser « {nouveau} » partout, y compris dans les éditions passées\n❌ Annuler = ne rien changer aux éditions passées\n\n(Seul le nom affiché change ; les classements et statistiques restent intacts.)",reg_name_updated:"✓ Nom mis à jour dans {n} édition(s) du palmarès.",reg_ok:"Inscription réussie ! Bienvenue ",reg_err_fields:"Pseudo et nom requis.",reg_err_exists:"Ce pseudo est déjà pris.",
     players_title:"Joueurs inscrits",
     admin_players_title:"Joueurs",
     notif_prefs_link:"⚙️ Préférences de notification",
@@ -1110,7 +1110,7 @@ const T = {
     reg_title:"Zum Turnier anmelden",reg_nick:"Chess.com-Benutzername *",
     reg_nick_hint:"Wird verwendet, um Sie auf Chess.com zu finden und einzuladen",reg_name:"Name / Nickname *",
     reg_name_hint:"Vorname, Spitzname oder echter Name — Ihre Wahl",reg_sector:"Sektor / Einheit (optional)",reg_btn:"Anmelden",
-    reg_ok:"Erfolgreich angemeldet! Willkommen ",reg_err_fields:"Spitzname und Name erforderlich.",reg_err_exists:"Dieser Spitzname ist bereits vergeben.",
+    reg_known_player:"👋 Dieses Pseudo hat bereits am Turnier teilgenommen ({n} Ausgabe(n)), unter dem Namen « {ancien} ».\n\nDu hast « {nouveau} » eingegeben.\n\n✅ OK = « {nouveau} » überall verwenden, auch in vergangenen Ausgaben\n❌ Abbrechen = vergangene Ausgaben unverändert lassen\n\n(Nur der angezeigte Name ändert sich; Ranglisten und Statistiken bleiben unberührt.)",reg_name_updated:"✓ Name in {n} Ausgabe(n) der Siegerliste aktualisiert.",reg_ok:"Erfolgreich angemeldet! Willkommen ",reg_err_fields:"Spitzname und Name erforderlich.",reg_err_exists:"Dieser Spitzname ist bereits vergeben.",
     players_title:"Angemeldete Spieler",
     admin_players_title:"Spieler",
     notif_prefs_link:"⚙️ Benachrichtigungseinstellungen",
@@ -1244,7 +1244,7 @@ const T = {
     reg_title:"Register for the tournament",reg_nick:"Chess.com username *",
     reg_nick_hint:"Used to find and invite you on Chess.com",reg_name:"Name / Nickname *",
     reg_name_hint:"First name, nickname or real name — your choice",reg_sector:"Sector / Unit (optional)",reg_btn:"Register",
-    reg_ok:"Registration successful! Welcome ",reg_err_fields:"Nickname and name are required.",reg_err_exists:"This nickname is already taken.",
+    reg_known_player:"👋 This username has already taken part ({n} edition(s)), under the name « {ancien} ».\n\nYou entered « {nouveau} ».\n\n✅ OK = use « {nouveau} » everywhere, including past editions\n❌ Cancel = leave past editions unchanged\n\n(Only the displayed name changes; rankings and statistics stay intact.)",reg_name_updated:"✓ Name updated in {n} edition(s) of the hall of fame.",reg_ok:"Registration successful! Welcome ",reg_err_fields:"Nickname and name are required.",reg_err_exists:"This nickname is already taken.",
     players_title:"Registered players",
     admin_players_title:"Players",
     notif_prefs_link:"⚙️ Notification preferences",
@@ -1378,7 +1378,7 @@ const T = {
     reg_title:"Iscriversi al torneo",reg_nick:"Nome utente Chess.com *",
     reg_nick_hint:"Utilizzato per trovarti e invitarti su Chess.com",reg_name:"Nome / Nickname *",
     reg_name_hint:"Nome, soprannome o nome reale — a tua scelta",reg_sector:"Settore / Unità (opzionale)",reg_btn:"Iscriversi",
-    reg_ok:"Iscrizione riuscita! Benvenuto/a ",reg_err_fields:"Soprannome e nome richiesti.",reg_err_exists:"Questo soprannome è già utilizzato.",
+    reg_known_player:"👋 Questo pseudonimo ha già partecipato al torneo ({n} edizione/i), con il nome « {ancien} ».\n\nHai inserito « {nouveau} ».\n\n✅ OK = usare « {nouveau} » ovunque, anche nelle edizioni passate\n❌ Annulla = lasciare invariate le edizioni passate\n\n(Cambia solo il nome visualizzato; classifiche e statistiche restano intatte.)",reg_name_updated:"✓ Nome aggiornato in {n} edizione/i dell'albo d'oro.",reg_ok:"Iscrizione riuscita! Benvenuto/a ",reg_err_fields:"Soprannome e nome richiesti.",reg_err_exists:"Questo soprannome è già utilizzato.",
     players_title:"Giocatori iscritti",
     admin_players_title:"Giocatori",
     notif_prefs_link:"⚙️ Preferenze di notifica",
@@ -2018,6 +2018,10 @@ window.togglePalmaresSection = function(cle) {
 // Joueur choisi en cliquant une ligne. Séparé du champ de recherche pour ne pas y
 // laisser un nom qui resterait affiché ensuite. Purement local à cet appareil.
 let joueurSelectionne = null;
+// Édition dépliée dans la fiche joueur (une seule à la fois). Déclarée ici, avec
+// joueurSelectionne : `let` n'est pas hissé, une déclaration plus bas ferait
+// planter voirJoueurPalmares qui l'utilise.
+let editionOuverte = null;
 
 window.onPalmaresSearch = function() {
   joueurSelectionne = null; // taper une recherche annule la sélection par clic
@@ -2026,6 +2030,7 @@ window.onPalmaresSearch = function() {
 
 window.voirJoueurPalmares = function(pseudo) {
   joueurSelectionne = pseudo;
+  editionOuverte = null;   // repartir replié quand on change de joueur
   renderPalmares();
   const fiche = document.getElementById('palmares-player-card');
   if (fiche && fiche.scrollIntoView) fiche.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -2101,7 +2106,11 @@ function renderLiveRanking() {
     const s = f.stats;
     const nrm = v => s.matches > 0 ? v / s.matches : 0;
     const surligne = correspond({pseudo:f.player, name:noms[f.player]});
-    const aff = noms[f.player] ? esc(noms[f.player]) : esc(f.player);
+    // Nom ET pseudo, comme au palmarès : sans le pseudo, impossible de savoir
+    // avec certitude de quel joueur il s'agit.
+    const aff = noms[f.player]
+      ? esc(noms[f.player]) + ' <span style="color:#bbb;font-weight:400">(' + esc(f.player) + ')</span>'
+      : esc(f.player);
     const qualifie = i < nbQualifies;
     return `<tr onclick="voirJoueurPalmares('${esc(f.player).replace(/'/g,"\\'")}')" style="cursor:pointer;${surligne?'background:#E8F5E9':(qualifie?'background:#FFFDF5':'')}">
       <td><strong style="color:${qualifie?'var(--gold)':'var(--gray)'}">${i+1}</strong></td>
@@ -2236,6 +2245,11 @@ function renderPalmares() {
 }
 
 // Fiche d'un joueur : son parcours à travers toutes les éditions, avec récapitulatif.
+window.ouvrirEditionJoueur = function(id) {
+  editionOuverte = (editionOuverte === id) ? null : id;
+  renderPalmaresPlayerCard(document.getElementById('palmares-search')?.value || '');
+};
+
 function renderPalmaresPlayerCard(recherche) {
   const box = document.getElementById('palmares-player-card');
   if (!box) return;
@@ -2256,7 +2270,8 @@ function renderPalmaresPlayerCard(recherche) {
     if (e) {
       if (!nom) nom = e.name || null;
       if (!pseudo) pseudo = e.pseudo;
-      parcours.push({ edition: ed.name || '', annee: ed.year || '', rang: e.rank, total: entries.length });
+      parcours.push({ id, edition: ed.name || '', annee: ed.year || '', rang: e.rank, total: entries.length,
+        st: { pts:e.pts, m:e.m, v:e.v, vB:e.vB, nB:e.nB, dB:e.dB, vN:e.vN, nN:e.nN, dN:e.dN } });
     }
   });
   // Inclut aussi le tournoi en cours s'il a démarré.
@@ -2265,7 +2280,8 @@ function renderPalmaresPlayerCard(recherche) {
   if (moi) {
     if (!nom) nom = moi.name || null;
     if (!pseudo) pseudo = moi.pseudo;
-    parcours.push({ edition: state?.settings?.name || '', annee: t('palmares_ongoing'), rang: moi.rank, total: enCours.length });
+    parcours.push({ id: 'current', edition: state?.settings?.name || '', annee: t('palmares_ongoing'), rang: moi.rank, total: enCours.length,
+      st: { pts:moi.pts, m:moi.m, v:moi.v, vB:moi.vB, nB:moi.nB, dB:moi.dB, vN:moi.vN, nN:moi.nN, dN:moi.dN } });
   }
   // Titre : "Nom (pseudo)" si les deux existent, sinon le pseudo seul.
   const titreJoueur = nom
@@ -2282,12 +2298,28 @@ function renderPalmaresPlayerCard(recherche) {
   const podiums = parcours.filter(p => p.rang <= 3).length;
   const meilleur = Math.min(...parcours.map(p => p.rang));
 
+  // Chaque édition est cliquable : elle déplie ses propres statistiques, sans
+  // quitter la fiche. Un second clic replie et revient au total.
   const lignes = parcours.map(p => {
     const medaille = p.rang === 1 ? '🏆' : p.rang === 2 ? '🥈' : p.rang === 3 ? '🥉' : '';
-    return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #eee;font-size:12px">
-      <span style="width:26px;text-align:center;font-weight:700">${medaille || p.rang}</span>
-      <span style="flex:1;min-width:0">${esc(p.edition)}${p.annee ? ' <span style="color:#bbb">(' + esc(String(p.annee)) + ')</span>' : ''}</span>
-      <span style="color:var(--gray);font-size:11px;white-space:nowrap">${p.rang}${t('palmares_of')}${p.total}</span>
+    const ouverte = editionOuverte === p.id;
+    const s = p.st || {};
+    const aStats = (s.m || s.pts || s.vB !== undefined);
+    const detail = (ouverte && aStats) ? `
+      <div style="padding:8px 0 10px 34px;font-size:12px;color:var(--gray);line-height:1.6">
+        <strong style="color:var(--dark);font-size:13px">${s.pts ?? 0}</strong> ${t('palmares_pts')} · ${s.m ?? 0} ${t('palmares_m')} · ${s.v ?? 0}${t('palmares_v')}
+        ${(s.vB !== undefined || s.dB !== undefined) ? `<br>
+          <span style="font-size:13px">⬜</span> <strong style="color:var(--dark)">${s.vB||0}</strong>${t('palmares_v')} ${s.nB||0}${t('palmares_n')} ${s.dB||0}${t('palmares_d')}
+          &nbsp;·&nbsp; <span style="font-size:13px">⬛</span> <strong style="color:var(--dark)">${s.vN||0}</strong>${t('palmares_v')} ${s.nN||0}${t('palmares_n')} ${s.dN||0}${t('palmares_d')}` : ''}
+      </div>` : '';
+    return `<div style="border-bottom:1px solid #eee">
+      <div onclick="ouvrirEditionJoueur('${esc(String(p.id||'')).replace(/'/g,"\\'")}')" style="display:flex;align-items:center;gap:8px;padding:7px 0;font-size:13px;cursor:${aStats?'pointer':'default'}">
+        <span style="width:28px;text-align:center;font-weight:700;font-size:${medaille?'17px':'13px'}">${medaille || p.rang}</span>
+        <span style="flex:1;min-width:0">${esc(p.edition)}${p.annee ? ' <span style="color:#bbb">(' + esc(String(p.annee)) + ')</span>' : ''}</span>
+        <span style="color:var(--gray);font-size:12px;white-space:nowrap">${p.rang}${t('palmares_of')}${p.total}</span>
+        ${aStats ? `<span style="color:var(--gold);font-size:11px;width:12px">${ouverte ? '▾' : '▸'}</span>` : '<span style="width:12px"></span>'}
+      </div>
+      ${detail}
     </div>`;
   }).join('');
 
@@ -2783,6 +2815,43 @@ window.confirmUnregister = function(id, nickname) {
   }
 };
 
+// Cherche un pseudo dans le palmarès. Renvoie le nom le plus récemment utilisé et
+// le nombre d'éditions, ou null si le joueur n'y figure pas.
+function trouverDansPalmares(pseudo) {
+  const q = pseudo.trim().toLowerCase();
+  const editions = Object.entries(state?.palmares || {})
+    .sort((a,b) => (b[1].order ?? 0) - (a[1].order ?? 0));   // plus récente d'abord
+  let nom = null, count = 0;
+  editions.forEach(([, ed]) => {
+    Object.values(ed.entries || {}).forEach(e => {
+      if (e?.pseudo && e.pseudo.trim().toLowerCase() === q) {
+        count++;
+        if (!nom && e.name) nom = e.name;
+      }
+    });
+  });
+  return count ? { name: nom, editions: count } : null;
+}
+
+// Met le nom à jour dans TOUTES les éditions, pour ce pseudo uniquement.
+// Écrit entrée par entrée sur le seul champ `name` : aucun risque d'écraser un
+// rang ou une statistique, et une écriture qui échoue n'affecte pas les autres.
+async function harmoniserNomPalmares(pseudo, nouveauNom) {
+  const q = pseudo.trim().toLowerCase();
+  let n = 0;
+  for (const [idEd, ed] of Object.entries(state?.palmares || {})) {
+    for (const [idEn, e] of Object.entries(ed.entries || {})) {
+      if (e?.pseudo && e.pseudo.trim().toLowerCase() === q && e.name !== nouveauNom) {
+        try {
+          await set(ref(db, 'palmares/' + idEd + '/entries/' + idEn + '/name'), nouveauNom);
+          n++;
+        } catch (err) { console.log('[ABCT] Harmonisation impossible sur ' + idEd + '/' + idEn + ' : ' + err.message); }
+      }
+    }
+  }
+  return n;
+}
+
 window.registerPlayer = async function() {
   // Le formulaire n'est affiché que pendant la phase d'inscription, mais la fonction
   // elle-même ne le vérifiait pas : garde de sécurité en profondeur.
@@ -2793,6 +2862,25 @@ window.registerPlayer = async function() {
   if (!nick||!name) { showMsg('reg-msg', t('reg_err_fields'), false); return; }
   const players=state?.players||{};
   if (Object.values(players).some(p=>p.nickname.toLowerCase()===nick.toLowerCase())) { showMsg('reg-msg', t('reg_err_exists'), false); return; }
+  // ── RECONNAISSANCE D'UN ANCIEN PARTICIPANT ──
+  // Le pseudo Chess.com est stable, le nom saisi ne l'est pas : « Dupont R. » une
+  // année, « Roger D. » la suivante. Les statistiques fusionnent quand même (elles
+  // se regroupent sur le pseudo), mais le palmarès afficherait des noms différents
+  // pour la même personne. On propose donc d'harmoniser.
+  const ancien = trouverDansPalmares(nick);
+  if (ancien && ancien.name && ancien.name.trim().toLowerCase() !== name.toLowerCase()) {
+    const msg = t('reg_known_player')
+      .replace('{ancien}', ancien.name)
+      .replace('{nouveau}', name)
+      .replace('{n}', ancien.editions);
+    if (confirm(msg)) {
+      // OK = harmoniser sur le nom saisi aujourd'hui, dans toutes les éditions.
+      // Seul le champ `name` est touché : rangs et statistiques restent intacts.
+      const n = await harmoniserNomPalmares(nick, name);
+      showMsg('reg-msg', t('reg_name_updated').replace('{n}', n), true, true);
+    }
+  }
+
   const id=genId();
   await set(ref(db,'players/'+id),{nickname:nick,name,sector,group:null,seed:Object.keys(players).length});
   document.getElementById('reg-nick').value='';

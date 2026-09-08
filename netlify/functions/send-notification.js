@@ -1,5 +1,18 @@
 const webpush = require('web-push');
 
+// ── TEXTES DES NOTIFICATIONS ──
+// Le serveur ignore la langue de chaque appareil : elle est enregistree dans
+// l'abonnement au moment ou le joueur active ses notifications. On regroupe donc
+// les destinataires par langue et on envoie a chacun le texte qui lui convient.
+// Les abonnements anterieurs, sans langue, recoivent le francais.
+const TEXTES = {
+  fr: { victoire: '🏆 Victoire : ', nul: '🤝 Match nul', test: '✅ Test réussi — tes notifications fonctionnent.' },
+  de: { victoire: '🏆 Sieg: ',      nul: '🤝 Remis', test: '✅ Test erfolgreich — deine Benachrichtigungen funktionieren.' },
+  en: { victoire: '🏆 Winner: ',    nul: '🤝 Draw', test: '✅ Test successful — your notifications are working.' },
+  it: { victoire: '🏆 Vittoria: ',  nul: '🤝 Patta', test: '✅ Test riuscito — le tue notifiche funzionano.' }
+};
+function txt(lang, cle) { return (TEXTES[lang] || TEXTES.fr)[cle]; }
+
 const VAPID_PUBLIC  = process.env.VAPID_PUBLIC_KEY;
 const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY;
 const DB_URL        = process.env.FIREBASE_DB_URL;
@@ -29,14 +42,12 @@ function restreindreSiMaintenance(liste, maintenance, subAdmin) {
 // supprime de Firebase sur-le-champ. Sans cela, il restait indefiniment dans la
 // liste : l'admin comptait des destinataires fantomes, et le joueur concerne voyait
 // "notifications activees" alors qu'il ne recevait plus rien — sans jamais l'apprendre.
+// `body` peut etre un texte (annonce manuelle, identique pour tous) ou une
+// FONCTION de la langue (resultat de match, traduit par destinataire).
 async function sendToAll(subscriptions, title, body, subPath) {
-  const payload = JSON.stringify({
-    title: title || 'Air Base Chess Tour',
-    body:  body  || '',
-    icon:  '/icon-192.jpg',
-    url:   'https://airbasechesstour.netlify.app/'
-  });
-
+  const corpsPour = (sub) => typeof body === 'function'
+    ? body(sub.lang || 'fr')   // abonnements anterieurs sans langue -> francais
+    : body;
   const results = { success: 0, failed: 0, expired: 0, cleaned: 0, errors: [] };
 
   for (const sub of subscriptions) {
@@ -46,6 +57,13 @@ async function sendToAll(subscriptions, title, body, subPath) {
       continue;
     }
     try {
+      // Payload construit PAR destinataire : le corps depend de sa langue.
+      const payload = JSON.stringify({
+        title: title || 'Air Base Chess Tour',
+        body:  corpsPour(sub) || '',
+        icon:  '/icon-192.jpg',
+        url:   'https://airbasechesstour.netlify.app/'
+      });
       await webpush.sendNotification(
         { endpoint: sub.endpoint, keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth } },
         payload,
@@ -117,6 +135,38 @@ exports.handler = async function (event) {
     let subscriptions = Object.entries(subsObj || {})
       .filter(([, s]) => s && s.endpoint && s.keys)
       .map(([id, s]) => ({ ...s, __id: id }));
+    // ── TEST DE BOUCLE COMPLETE ──
+    // Envoie une VRAIE notification push au seul appareil qui la demande, par le
+    // meme circuit qu'une annonce : Firebase -> cette fonction -> cles VAPID ->
+    // service push -> telephone. Contrairement a un affichage local, ce test
+    // detecte une entree Firebase absente, une adresse perimee ou une cle mal
+    // configuree — c'est-a-dire tout ce qui empecherait vraiment de recevoir.
+    if (parsed.action === 'test') {
+      const cible = (subsObj || {})[parsed.subId];
+      if (!cible || !cible.endpoint || !cible.keys)
+        return { statusCode: 200, headers, body: JSON.stringify({ ok: false, code: 'test_no_entry' }) };
+      try {
+        await webpush.sendNotification(
+          { endpoint: cible.endpoint, keys: { p256dh: cible.keys.p256dh, auth: cible.keys.auth } },
+          JSON.stringify({
+            title: 'Air Base Chess Tour',
+            body: txt(cible.lang || 'fr', 'test'),
+            icon: '/icon-192.jpg',
+            url: 'https://airbasechesstour.netlify.app/'
+          }),
+          { TTL: 60, urgency: 'high' }
+        );
+        return { statusCode: 200, headers, body: JSON.stringify({ ok: true, code: 'test_sent' }) };
+      } catch (e) {
+        // 404/410 : l'adresse est morte. On nettoie, comme a chaque envoi reel.
+        if (e.statusCode === 404 || e.statusCode === 410) {
+          await fbWrite(SUB_PATH + '/' + parsed.subId, null).catch(() => {});
+          return { statusCode: 200, headers, body: JSON.stringify({ ok: false, code: 'test_dead' }) };
+        }
+        return { statusCode: 200, headers, body: JSON.stringify({ ok: false, code: 'test_error', detail: String(e.statusCode || e.message) }) };
+      }
+    }
+
     const adminKey = IS_DEV ? 'adminSubIdDev' : 'adminSubId';
     const adminSubId = await fbRead('settings/' + adminKey).catch(() => null);
     const subAdmin = adminSubId ? (subsObj || {})[adminSubId] : null;
@@ -159,11 +209,13 @@ exports.handler = async function (event) {
         return { statusCode: 400, headers, body: JSON.stringify({ error: 'Score incomplet' }) };
 
       const tourName = await fbRead('settings/name').catch(() => null);
-      let headline;
-      if (sc1 > sc2) headline = `🏆 Victoire : ${p1}`;
-      else if (sc2 > sc1) headline = `🏆 Victoire : ${p2}`;
-      else headline = `🤝 Match nul`; // possible en poule (pas en finale)
-      const autoBody = `${headline}\n${p1} ${sc1} — ${sc2} ${p2}`;
+      // Le corps depend de la langue du destinataire : on fournit une fonction
+      // plutot qu'un texte fige, appelee une fois par groupe de langue.
+      const corpsSelonLangue = (lang) => {
+        const gagnant = sc1 > sc2 ? p1 : (sc2 > sc1 ? p2 : null);
+        const headline = gagnant ? txt(lang, 'victoire') + gagnant : txt(lang, 'nul');
+        return `${headline}\n${p1} ${sc1} — ${sc2} ${p2}`;
+      };
 
       // Marquer avant l'envoi pour eviter un double-envoi en cas d'appels rapproches.
       await fbWrite(path + '/notified', true);
@@ -173,7 +225,7 @@ exports.handler = async function (event) {
       if (!eligible.length)
         return { statusCode: 200, headers, body: JSON.stringify({ skipped: 'aucun abonne pour la categorie Match' }) };
 
-      const results = await sendToAll(eligible, tourName || 'Air Base Chess Tour', autoBody, SUB_PATH);
+      const results = await sendToAll(eligible, tourName || 'Air Base Chess Tour', corpsSelonLangue, SUB_PATH);
       return { statusCode: 200, headers, body: JSON.stringify(results) };
     }
 

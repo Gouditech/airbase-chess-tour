@@ -14,6 +14,19 @@
 
   var FINALS_ROUND_SEQUENCE = ['32èmes', '16èmes', '8èmes', 'Quarts', 'Demis', 'Finale'];
 
+  // Analyse une date 'AAAA-MM-JJ' en heure LOCALE.
+  // new Date('2026-09-30') l'interprète comme minuit UTC : sur un appareil réglé
+  // sur un fuseau en retard sur UTC, l'affichage recule d'un jour. En construisant
+  // la date à partir de ses composantes, on obtient minuit local — la même date
+  // partout, quel que soit l'appareil ou son fuseau.
+  function parseDateLocale(s) {
+    if (!s) return null;
+    var m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!m) { var d0 = new Date(s); return isNaN(d0.getTime()) ? null : d0; }
+    var d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    return isNaN(d.getTime()) ? null : d;
+  }
+
   // Date d'échéance d'un match.
   //   Poule  -> poolStartDate + (round - 1) * poolInterval
   //   Finale -> finalsStartDate + position * finalsInterval, où la position est
@@ -46,8 +59,8 @@
       var position = thisIdx - firstIdx;
       if (position < 0) return null;
 
-      var df = new Date(startDate);
-      if (isNaN(df.getTime())) return null;  // date de réglage invalide
+      var df = parseDateLocale(startDate);
+      if (!df) return null;                  // date de réglage invalide
       df.setDate(df.getDate() + (position + 1) * interval);
       return df;
     }
@@ -55,8 +68,8 @@
     var poolStart = s.poolStartDate;
     var poolInterval = s.poolInterval || 4;
     if (!poolStart || !game.round) return null;
-    var d = new Date(poolStart);
-    if (isNaN(d.getTime())) return null;
+    var d = parseDateLocale(poolStart);
+    if (!d) return null;
     d.setDate(d.getDate() + game.round * poolInterval);
     return d;
   }
@@ -79,6 +92,7 @@
   var api = {
     FINALS_ROUND_SEQUENCE: FINALS_ROUND_SEQUENCE,
     matchDueDate: matchDueDate,
+    parseDateLocale: parseDateLocale,
     isMatchLate: isMatchLate
   };
 

@@ -283,28 +283,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
       </div>
     </div>
     <div id="admin-notifs" style="display:none">
-      <div class="card">
-        <h2 id="auto-notif-title">⚙️ Réglages automatiques</h2>
-        <div>
-          <div style="font-size:13px;font-weight:700;margin-bottom:10px">🔔 Notifications automatiques</div>
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;padding:10px 12px;background:#f8f8f8;border-radius:8px">
-            <input type="checkbox" id="auto-notify-toggle" onchange="toggleAutoNotify()" style="width:18px;height:18px;flex-shrink:0">
-            <label for="auto-notify-toggle" style="font-size:13px;line-height:1.4">🤖 Envoi automatique — catégorie <b>Match</b> (résultat saisi par un joueur ou l'admin). Se coupe aussi en mode maintenance.</label>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:10px 12px;background:#f8f8f8;border-radius:8px">
-            <input type="checkbox" id="auto-late-toggle" onchange="toggleAutoLateAlert()" style="width:18px;height:18px;flex-shrink:0">
-            <label for="auto-late-toggle" style="font-size:13px;line-height:1.4">📅 Alerte quotidienne des matchs en retard — <b>toi uniquement</b>, l'admin. Rien n'est envoyé aux joueurs automatiquement.</label>
-          </div>
-        </div>
-        <div style="border-top:1px solid #eee;margin-top:8px;padding-top:12px">
-          <div style="font-size:13px;font-weight:700;margin-bottom:10px">📍 Appareil admin (alerte retard)</div>
-          <div id="admin-device-status" style="font-size:13px;margin-bottom:10px;padding:0 2px"></div>
-          <div id="admin-device-actions" style="margin-bottom:12px;display:flex;flex-direction:column;gap:8px"></div>
-          <button style="margin-top:10px" class="btn btn-gray" onclick="checkLateNow()" id="check-late-btn">🔍 Vérifier les retards maintenant</button>
-          <div id="check-late-result" style="font-size:12px;margin-top:6px"></div>
-        </div>
-      </div>
-      <div class="card" style="margin-top:0">
+<div class="card" style="margin-top:0">
         <h2 id="notif-admin-title">🔔 Envoyer une notification</h2>
         <div style="margin-bottom:12px">
           <textarea id="notif-admin-msg" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;min-height:80px;resize:vertical" placeholder="Message de notification..."></textarea>
@@ -330,12 +309,6 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
             <span id="notif-subscribers-count" style="font-size:12px;color:var(--gray)"></span>
           </div>
 
-          <button class="btn btn-gray" style="margin-top:8px" onclick="cleanGhostSubscriptions()" id="clean-subs-btn">🧹 Retirer les abonnements inactifs</button>
-          <!-- Zone de résultat PROPRE à cette section : depuis que les abonnés sont
-               après WhatsApp, écrire dans la zone d'envoi affichait le message très
-               au-dessus, hors de l'écran — on croyait que rien ne se passait. -->
-          <div id="clean-subs-result" style="font-size:12px;margin-top:6px"></div>
-          <div id="clean-subs-hint" style="font-size:11px;color:var(--gray);margin-top:5px;line-height:1.5"></div>
 
           <a href="#" onclick="toggleSubsDetail();return false;" style="display:inline-block;margin-top:10px;font-size:11px;color:var(--gold);text-decoration:underline">🔍 Voir le détail des dates d'abonnement</a>
           <div id="notif-subs-detail" style="display:none;font-size:11px;color:var(--gray);margin-top:6px;max-height:180px;overflow-y:auto;background:#fff;border-radius:6px;padding:8px"></div>
@@ -345,7 +318,28 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
             <button class="btn btn-sm" style="width:auto;margin-top:0;font-size:11px;color:var(--red);background:#fee" onclick="confirmAction('resetSubscriptions','','',false)" id="reset-subs-btn">↺ Réinitialiser tous les abonnements</button>
           </div>
         </div>
-            </div>
+      </div>
+
+      <div class="card">
+        <h2 id="auto-notif-title">⚙️ Réglages automatiques</h2>
+        <div>
+          <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;padding:10px 12px;border:1px solid #eee;border-radius:8px">
+            <input type="checkbox" id="auto-notify-toggle" onchange="toggleAutoNotify()" style="width:18px;height:18px;flex-shrink:0">
+            <label for="auto-notify-toggle" style="font-size:13px;line-height:1.45">🤖 <b>Résultats de match</b> — envoi automatique à chaque score saisi.<br><span style="color:var(--gray);font-size:11.5px">Suspendu en mode maintenance.</span></label>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:4px;padding:10px 12px;border:1px solid #eee;border-radius:8px">
+            <input type="checkbox" id="auto-late-toggle" onchange="toggleAutoLateAlert()" style="width:18px;height:18px;flex-shrink:0">
+            <label for="auto-late-toggle" style="font-size:13px;line-height:1.45">📅 <b>Alerte retard quotidienne</b> — pour toi seul.<br><span style="color:var(--gray);font-size:11.5px">Les joueurs ne reçoivent jamais cette alerte.</span></label>
+          </div>
+        </div>
+        <div style="border-top:1px solid #eee;margin-top:8px;padding-top:12px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:10px">📍 Appareil admin (alerte retard)</div>
+          <div id="admin-device-status" style="font-size:13px;margin-bottom:10px;padding:0 2px"></div>
+          <div id="admin-device-actions" style="margin-bottom:12px;display:flex;flex-direction:column;gap:8px"></div>
+          <button style="margin-top:10px" class="btn btn-gray" onclick="checkLateNow()" id="check-late-btn">🔍 Vérifier les retards maintenant</button>
+          <div id="check-late-result" style="font-size:12px;margin-top:6px"></div>
+        </div>
+      </div>
 
     </div>
     <div id="admin-players" class="card" style="display:none">
@@ -462,6 +456,22 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
 </div>
 
 <!-- INSTALL MODAL -->
+<!-- INVITE AUX NOTIFICATIONS
+     Bandeau maison, PAS la fenêtre du navigateur directement : une demande de
+     permission sans geste de l'utilisateur est bloquée par Firefox, refusée par
+     Safari, et discrètement masquée par Chrome. Pire, un refus réflexe bloque les
+     notifications DÉFINITIVEMENT — le joueur ne pourrait plus les activer depuis
+     le site. Ici, le clic sur « Activer » constitue le geste attendu : la vraie
+     demande s'affiche alors partout, et fermer le bandeau ne bloque rien. -->
+<div id="notif-invite" style="display:none;position:fixed;left:12px;right:12px;bottom:calc(66px + env(safe-area-inset-bottom));z-index:9998;
+     background:#fff;border-radius:14px;box-shadow:0 6px 28px rgba(0,0,0,0.18);padding:14px 16px;
+     max-width:420px;margin:0 auto;transform:translateY(120%);transition:transform .35s ease">
+  <button onclick="fermerInviteNotif()" aria-label="Fermer" style="position:absolute;top:8px;right:10px;border:none;background:none;font-size:17px;color:#bbb;cursor:pointer;padding:2px 6px;line-height:1">✕</button>
+  <div style="font-size:14px;font-weight:800;margin-bottom:4px;padding-right:22px" id="invite-title">🔔 Reste informé</div>
+  <div style="font-size:12.5px;color:#555;line-height:1.5;margin-bottom:12px" id="invite-text"></div>
+  <button class="btn btn-gold" style="font-size:13px" onclick="accepterInviteNotif()" id="invite-btn"></button>
+</div>
+
 <!-- Reconnaissance d'un ancien participant : trois issues claires, dont annuler
      complètement. Un simple OK/Annuler était trop risqué — un joueur pouvait
      renommer tout son historique par erreur sans comprendre ce qu'il validait. -->
@@ -573,10 +583,19 @@ function urlBase64ToUint8Array(base64String) {
 
 async function subscribeToNotifications() {
   try {
+    // FILET iPhone : si le joueur a fermé le bandeau puis clique ce bouton, il ne
+    // doit pas se heurter à un échec muet. On lui réaffiche la marche à suivre —
+    // c'est ici qu'il apprend que l'installation est un préalable, pas une option.
+    if (estIOS() && !estInstallee()) {
+      showMsg('notif-msg', t('notif_ios_install_first'), false, true);
+      proposerNotifications(true);   // réouvre le bandeau, même après 3 fermetures
+      return;
+    }
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
       showMsg('notif-msg', t('notif_install_hint'), false, true); return;
     }
     if (!('Notification' in window)) { showMsg('notif-msg', t('notif_unsupported'), false, true); return; }
+    showMsg('notif-msg', t('notif_activating'));
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') { const isPWA = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone; showMsg('notif-msg', t(isPWA ? 'notif_denied_pwa' : 'notif_denied'), false, true); return; }
     const reg = await navigator.serviceWorker.ready;
@@ -592,10 +611,16 @@ async function subscribeToNotifications() {
       endpoint: subObj.endpoint,
       keys: subObj.keys,
       timestamp: Date.now(),
+      lang: langueCourante(),
       prefs: { officiel: cbO ? cbO.checked : true, match: cbM ? cbM.checked : true }
     });
     localStorage.setItem('abct-notif-subid', subId);
     localStorage.setItem('abct-notif', 'on');
+    // Le bandeau d'invitation n'a plus lieu d'être : le joueur vient de s'abonner.
+    // Fermé ICI et non dans le bouton du bandeau, car l'activation peut aussi
+    // venir du bouton de la carte d'accueil — le bandeau restait alors affiché à
+    // proposer ce qui venait d'être fait.
+    masquerInvite();
     recentlySubscribed = true;
     setTimeout(() => { recentlySubscribed = false; }, 5000);
     updateNotifBtn();
@@ -677,11 +702,20 @@ if ('serviceWorker' in navigator) {
     const nouvelId = btoa(nouveau.endpoint).slice(-20);
     if (ancienId === nouvelId) return;
     const prefs = state?.[SUB_PATH]?.[ancienId]?.prefs || { officiel: true, match: true };
-    await set(ref(db, SUB_PATH + '/' + nouvelId), { endpoint: nouveau.endpoint, keys: nouveau.keys, timestamp: Date.now(), prefs });
-    if (ancienId) await set(ref(db, SUB_PATH + '/' + ancienId), null);
-    if (state?.settings?.[ADMIN_SUB_KEY] === ancienId) await set(ref(db, 'settings/' + ADMIN_SUB_KEY), nouvelId);
-    localStorage.setItem('abct-notif-subid', nouvelId);
-    console.log('[ABCT] Abonnement renouvelé par le navigateur — migré sans doublon');
+    try {
+      // La NOUVELLE entrée d'abord : si elle échoue, l'ancienne reste en place et
+      // le joueur continue de recevoir. Supprimer avant d'écrire le couperait.
+      await set(ref(db, SUB_PATH + '/' + nouvelId), { endpoint: nouveau.endpoint, keys: nouveau.keys, timestamp: Date.now(), lang: langueCourante(), prefs });
+      // Le pointeur local ensuite : il ne doit désigner que ce qui existe.
+      localStorage.setItem('abct-notif-subid', nouvelId);
+      if (ancienId) await set(ref(db, SUB_PATH + '/' + ancienId), null);
+      if (state?.settings?.[ADMIN_SUB_KEY] === ancienId) await set(ref(db, 'settings/' + ADMIN_SUB_KEY), nouvelId);
+      console.log('[ABCT] Abonnement renouvelé par le navigateur — migré sans doublon');
+    } catch (e) {
+      // Migration incomplète : le bloc « rotation d'adresse » du prochain
+      // démarrage la reprendra, en comparant l'adresse réelle au pointeur local.
+      console.log('[ABCT] Migration d\'abonnement interrompue, reprise au prochain démarrage :', e.message);
+    }
   });
 }
 
@@ -704,6 +738,123 @@ function syncPrefsCases() {
 window.fermerPrefsPanel = function() {
   const box = document.getElementById('notif-prefs');
   if (box) box.style.display = 'none';
+};
+
+// ── INVITE AUX NOTIFICATIONS ──
+// Conditions d'apparition, toutes nécessaires :
+//   - le navigateur sait faire des notifications
+//   - le joueur n'est pas déjà abonné
+//   - il n'a jamais refusé au niveau du navigateur (sinon rien ne servirait)
+//   - il a fermé le bandeau moins de 3 fois (au-delà, insister l'agacerait)
+const INVITE_MAX = 3;
+function estIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent)
+      || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+// Compteur de fermetures, DISTINCT selon le contexte : quelqu'un qui a fermé le
+// bandeau trois fois dans son navigateur vient peut-être d'installer l'app — le
+// contexte a changé, l'invitation redevient pertinente. Sans ces deux clés, il
+// aurait fait toute la manipulation sans jamais revoir la proposition.
+function cleRefus() { return estInstallee() ? 'abct-invite-refus-app' : 'abct-invite-refus'; }
+
+function peutProposerNotif() {
+  if (localStorage.getItem('abct-notif') === 'on') return false;
+  const refus = parseInt(localStorage.getItem(cleRefus()) || '0', 10);
+  if (refus >= INVITE_MAX) return false;
+
+  // ⚠️ Sur iPhone/iPad hors app installée, l'API Notification N'EXISTE PAS : Apple
+  // ne l'expose qu'aux sites ajoutés à l'écran d'accueil. Exiger sa présence ici
+  // empêcherait le bandeau de s'afficher précisément là où il est indispensable —
+  // c'est le seul endroit où le joueur apprend qu'il doit installer l'app.
+  if (estIOS() && !estInstallee()) return true;
+
+  if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) return false;
+  if (Notification.permission !== 'default') return false;   // déjà accordé ou refusé
+  return true;
+}
+
+// Le site tourne-t-il comme application installée ?
+function estInstallee() {
+  return window.matchMedia('(display-mode: standalone)').matches
+      || window.navigator.standalone === true;
+}
+
+
+// forcer=true : rouvre le bandeau même si le joueur l'a déjà fermé trois fois.
+// Utilisé quand il clique lui-même le bouton — c'est une demande explicite.
+function proposerNotifications(forcer) {
+  if (!forcer && !peutProposerNotif()) return;
+  const box = document.getElementById('notif-invite');
+  if (!box) return;
+
+  const installee = estInstallee();
+  // Depuis iOS 16.4 (mars 2023), TOUS les navigateurs iOS proposent « Sur l'écran
+  // d'accueil » — Chrome, Edge, Firefox, Brave compris — et le push fonctionne
+  // quelle que soit l'app qui a installé. Inutile donc de renvoyer vers Safari :
+  // ce serait un détour sans raison. Mêmes étapes pour tout le monde.
+  const iosSansApp = estIOS() && !installee;
+
+  const titre = document.getElementById('invite-title');
+  const texte = document.getElementById('invite-text');
+  const bBtn  = document.getElementById('invite-btn');
+
+  if (iosSansApp) {
+    // Les étapes sont AFFICHÉES, pas cachées derrière un bouton : trois lignes
+    // numérotées se lisent, un bouton « voir les instructions » ne se clique pas.
+    titre.textContent = t('invite_title');
+    texte.innerHTML = `<div style="margin-bottom:9px">${esc(t('invite_ios'))}</div>
+      <div style="font-size:12.5px;line-height:2;color:#333">
+        <b>1.</b> ${esc(t('invite_step1'))}<br>
+        <b>2.</b> ${esc(t('invite_step2'))}<br>
+        <b>3.</b> ${esc(t('invite_step3'))}<br>
+        <b>4.</b> ${esc(t('invite_step4'))}
+      </div>`;
+    bBtn.style.display = 'none';
+  } else {
+    // Android, ordinateur, ou app installée : les notifications fonctionnent
+    // directement, une seule action.
+    titre.textContent = t('invite_title');
+    texte.textContent = t('invite_text');
+    bBtn.textContent = t('invite_btn');
+    bBtn.style.display = 'block';
+  }
+  // Annuler une fermeture en attente, sinon elle masquerait ce qu'on vient d'ouvrir.
+  if (minuteurInvite) { clearTimeout(minuteurInvite); minuteurInvite = null; }
+  box.style.display = 'block';
+  // Laisser le site s'afficher d'abord : surgir instantanément fait publicité.
+  setTimeout(() => { box.style.transform = 'translateY(0)'; }, 50);
+}
+
+// Le masquage attend la fin de l'animation avant de retirer le bandeau du flux.
+// Ce minuteur DOIT être annulable : sur iPhone, cliquer le bouton de la carte
+// masque puis rouvre aussitôt le bandeau — sans annulation, la fermeture
+// programmée l'effacerait 350 ms plus tard, après un bref clignotement.
+let minuteurInvite = null;
+function masquerInvite() {
+  const box = document.getElementById('notif-invite');
+  if (!box) return;
+  box.style.transform = 'translateY(120%)';
+  if (minuteurInvite) clearTimeout(minuteurInvite);
+  minuteurInvite = setTimeout(() => { box.style.display = 'none'; minuteurInvite = null; }, 350);
+}
+
+window.fermerInviteNotif = function() {
+  // On compte les refus pour ne pas insister indéfiniment, dans le contexte courant.
+  const cle = cleRefus();
+  const n = parseInt(localStorage.getItem(cle) || '0', 10) + 1;
+  localStorage.setItem(cle, String(n));
+  masquerInvite();
+};
+
+window.accepterInviteNotif = async function() {
+  // Masqué tout de suite pour libérer l'écran ; en cas d'échec de l'abonnement,
+  // le message d'erreur s'affiche sur la carte, pas dans le bandeau.
+  masquerInvite();
+  // Le clic est le geste utilisateur qui rend la demande recevable par TOUS les
+  // navigateurs. subscribeToNotifications s'occupe de la permission et de
+  // l'enregistrement ; le bouton du site passe au vert de lui-même.
+  await subscribeToNotifications();
 };
 
 window.toggleNotifPrefsPanel = function() {
@@ -764,42 +915,6 @@ window.deleteSubscription = async function(subId) {
   await set(ref(db, SUB_PATH + '/' + subId), null);
   renderSubsDetail();
 }
-
-// Teste chaque abonnement SANS notifier personne (message à TTL 0, jeté par le
-// service push avant remise) et retire ceux qui répondent "disparu".
-window.cleanGhostSubscriptions = async function() {
-  if (!isAdmin) return;
-  const btn = document.getElementById('clean-subs-btn');
-  if (btn) btn.disabled = true;
-  showMsg('clean-subs-result', t('clean_running'));
-  try {
-    const res = await fetch('/.netlify/functions/clean-subscriptions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pin: sessionStorage.getItem('abct-session-pin') || '' })
-    });
-    const d = await res.json();
-    if (!res.ok) { showMsg('clean-subs-result', d.error || 'Erreur', false, true); return; }
-    // Quand rien n'est retiré, dire POURQUOI : le service push peut considérer une
-    // adresse comme valide alors que l'appareil ne reçoit plus rien (données
-    // effacées). Sans cette explication, on croit que le bouton ne marche pas.
-    const txt = (d.cleaned ? t('clean_done').replace('{n}', d.cleaned).replace('{a}', d.alive ?? 0)
-                           : t('clean_none').replace('{a}', d.alive ?? 0))
-      + (d.adminCleared ? ' ' + t('clean_admin_cleared') : '');
-    showMsg('clean-subs-result', txt, true, true);
-    renderSubsDetail();
-    // Rien retiré : on ouvre le détail, car la suppression manuelle est alors la
-    // seule voie. Éviter que l'admin ait à deviner l'étape suivante.
-    if (!d.cleaned) {
-      const box = document.getElementById('notif-subs-detail');
-      if (box) box.style.display = 'block';
-    }
-  } catch(e) {
-    showMsg('clean-subs-result', 'Erreur: ' + e.message, false, true);
-  } finally {
-    if (btn) btn.disabled = false;
-  }
-};
 
 window.resetSubscriptions = async function() {
   if (!isAdmin) return;
@@ -890,51 +1005,54 @@ window.updateNotifPrefs = async function() {
 }
 
 window.testNotification = async function() {
+  // TEST DE BOUCLE COMPLÈTE : on demande au SERVEUR d'envoyer une vraie
+  // notification à cet appareil. L'ancien test se contentait d'un affichage local
+  // — il réussissait même si l'entrée Firebase manquait ou si l'adresse était
+  // périmée, donc même quand aucune notification réelle ne serait jamais arrivée.
+  const subId = localStorage.getItem('abct-notif-subid');
+  if (!subId) { showMsg('notif-msg', '❌ ' + t('notif_test_nosub'), false, true); return; }
+  const btn = document.getElementById('notif-test-btn');
+  if (btn) btn.disabled = true;
+  showMsg('notif-msg', t('notif_test_sending'));
   try {
-    const reg = await navigator.serviceWorker.ready;
-    const sub = await reg.pushManager.getSubscription();
-    if (!sub) { showMsg('notif-msg', '❌ ' + t('notif_test_nosub'), false, true); return; }
-    await reg.showNotification(state?.settings?.name || 'Air Base Chess Tour', {
-      body: t('notif_test_body'),
-      icon: '/icon-192.jpg',
-      badge: '/icon-192.jpg',
-      vibrate: [200, 100, 200],
-      tag: 'abct-test',
-      requireInteraction: true
+    const res = await fetch('/.netlify/functions/send-notification', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'test', subId })
     });
-    showMsg('notif-msg', t('notif_test_sent'));
+    const d = await res.json();
+    if (d.ok) {
+      showMsg('notif-msg', t('notif_test_sent'));
+    } else {
+      // L'état local doit suivre ce que le serveur vient de constater. Sans cela,
+      // le bouton resterait VERT sous un message disant que l'abonnement a été
+      // retiré — exactement le mensonge qu'on cherche à éliminer.
+      if (d.code === 'test_dead' || d.code === 'test_no_entry') {
+        localStorage.removeItem('abct-notif');
+        localStorage.removeItem('abct-notif-subid');
+        try {
+          // Révoquer aussi côté navigateur : l'abonnement local pointe vers une
+          // adresse que le service push refuse. Le garder empêcherait d'en créer
+          // un neuf — subscribe() renverrait le même, mort.
+          const reg = await navigator.serviceWorker.ready;
+          const s = await reg.pushManager.getSubscription();
+          if (s) await s.unsubscribe();
+        } catch (e) { /* non bloquant */ }
+      }
+      // Chaque échec dit CE QUI est cassé, pas seulement qu'il y a un problème.
+      const cle = 'notif_' + (d.code || 'test_error');
+      showMsg('notif-msg', '❌ ' + (T[lang]?.[cle] ? t(cle) : (d.detail || 'Erreur')), false, true);
+      updateNotifBtn();
+    }
   } catch(e) {
-    showMsg('notif-msg', '❌ Erreur: ' + e.message, false);
+    showMsg('notif-msg', '❌ ' + t('notif_test_network'), false, true);
+  } finally {
+    if (btn) btn.disabled = false;
   }
 };
 
-let lastNotifTimestamp = 0;
 
-function checkNewNotification(data) {
-  const notifs = data?.notifications || {};
-  const entries = Object.values(notifs).sort((a,b) => b.timestamp - a.timestamp);
-  if (!entries.length) return;
-  const latest = entries[0];
-  if (latest.timestamp > lastNotifTimestamp && lastNotifTimestamp > 0) {
-    // Show in-app banner
-    showInAppNotification(latest.title, latest.body);
-  }
-  if (lastNotifTimestamp === 0) lastNotifTimestamp = latest.timestamp;
-  else lastNotifTimestamp = Math.max(lastNotifTimestamp, latest.timestamp);
-}
 
-function showInAppNotification(title, body) {
-  // Create or update notification banner
-  let banner = document.getElementById('inapp-notif-banner');
-  if (!banner) {
-    banner = document.createElement('div');
-    banner.id = 'inapp-notif-banner';
-    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:8000;background:var(--dark);color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:flex-start;box-shadow:0 2px 8px rgba(0,0,0,0.3)';
-    document.body.appendChild(banner);
-  }
-  banner.innerHTML = `<div><div style="font-weight:700;font-size:13px;color:var(--gold)">🔔 ${esc(title)}</div><div style="font-size:12px;margin-top:3px;color:#ddd">${esc(body)}</div></div><button onclick="document.getElementById('inapp-notif-banner').remove()" style="border:none;background:none;color:#888;font-size:18px;cursor:pointer;padding:0 0 0 12px">✕</button>`;
-  setTimeout(() => { if (banner.parentNode) banner.remove(); }, 8000);
-}
 
 window.toggleNotifications = async function() {
   const on = localStorage.getItem('abct-notif') === 'on';
@@ -944,9 +1062,18 @@ window.toggleNotifications = async function() {
     // désabonne pas quelqu'un sans confirmation.
     toggleNotifPrefsPanel();
   } else {
-    // Vérifier la compatibilité AVANT de montrer le panneau — sinon sur iPhone (onglet
-    // normal, app pas installée) on afficherait des cases à cocher qui ne mèneraient
-    // à rien, et la personne ne le découvrirait qu'après avoir cliqué Valider.
+    // FILET iPhone, EN PREMIER : sur iOS hors app installée, PushManager n'existe
+    // pas — le test ci-dessous sortirait avec un message générique, sans dire
+    // comment faire. Ici on réaffiche la marche à suivre et on rouvre le bandeau,
+    // même s'il avait été fermé trois fois : c'est une demande explicite du joueur.
+    if (estIOS() && !estInstallee()) {
+      showMsg('notif-msg', t('notif_ios_install_first'), false, true);
+      proposerNotifications(true);
+      return;
+    }
+    // Vérifier la compatibilité AVANT de montrer le panneau — sinon on afficherait
+    // des cases à cocher qui ne mèneraient à rien, et la personne ne le
+    // découvrirait qu'après avoir cliqué Valider.
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
       showMsg('notif-msg', t('notif_install_hint'), false, true);
       return;
@@ -982,7 +1109,7 @@ const T = {
   fr:{
     loading:"Chargement...",offline:"⚠️ Hors ligne — données non synchronisées",write_denied:"⛔ Enregistrement refusé — recharge la page et réessaie.",
     dev_none:"⚠️ Aucun appareil admin enregistré pour l'alerte retard.",dev_orphan:"⚠️ L'appareil admin enregistré n'a plus d'abonnement actif — l'alerte retard ne parvient à personne.",dev_this_on:"✅ C'est cet appareil qui est enregistré pour l'alerte retard.",dev_this_off:"⏸️ Cet appareil est enregistré, mais l'alerte automatique est désactivée (case ci-dessus).",dev_other:"⚠️ Un <b>autre</b> appareil est enregistré pour l'alerte retard — pas celui-ci.",dev_register_btn:"📍 Faire de cet appareil mon appareil admin",dev_register_instead:"📍 Enregistrer cet appareil à la place",dev_remove_this:"🔄 Retirer cet enregistrement",dev_remove_current:"🔄 Retirer l'enregistrement actuel",dev_enable_first:"Active tes notifications ci-dessus d'abord.",dev_enable_then_register:"Active tes notifications ci-dessus, puis enregistre cet appareil.",dev_home_this_on:"✅ Appareil admin — alerte retard active ici",dev_home_this_off:"⏸️ Appareil admin enregistré ici — alerte désactivée",dev_home_other:"⚠️ Pas l'appareil admin enregistré — aucune alerte retard ici",dev_home_orphan:"⚠️ L'appareil admin enregistré n'est plus abonné — alerte sans destinataire",dev_home_none:"⚠️ Aucun appareil admin enregistré",
-    late_check_alert_sent:"{n} match(s) en retard — alerte envoyée à l'appareil admin",late_check_nothing_late:"Aucun match en retard. Rien à envoyer.",late_check_proof_sent:"Aucun retard. Le message hebdomadaire de contrôle a été envoyé.",late_check_not_playing:"Le tournoi n'est pas en phase de jeu : aucun match ne peut être en retard.",late_check_no_admin_device:"Aucun appareil admin enregistré : l'alerte n'a pas de destinataire.",late_check_admin_sub_invalid:"L'abonnement de l'appareil admin est invalide. Réenregistre-le.",late_check_auto_off:"L'alerte automatique est désactivée (case dans l'onglet Notifs).",late_check_maintenance:"Mode maintenance actif : l'alerte est suspendue.",late_check_no_config:"Configuration serveur incomplète (clés manquantes sur Netlify).",notif_cleaned:"🧹 {n} abonnement(s) inactif(s) retiré(s).",clean_subs_btn:"🧹 Retirer les abonnements inactifs",subs_section_title:"👥 Abonnés",clean_subs_hint:"Vérifie chaque abonnement et retire ceux qui ne peuvent plus rien recevoir (navigateur réinstallé, données effacées). Personne n'est notifié, les abonnés valides ne sont pas touchés.",reset_subs_warn:"⚠️ Efface TOUS les abonnements, y compris les valides. Chacun devra rouvrir le site pour être réabonné, et ses préférences seront remises par défaut. À réserver aux cas de désordre : le nettoyage ci-dessus suffit d'ordinaire.",clean_running:"🔎 Vérification de chaque abonnement… (personne n'est notifié)",late_checking:"⏳ Vérification en cours…",notif_muted:"🔕 Aucune notification ne te parviendra",notif_all_muted:"⚠️ Tu as décoché les deux catégories : plus aucune notification ne te parviendra. Tu risques de manquer une échéance et d'être déclaré forfait. Recoche au moins une case.",prefs_loading:"Chargement de tes préférences…",prefs_close_btn:"✓ OK",auto_notif_title:"⚙️ Réglages automatiques",prefs_title:"🔔 Mes notifications",clean_done:"✓ {n} abonnement(s) inactif(s) retiré(s). {a} encore valide(s).",clean_admin_cleared:"L'appareil admin en faisait partie : enregistre-en un nouveau.",clean_none:"✓ Les {a} abonnement(s) sont acceptés par le service de notification — aucun à retirer. Un appareil dont les données ont été effacées peut rester considéré comme valide plusieurs jours : supprime-le à la main ci-dessous si tu sais qu'il ne sert plus.",late_check_admin_dead:"L'appareil admin n'était plus joignable : abonnement et enregistrement retirés. Enregistre un appareil ci-dessus.",pin_current:"PIN actuel",reg_closed:"Les inscriptions sont fermées.",pin_new:"Nouveau PIN",pin_confirm:"Confirmer",set_semis:"Format demi-finales",set_final:"Format finale",whatsapp_title:"📲 Rappel WhatsApp",save_seed:"💾 Sauvegarder",
+    late_check_alert_sent:"{n} match(s) en retard — alerte envoyée à l'appareil admin",late_check_nothing_late:"Aucun match en retard. Rien à envoyer.",late_check_proof_sent:"Aucun retard. Le message hebdomadaire de contrôle a été envoyé.",late_check_not_playing:"Le tournoi n'est pas en phase de jeu : aucun match ne peut être en retard.",late_check_no_admin_device:"Aucun appareil admin enregistré : l'alerte n'a pas de destinataire.",late_check_admin_sub_invalid:"L'abonnement de l'appareil admin est invalide. Réenregistre-le.",late_check_auto_off:"L'alerte automatique est désactivée (case dans l'onglet Notifs).",late_check_maintenance:"Mode maintenance actif : l'alerte est suspendue.",late_check_no_config:"Configuration serveur incomplète (clés manquantes sur Netlify).",notif_cleaned:"🧹 {n} abonnement(s) inactif(s) retiré(s).",subs_section_title:"👥 Abonnés",reset_subs_warn:"⚠️ Efface TOUS les abonnements, y compris les valides. Chacun devra rouvrir le site pour être réabonné, et ses préférences seront remises par défaut. À réserver aux cas de désordre : le nettoyage ci-dessus suffit d'ordinaire.",late_checking:"⏳ Vérification en cours…",notif_muted:"🔕 Aucune notification ne te parviendra",notif_all_muted:"⚠️ Tu as décoché les deux catégories : plus aucune notification ne te parviendra. Tu risques de manquer une échéance et d'être déclaré forfait. Recoche au moins une case.",prefs_loading:"Chargement de tes préférences…",prefs_close_btn:"✓ OK",auto_notif_title:"⚙️ Réglages automatiques",prefs_title:"🔔 Mes notifications",late_check_admin_dead:"L'appareil admin n'était plus joignable : abonnement et enregistrement retirés. Enregistre un appareil ci-dessus.",pin_current:"PIN actuel",reg_closed:"Les inscriptions sont fermées.",pin_new:"Nouveau PIN",pin_confirm:"Confirmer",set_semis:"Format demi-finales",set_final:"Format finale",whatsapp_title:"📲 Rappel WhatsApp",save_seed:"💾 Sauvegarder",
     tab_home:"Tournoi",tab_groups:"Groupes",tab_matches:"Matchs",tab_finals:"Finales",
     tab_info:"Infos",confirm_archive_before_reset:"⚠️ ARCHIVER LE TOURNOI ?\n\nLe classement final de {n} joueur(s) va être rangé dans le palmarès, avec toutes les statistiques.\n\n✅ OK = archiver, puis réinitialiser\n❌ Annuler = réinitialiser SANS archiver\n\n(Une copie de sécurité du tournoi est conservée dans tous les cas.)",palmares_admin_title:"🏅 Palmarès",palmares_edition_name_placeholder:"Nom de l'édition",info_rules_btn:"📜 Règlement",info_palmares_btn:"🏅 Palmarès",info_ranking_btn:"📊 Classement en direct",live_rank_title:"Classement en direct",info_admin_btn:"⚙️ Admin",info_rules_title:"Règlement",info_palmares_title:"Palmarès",
     status_registration:"Inscriptions ouvertes",status_playing:"Phase de poules",status_finals:"Phases finales",status_finished:"Terminé",
@@ -990,7 +1117,7 @@ const T = {
     reg_title:"S'inscrire au tournoi",reg_nick:"Pseudo Chess.com *",
     reg_nick_hint:"Utilisé pour vous retrouver et vous inviter sur Chess.com",reg_name:"Nom / Nickname *",
     reg_name_hint:"Prénom, surnom ou nom réel — à votre choix",reg_sector:"Secteur / Unité (optionnel)",reg_btn:"S'inscrire",
-    edition_moved:"✓ Ordre des éditions mis à jour",known_title:"👋 On se connaît ?",known_body_1:"Le pseudo Chess.com <b>{pseudo}</b> a déjà participé à une édition précédente du tournoi, sous le nom <b>« {ancien} »</b>.<br><br>Tu viens de saisir <b>« {nouveau} »</b>.<br><br>Que faire ?",known_body_n:"Le pseudo Chess.com <b>{pseudo}</b> a déjà participé à des éditions précédentes du tournoi, sous le nom <b>« {ancien} »</b>.<br><br>Tu viens de saisir <b>« {nouveau} »</b>.<br><br>Que faire ?",known_keep:"✅ Garder « {ancien} »",known_update:"✏️ Utiliser « {nouveau} » partout",known_cancel:"✕ Annuler l'inscription",reg_name_updated:"✓ Nom mis à jour dans {n} édition(s) du palmarès.",reg_ok:"Inscription réussie ! Bienvenue ",reg_err_fields:"Pseudo et nom requis.",reg_err_exists:"Ce pseudo est déjà pris.",
+    edition_moved:"✓ Ordre des éditions mis à jour",invite_title:"🔔 Reste informé",invite_text:"Résultats des matchs et annonces du tournoi, directement sur ton téléphone.",invite_ios:"Installe l'app pour activer les notifications :",invite_step1:"Appuie sur Partager ⬆️",invite_step2:"Choisis « Sur l'écran d'accueil »",invite_step3:"Appuie sur « Ajouter »",invite_step4:"Ouvre l'app : tu pourras y activer les notifications",notif_ios_install_first:"⚠️ Sur iPhone, les notifications ne fonctionnent que depuis l'app installée. Suis les étapes ci-dessous, puis active-les depuis l'app.",invite_btn:"🔔 Activer les notifications",known_title:"👋 On se connaît ?",known_body_1:"Le pseudo Chess.com <b>{pseudo}</b> a déjà participé à une édition précédente du tournoi, sous le nom <b>« {ancien} »</b>.<br><br>Tu viens de saisir <b>« {nouveau} »</b>.<br><br>Que faire ?",known_body_n:"Le pseudo Chess.com <b>{pseudo}</b> a déjà participé à des éditions précédentes du tournoi, sous le nom <b>« {ancien} »</b>.<br><br>Tu viens de saisir <b>« {nouveau} »</b>.<br><br>Que faire ?",known_keep:"✅ Garder « {ancien} »",known_update:"✏️ Utiliser « {nouveau} » partout",known_cancel:"✕ Annuler l'inscription",reg_name_updated:"✓ Nom mis à jour dans {n} édition(s) du palmarès.",reg_ok:"Inscription réussie ! Bienvenue ",reg_err_fields:"Pseudo et nom requis.",reg_err_exists:"Ce pseudo est déjà pris.",
     players_title:"Joueurs inscrits",
     admin_players_title:"Joueurs",
     notif_prefs_link:"⚙️ Préférences de notification",
@@ -1052,7 +1179,7 @@ const T = {
     notif_enabled:"✓ Notifications activées !",
     notif_disabled_warn:"⚠️ Notifications désactivées. Tu ne recevras plus les annonces du tournoi ni les résultats — tu risques de manquer une échéance et d'être déclaré forfait. Réactive-les dès que possible.",notif_cut_server:"⚠️ Tes notifications ont été coupées côté serveur — réactive-les si tu le souhaites.",notif_lost:"⚠️ Tes notifications ne fonctionnaient plus (abonnement perdu par ton navigateur). Réactive-les pour ne pas manquer d'échéance.",
     notif_test_body:"🔔 Ceci est un test de notification.",
-    notif_test_sent:"✓ Notification test envoyée !",
+    notif_activating:"⏳ Activation en cours…",notif_test_sending:"📤 Envoi du test en cours…",notif_test_no_entry:"❌ Aucune entrée sur le serveur pour cet appareil. Désactive puis réactive tes notifications.",notif_test_dead:"❌ Ton abonnement n'est plus valide (adresse expirée). Il a été retiré : réactive tes notifications.",notif_test_error:"❌ Le serveur n'a pas pu envoyer. Réessaie dans un instant.",notif_test_network:"❌ Serveur injoignable. Vérifie ta connexion.",notif_test_sent:"✓ Notification test envoyée !",
     notif_test_nosub:"Pas d'abonnement actif. Désactive puis réactive les notifications.",
     notif_enter_msg:"Entrez un message.",
     notif_sent:"✓ Notification enregistrée !",
@@ -1117,7 +1244,7 @@ const T = {
   de:{
     loading:"Wird geladen...",offline:"⚠️ Offline — Daten werden nicht synchronisiert",write_denied:"⛔ Speichern abgelehnt — Seite neu laden und erneut versuchen.",
     dev_none:"⚠️ Kein Admin-Gerät für die Verspätungswarnung registriert.",dev_orphan:"⚠️ Das registrierte Admin-Gerät hat kein aktives Abonnement mehr — die Warnung erreicht niemanden.",dev_this_on:"✅ Dieses Gerät ist für die Verspätungswarnung registriert.",dev_this_off:"⏸️ Dieses Gerät ist registriert, aber die automatische Warnung ist deaktiviert (Kästchen oben).",dev_other:"⚠️ Ein <b>anderes</b> Gerät ist für die Verspätungswarnung registriert — nicht dieses.",dev_register_btn:"📍 Dieses Gerät zu meinem Admin-Gerät machen",dev_register_instead:"📍 Stattdessen dieses Gerät registrieren",dev_remove_this:"🔄 Diese Registrierung entfernen",dev_remove_current:"🔄 Aktuelle Registrierung entfernen",dev_enable_first:"Aktiviere zuerst oben deine Benachrichtigungen.",dev_enable_then_register:"Aktiviere oben deine Benachrichtigungen und registriere dann dieses Gerät.",dev_home_this_on:"✅ Admin-Gerät — Verspätungswarnung hier aktiv",dev_home_this_off:"⏸️ Admin-Gerät hier registriert — Warnung deaktiviert",dev_home_other:"⚠️ Nicht das registrierte Admin-Gerät — keine Warnung hier",dev_home_orphan:"⚠️ Registriertes Admin-Gerät nicht mehr abonniert — Warnung ohne Empfänger",dev_home_none:"⚠️ Kein Admin-Gerät registriert",
-    late_check_alert_sent:"{n} verspätete Partie(n) — Warnung an das Admin-Gerät gesendet",late_check_nothing_late:"Keine verspätete Partie. Nichts zu senden.",late_check_proof_sent:"Keine Verspätung. Die wöchentliche Kontrollnachricht wurde gesendet.",late_check_not_playing:"Das Turnier ist nicht in der Spielphase: keine Partie kann verspätet sein.",late_check_no_admin_device:"Kein Admin-Gerät registriert: die Warnung hat keinen Empfänger.",late_check_admin_sub_invalid:"Das Abonnement des Admin-Geräts ist ungültig. Bitte neu registrieren.",late_check_auto_off:"Die automatische Warnung ist deaktiviert (Kästchen im Tab Benachrichtigungen).",late_check_maintenance:"Wartungsmodus aktiv: die Warnung ist ausgesetzt.",late_check_no_config:"Serverkonfiguration unvollständig (fehlende Schlüssel auf Netlify).",notif_cleaned:"🧹 {n} inaktive(s) Abonnement(s) entfernt.",clean_subs_btn:"🧹 Inaktive Abonnements entfernen",subs_section_title:"👥 Abonnenten",clean_subs_hint:"Prüft jedes Abonnement und entfernt jene, die nichts mehr empfangen können (Browser neu installiert, Daten gelöscht). Niemand wird benachrichtigt, gültige Abonnements bleiben unberührt.",reset_subs_warn:"⚠️ Löscht ALLE Abonnements, auch die gültigen. Jeder muss die Website erneut öffnen, um wieder angemeldet zu werden, und seine Einstellungen werden zurückgesetzt. Nur bei Problemen verwenden: die Bereinigung oben genügt normalerweise.",clean_running:"🔎 Jedes Abonnement wird geprüft… (niemand wird benachrichtigt)",late_checking:"⏳ Prüfung läuft…",notif_muted:"🔕 Du erhältst keine Benachrichtigungen",notif_all_muted:"⚠️ Du hast beide Kategorien abgewählt: du erhältst keine Benachrichtigung mehr. Du riskierst, eine Frist zu verpassen und kampflos zu verlieren. Wähle mindestens eine wieder aus.",prefs_loading:"Deine Einstellungen werden geladen…",prefs_close_btn:"✓ OK",auto_notif_title:"⚙️ Automatische Einstellungen",prefs_title:"🔔 Meine Benachrichtigungen",clean_done:"✓ {n} inaktive(s) Abonnement(s) entfernt. {a} noch gültig.",clean_admin_cleared:"Das Admin-Gerät war dabei: registriere ein neues.",clean_none:"✓ Die {a} Abonnement(s) werden vom Benachrichtigungsdienst akzeptiert — keines zu entfernen. Ein Gerät, dessen Daten gelöscht wurden, kann tagelang als gültig gelten: entferne es unten von Hand, wenn du weißt, dass es nicht mehr dient.",late_check_admin_dead:"Das Admin-Gerät war nicht mehr erreichbar: Abonnement und Registrierung entfernt. Registriere oben ein Gerät.",pin_current:"Aktueller PIN",reg_closed:"Die Anmeldung ist geschlossen.",pin_new:"Neuer PIN",pin_confirm:"Bestätigen",set_semis:"Format Halbfinale",set_final:"Format Finale",whatsapp_title:"📲 WhatsApp-Erinnerung",save_seed:"💾 Speichern",
+    late_check_alert_sent:"{n} verspätete Partie(n) — Warnung an das Admin-Gerät gesendet",late_check_nothing_late:"Keine verspätete Partie. Nichts zu senden.",late_check_proof_sent:"Keine Verspätung. Die wöchentliche Kontrollnachricht wurde gesendet.",late_check_not_playing:"Das Turnier ist nicht in der Spielphase: keine Partie kann verspätet sein.",late_check_no_admin_device:"Kein Admin-Gerät registriert: die Warnung hat keinen Empfänger.",late_check_admin_sub_invalid:"Das Abonnement des Admin-Geräts ist ungültig. Bitte neu registrieren.",late_check_auto_off:"Die automatische Warnung ist deaktiviert (Kästchen im Tab Benachrichtigungen).",late_check_maintenance:"Wartungsmodus aktiv: die Warnung ist ausgesetzt.",late_check_no_config:"Serverkonfiguration unvollständig (fehlende Schlüssel auf Netlify).",notif_cleaned:"🧹 {n} inaktive(s) Abonnement(s) entfernt.",subs_section_title:"👥 Abonnenten",reset_subs_warn:"⚠️ Löscht ALLE Abonnements, auch die gültigen. Jeder muss die Website erneut öffnen, um wieder angemeldet zu werden, und seine Einstellungen werden zurückgesetzt. Nur bei Problemen verwenden: die Bereinigung oben genügt normalerweise.",late_checking:"⏳ Prüfung läuft…",notif_muted:"🔕 Du erhältst keine Benachrichtigungen",notif_all_muted:"⚠️ Du hast beide Kategorien abgewählt: du erhältst keine Benachrichtigung mehr. Du riskierst, eine Frist zu verpassen und kampflos zu verlieren. Wähle mindestens eine wieder aus.",prefs_loading:"Deine Einstellungen werden geladen…",prefs_close_btn:"✓ OK",auto_notif_title:"⚙️ Automatische Einstellungen",prefs_title:"🔔 Meine Benachrichtigungen",late_check_admin_dead:"Das Admin-Gerät war nicht mehr erreichbar: Abonnement und Registrierung entfernt. Registriere oben ein Gerät.",pin_current:"Aktueller PIN",reg_closed:"Die Anmeldung ist geschlossen.",pin_new:"Neuer PIN",pin_confirm:"Bestätigen",set_semis:"Format Halbfinale",set_final:"Format Finale",whatsapp_title:"📲 WhatsApp-Erinnerung",save_seed:"💾 Speichern",
     tab_home:"Turnier",tab_groups:"Gruppen",tab_matches:"Partien",tab_finals:"Finale",
     tab_info:"Infos",confirm_archive_before_reset:"⚠️ TURNIER ARCHIVIEREN?\n\nDie Endrangliste von {n} Spieler(n) wird mit allen Statistiken in der Siegerliste abgelegt.\n\n✅ OK = archivieren, dann zurücksetzen\n❌ Abbrechen = zurücksetzen OHNE Archivierung\n\n(Eine Sicherungskopie des Turniers bleibt in jedem Fall erhalten.)",palmares_admin_title:"🏅 Siegerliste",palmares_edition_name_placeholder:"Name der Ausgabe",info_rules_btn:"📜 Reglement",info_palmares_btn:"🏅 Siegerliste",info_ranking_btn:"📊 Live-Rangliste",live_rank_title:"Live-Rangliste",info_admin_btn:"⚙️ Admin",info_rules_title:"Reglement",info_palmares_title:"Siegerliste",
     status_registration:"Anmeldung offen",status_playing:"Gruppenphase",status_finals:"Finalphase",status_finished:"Beendet",
@@ -1125,7 +1252,7 @@ const T = {
     reg_title:"Zum Turnier anmelden",reg_nick:"Chess.com-Benutzername *",
     reg_nick_hint:"Wird verwendet, um Sie auf Chess.com zu finden und einzuladen",reg_name:"Name / Nickname *",
     reg_name_hint:"Vorname, Spitzname oder echter Name — Ihre Wahl",reg_sector:"Sektor / Einheit (optional)",reg_btn:"Anmelden",
-    edition_moved:"✓ Reihenfolge der Ausgaben aktualisiert",known_title:"👋 Kennen wir uns?",known_body_1:"Das Chess.com-Pseudo <b>{pseudo}</b> hat bereits an einer früheren Turnierausgabe teilgenommen, unter dem Namen <b>« {ancien} »</b>.<br><br>Du hast <b>« {nouveau} »</b> eingegeben.<br><br>Was möchtest du tun?",known_body_n:"Das Chess.com-Pseudo <b>{pseudo}</b> hat bereits an früheren Turnierausgaben teilgenommen, unter dem Namen <b>« {ancien} »</b>.<br><br>Du hast <b>« {nouveau} »</b> eingegeben.<br><br>Was möchtest du tun?",known_keep:"✅ « {ancien} » behalten",known_update:"✏️ Überall « {nouveau} » verwenden",known_cancel:"✕ Anmeldung abbrechen",reg_name_updated:"✓ Name in {n} Ausgabe(n) der Siegerliste aktualisiert.",reg_ok:"Erfolgreich angemeldet! Willkommen ",reg_err_fields:"Spitzname und Name erforderlich.",reg_err_exists:"Dieser Spitzname ist bereits vergeben.",
+    edition_moved:"✓ Reihenfolge der Ausgaben aktualisiert",invite_title:"🔔 Bleib informiert",invite_text:"Spielergebnisse und Turnierankündigungen, direkt auf dein Handy.",invite_ios:"Installiere die App, um Benachrichtigungen zu aktivieren:",invite_step1:"Tippe auf Teilen ⬆️",invite_step2:"Wähle « Zum Home-Bildschirm »",invite_step3:"Tippe auf « Hinzufügen »",invite_step4:"Öffne die App: dort kannst du die Benachrichtigungen aktivieren",notif_ios_install_first:"⚠️ Auf dem iPhone funktionieren Benachrichtigungen nur über die installierte App. Folge den Schritten unten und aktiviere sie dann in der App.",invite_btn:"🔔 Benachrichtigungen aktivieren",known_title:"👋 Kennen wir uns?",known_body_1:"Das Chess.com-Pseudo <b>{pseudo}</b> hat bereits an einer früheren Turnierausgabe teilgenommen, unter dem Namen <b>« {ancien} »</b>.<br><br>Du hast <b>« {nouveau} »</b> eingegeben.<br><br>Was möchtest du tun?",known_body_n:"Das Chess.com-Pseudo <b>{pseudo}</b> hat bereits an früheren Turnierausgaben teilgenommen, unter dem Namen <b>« {ancien} »</b>.<br><br>Du hast <b>« {nouveau} »</b> eingegeben.<br><br>Was möchtest du tun?",known_keep:"✅ « {ancien} » behalten",known_update:"✏️ Überall « {nouveau} » verwenden",known_cancel:"✕ Anmeldung abbrechen",reg_name_updated:"✓ Name in {n} Ausgabe(n) der Siegerliste aktualisiert.",reg_ok:"Erfolgreich angemeldet! Willkommen ",reg_err_fields:"Spitzname und Name erforderlich.",reg_err_exists:"Dieser Spitzname ist bereits vergeben.",
     players_title:"Angemeldete Spieler",
     admin_players_title:"Spieler",
     notif_prefs_link:"⚙️ Benachrichtigungseinstellungen",
@@ -1222,7 +1349,7 @@ const T = {
     notif_enabled:"✓ Benachrichtigungen aktiviert!",
     notif_disabled_warn:"⚠️ Benachrichtigungen deaktiviert. Du erhältst keine Turnierankündigungen und Ergebnisse mehr — du riskierst, eine Frist zu verpassen und kampflos zu verlieren. Aktiviere sie so bald wie möglich wieder.",notif_cut_server:"⚠️ Deine Benachrichtigungen wurden serverseitig abgeschaltet — aktiviere sie bei Bedarf erneut.",notif_lost:"⚠️ Deine Benachrichtigungen funktionierten nicht mehr (Abo vom Browser verloren). Aktiviere sie erneut, um keine Frist zu verpassen.",
     notif_test_body:"🔔 Dies ist eine Testbenachrichtigung.",
-    notif_test_sent:"✓ Testbenachrichtigung gesendet!",
+    notif_activating:"⏳ Wird aktiviert…",notif_test_sending:"📤 Test wird gesendet…",notif_test_no_entry:"❌ Kein Eintrag auf dem Server für dieses Gerät. Deaktiviere und aktiviere deine Benachrichtigungen erneut.",notif_test_dead:"❌ Dein Abo ist nicht mehr gültig (Adresse abgelaufen). Es wurde entfernt: aktiviere die Benachrichtigungen erneut.",notif_test_error:"❌ Der Server konnte nicht senden. Versuche es gleich noch einmal.",notif_test_network:"❌ Server nicht erreichbar. Prüfe deine Verbindung.",notif_test_sent:"✓ Testbenachrichtigung gesendet!",
     notif_test_nosub:"Kein aktives Abonnement. Deaktiviere und reaktiviere die Benachrichtigungen.",
     notif_enter_msg:"Bitte eine Nachricht eingeben.",
     notif_sent:"✓ Benachrichtigung gespeichert!",
@@ -1251,7 +1378,7 @@ const T = {
   en:{
     loading:"Loading...",offline:"⚠️ Offline — data not syncing",write_denied:"⛔ Save refused — reload the page and try again.",
     dev_none:"⚠️ No admin device registered for the late alert.",dev_orphan:"⚠️ The registered admin device no longer has an active subscription — the late alert reaches no one.",dev_this_on:"✅ This device is registered for the late alert.",dev_this_off:"⏸️ This device is registered, but the automatic alert is disabled (checkbox above).",dev_other:"⚠️ <b>Another</b> device is registered for the late alert — not this one.",dev_register_btn:"📍 Make this device my admin device",dev_register_instead:"📍 Register this device instead",dev_remove_this:"🔄 Remove this registration",dev_remove_current:"🔄 Remove the current registration",dev_enable_first:"Enable your notifications above first.",dev_enable_then_register:"Enable your notifications above, then register this device.",dev_home_this_on:"✅ Admin device — late alert active here",dev_home_this_off:"⏸️ Admin device registered here — alert disabled",dev_home_other:"⚠️ Not the registered admin device — no late alert here",dev_home_orphan:"⚠️ Registered admin device no longer subscribed — alert has no recipient",dev_home_none:"⚠️ No admin device registered",
-    late_check_alert_sent:"{n} late game(s) — alert sent to the admin device",late_check_nothing_late:"No late game. Nothing to send.",late_check_proof_sent:"No delay. The weekly check message was sent.",late_check_not_playing:"The tournament is not in a playing phase: no game can be late.",late_check_no_admin_device:"No admin device registered: the alert has no recipient.",late_check_admin_sub_invalid:"The admin device subscription is invalid. Please register it again.",late_check_auto_off:"The automatic alert is disabled (checkbox in the Notifs tab).",late_check_maintenance:"Maintenance mode active: the alert is suspended.",late_check_no_config:"Server configuration incomplete (missing keys on Netlify).",notif_cleaned:"🧹 {n} inactive subscription(s) removed.",clean_subs_btn:"🧹 Remove inactive subscriptions",subs_section_title:"👥 Subscribers",clean_subs_hint:"Checks every subscription and removes those that can no longer receive anything (browser reinstalled, data cleared). Nobody is notified, valid subscribers are untouched.",reset_subs_warn:"⚠️ Erases ALL subscriptions, including valid ones. Everyone will have to reopen the site to be resubscribed, and their preferences will be reset. Reserve this for real trouble: the cleanup above is usually enough.",clean_running:"🔎 Checking each subscription… (nobody is notified)",late_checking:"⏳ Checking…",notif_muted:"🔕 You will receive no notifications",notif_all_muted:"⚠️ You unchecked both categories: you will receive no notification at all. You risk missing a deadline and forfeiting. Check at least one box again.",prefs_loading:"Loading your preferences…",prefs_close_btn:"✓ OK",auto_notif_title:"⚙️ Automatic settings",prefs_title:"🔔 My notifications",clean_done:"✓ {n} inactive subscription(s) removed. {a} still valid.",clean_admin_cleared:"The admin device was one of them: register a new one.",clean_none:"✓ All {a} subscription(s) are accepted by the push service — none to remove. A device whose data was cleared can still count as valid for days: remove it manually below if you know it is no longer in use.",late_check_admin_dead:"The admin device was no longer reachable: subscription and registration removed. Register a device above.",pin_current:"Current PIN",reg_closed:"Registration is closed.",pin_new:"New PIN",pin_confirm:"Confirm",set_semis:"Semi-finals format",set_final:"Final format",whatsapp_title:"📲 WhatsApp reminder",save_seed:"💾 Save",
+    late_check_alert_sent:"{n} late game(s) — alert sent to the admin device",late_check_nothing_late:"No late game. Nothing to send.",late_check_proof_sent:"No delay. The weekly check message was sent.",late_check_not_playing:"The tournament is not in a playing phase: no game can be late.",late_check_no_admin_device:"No admin device registered: the alert has no recipient.",late_check_admin_sub_invalid:"The admin device subscription is invalid. Please register it again.",late_check_auto_off:"The automatic alert is disabled (checkbox in the Notifs tab).",late_check_maintenance:"Maintenance mode active: the alert is suspended.",late_check_no_config:"Server configuration incomplete (missing keys on Netlify).",notif_cleaned:"🧹 {n} inactive subscription(s) removed.",subs_section_title:"👥 Subscribers",reset_subs_warn:"⚠️ Erases ALL subscriptions, including valid ones. Everyone will have to reopen the site to be resubscribed, and their preferences will be reset. Reserve this for real trouble: the cleanup above is usually enough.",late_checking:"⏳ Checking…",notif_muted:"🔕 You will receive no notifications",notif_all_muted:"⚠️ You unchecked both categories: you will receive no notification at all. You risk missing a deadline and forfeiting. Check at least one box again.",prefs_loading:"Loading your preferences…",prefs_close_btn:"✓ OK",auto_notif_title:"⚙️ Automatic settings",prefs_title:"🔔 My notifications",late_check_admin_dead:"The admin device was no longer reachable: subscription and registration removed. Register a device above.",pin_current:"Current PIN",reg_closed:"Registration is closed.",pin_new:"New PIN",pin_confirm:"Confirm",set_semis:"Semi-finals format",set_final:"Final format",whatsapp_title:"📲 WhatsApp reminder",save_seed:"💾 Save",
     tab_home:"Tournament",tab_groups:"Groups",tab_matches:"Matches",tab_finals:"Finals",
     tab_info:"Info",confirm_archive_before_reset:"⚠️ ARCHIVE THE TOURNAMENT?\n\nThe final ranking of {n} player(s) will be filed in the hall of fame, with all statistics.\n\n✅ OK = archive, then reset\n❌ Cancel = reset WITHOUT archiving\n\n(A safety copy of the tournament is kept either way.)",palmares_admin_title:"🏅 Hall of fame",palmares_edition_name_placeholder:"Edition name",info_rules_btn:"📜 Rules",info_palmares_btn:"🏅 Hall of fame",info_ranking_btn:"📊 Live ranking",live_rank_title:"Live ranking",info_admin_btn:"⚙️ Admin",info_rules_title:"Rules",info_palmares_title:"Hall of fame",
     status_registration:"Registration open",status_playing:"Group stage",status_finals:"Final stage",status_finished:"Finished",
@@ -1259,7 +1386,7 @@ const T = {
     reg_title:"Register for the tournament",reg_nick:"Chess.com username *",
     reg_nick_hint:"Used to find and invite you on Chess.com",reg_name:"Name / Nickname *",
     reg_name_hint:"First name, nickname or real name — your choice",reg_sector:"Sector / Unit (optional)",reg_btn:"Register",
-    edition_moved:"✓ Edition order updated",known_title:"👋 Do we know each other?",known_body_1:"The Chess.com username <b>{pseudo}</b> has already taken part in a previous edition of the tournament, under the name <b>« {ancien} »</b>.<br><br>You entered <b>« {nouveau} »</b>.<br><br>What would you like to do?",known_body_n:"The Chess.com username <b>{pseudo}</b> has already taken part in previous editions of the tournament, under the name <b>« {ancien} »</b>.<br><br>You entered <b>« {nouveau} »</b>.<br><br>What would you like to do?",known_keep:"✅ Keep « {ancien} »",known_update:"✏️ Use « {nouveau} » everywhere",known_cancel:"✕ Cancel registration",reg_name_updated:"✓ Name updated in {n} edition(s) of the hall of fame.",reg_ok:"Registration successful! Welcome ",reg_err_fields:"Nickname and name are required.",reg_err_exists:"This nickname is already taken.",
+    edition_moved:"✓ Edition order updated",invite_title:"🔔 Stay informed",invite_text:"Match results and tournament announcements, straight to your phone.",invite_ios:"Install the app to enable notifications:",invite_step1:"Tap Share ⬆️",invite_step2:"Choose « Add to Home Screen »",invite_step3:"Tap « Add »",invite_step4:"Open the app: you can enable notifications there",notif_ios_install_first:"⚠️ On iPhone, notifications only work from the installed app. Follow the steps below, then enable them from the app.",invite_btn:"🔔 Enable notifications",known_title:"👋 Do we know each other?",known_body_1:"The Chess.com username <b>{pseudo}</b> has already taken part in a previous edition of the tournament, under the name <b>« {ancien} »</b>.<br><br>You entered <b>« {nouveau} »</b>.<br><br>What would you like to do?",known_body_n:"The Chess.com username <b>{pseudo}</b> has already taken part in previous editions of the tournament, under the name <b>« {ancien} »</b>.<br><br>You entered <b>« {nouveau} »</b>.<br><br>What would you like to do?",known_keep:"✅ Keep « {ancien} »",known_update:"✏️ Use « {nouveau} » everywhere",known_cancel:"✕ Cancel registration",reg_name_updated:"✓ Name updated in {n} edition(s) of the hall of fame.",reg_ok:"Registration successful! Welcome ",reg_err_fields:"Nickname and name are required.",reg_err_exists:"This nickname is already taken.",
     players_title:"Registered players",
     admin_players_title:"Players",
     notif_prefs_link:"⚙️ Notification preferences",
@@ -1322,7 +1449,7 @@ const T = {
     notif_enabled:"✓ Notifications enabled!",
     notif_disabled_warn:"⚠️ Notifications disabled. You will no longer receive tournament announcements or results — you risk missing a deadline and forfeiting. Re-enable them as soon as possible.",notif_cut_server:"⚠️ Your notifications were cut off server-side — re-enable them if you wish.",notif_lost:"⚠️ Your notifications had stopped working (subscription lost by your browser). Re-enable them so you don't miss a deadline.",
     notif_test_body:"🔔 This is a test notification.",
-    notif_test_sent:"✓ Test notification sent!",
+    notif_activating:"⏳ Enabling…",notif_test_sending:"📤 Sending test…",notif_test_no_entry:"❌ No entry on the server for this device. Turn your notifications off and on again.",notif_test_dead:"❌ Your subscription is no longer valid (address expired). It was removed: enable notifications again.",notif_test_error:"❌ The server could not send. Try again in a moment.",notif_test_network:"❌ Server unreachable. Check your connection.",notif_test_sent:"✓ Test notification sent!",
     notif_test_nosub:"No active subscription. Disable then re-enable notifications.",
     notif_enter_msg:"Please enter a message.",
     notif_sent:"✓ Notification saved!",
@@ -1385,7 +1512,7 @@ const T = {
   it:{
     loading:"Caricamento...",offline:"⚠️ Offline — dati non sincronizzati",write_denied:"⛔ Salvataggio rifiutato — ricarica la pagina e riprova.",
     dev_none:"⚠️ Nessun dispositivo admin registrato per l'avviso di ritardo.",dev_orphan:"⚠️ Il dispositivo admin registrato non ha più un abbonamento attivo — l'avviso non raggiunge nessuno.",dev_this_on:"✅ Questo dispositivo è registrato per l'avviso di ritardo.",dev_this_off:"⏸️ Questo dispositivo è registrato, ma l'avviso automatico è disattivato (casella sopra).",dev_other:"⚠️ Un <b>altro</b> dispositivo è registrato per l'avviso di ritardo — non questo.",dev_register_btn:"📍 Rendere questo dispositivo il mio dispositivo admin",dev_register_instead:"📍 Registrare invece questo dispositivo",dev_remove_this:"🔄 Rimuovere questa registrazione",dev_remove_current:"🔄 Rimuovere la registrazione attuale",dev_enable_first:"Attiva prima le notifiche qui sopra.",dev_enable_then_register:"Attiva le notifiche qui sopra, poi registra questo dispositivo.",dev_home_this_on:"✅ Dispositivo admin — avviso di ritardo attivo qui",dev_home_this_off:"⏸️ Dispositivo admin registrato qui — avviso disattivato",dev_home_other:"⚠️ Non è il dispositivo admin registrato — nessun avviso qui",dev_home_orphan:"⚠️ Dispositivo admin registrato non più abbonato — avviso senza destinatario",dev_home_none:"⚠️ Nessun dispositivo admin registrato",
-    late_check_alert_sent:"{n} partita/e in ritardo — avviso inviato al dispositivo admin",late_check_nothing_late:"Nessuna partita in ritardo. Niente da inviare.",late_check_proof_sent:"Nessun ritardo. Il messaggio settimanale di controllo è stato inviato.",late_check_not_playing:"Il torneo non è in fase di gioco: nessuna partita può essere in ritardo.",late_check_no_admin_device:"Nessun dispositivo admin registrato: l'avviso non ha destinatario.",late_check_admin_sub_invalid:"L'abbonamento del dispositivo admin non è valido. Registralo di nuovo.",late_check_auto_off:"L'avviso automatico è disattivato (casella nella scheda Notifiche).",late_check_maintenance:"Modalità manutenzione attiva: l'avviso è sospeso.",late_check_no_config:"Configurazione server incompleta (chiavi mancanti su Netlify).",notif_cleaned:"🧹 {n} abbonamento/i inattivo/i rimosso/i.",clean_subs_btn:"🧹 Rimuovere gli abbonamenti inattivi",subs_section_title:"👥 Abbonati",clean_subs_hint:"Verifica ogni abbonamento e rimuove quelli che non possono più ricevere nulla (browser reinstallato, dati cancellati). Nessuno viene notificato, gli abbonati validi non vengono toccati.",reset_subs_warn:"⚠️ Cancella TUTTI gli abbonamenti, compresi quelli validi. Ognuno dovrà riaprire il sito per essere riabbonato e le sue preferenze verranno ripristinate. Da riservare ai casi problematici: la pulizia qui sopra basta di solito.",clean_running:"🔎 Verifica di ogni abbonamento… (nessuno viene notificato)",late_checking:"⏳ Verifica in corso…",notif_muted:"🔕 Non riceverai alcuna notifica",notif_all_muted:"⚠️ Hai deselezionato entrambe le categorie: non riceverai più alcuna notifica. Rischi di perdere una scadenza e di perdere a tavolino. Seleziona almeno una casella.",prefs_loading:"Caricamento delle tue preferenze…",prefs_close_btn:"✓ OK",auto_notif_title:"⚙️ Impostazioni automatiche",prefs_title:"🔔 Le mie notifiche",clean_done:"✓ {n} abbonamento/i inattivo/i rimosso/i. {a} ancora valido/i.",clean_admin_cleared:"Il dispositivo admin era tra questi: registrane uno nuovo.",clean_none:"✓ I {a} abbonamento/i sono accettati dal servizio di notifica — nessuno da rimuovere. Un dispositivo i cui dati sono stati cancellati può restare valido per giorni: rimuovilo a mano qui sotto se sai che non serve più.",late_check_admin_dead:"Il dispositivo admin non era più raggiungibile: abbonamento e registrazione rimossi. Registra un dispositivo qui sopra.",pin_current:"PIN attuale",reg_closed:"Le iscrizioni sono chiuse.",pin_new:"Nuovo PIN",pin_confirm:"Confermare",set_semis:"Formato semifinali",set_final:"Formato finale",whatsapp_title:"📲 Promemoria WhatsApp",save_seed:"💾 Salvare",
+    late_check_alert_sent:"{n} partita/e in ritardo — avviso inviato al dispositivo admin",late_check_nothing_late:"Nessuna partita in ritardo. Niente da inviare.",late_check_proof_sent:"Nessun ritardo. Il messaggio settimanale di controllo è stato inviato.",late_check_not_playing:"Il torneo non è in fase di gioco: nessuna partita può essere in ritardo.",late_check_no_admin_device:"Nessun dispositivo admin registrato: l'avviso non ha destinatario.",late_check_admin_sub_invalid:"L'abbonamento del dispositivo admin non è valido. Registralo di nuovo.",late_check_auto_off:"L'avviso automatico è disattivato (casella nella scheda Notifiche).",late_check_maintenance:"Modalità manutenzione attiva: l'avviso è sospeso.",late_check_no_config:"Configurazione server incompleta (chiavi mancanti su Netlify).",notif_cleaned:"🧹 {n} abbonamento/i inattivo/i rimosso/i.",subs_section_title:"👥 Abbonati",reset_subs_warn:"⚠️ Cancella TUTTI gli abbonamenti, compresi quelli validi. Ognuno dovrà riaprire il sito per essere riabbonato e le sue preferenze verranno ripristinate. Da riservare ai casi problematici: la pulizia qui sopra basta di solito.",late_checking:"⏳ Verifica in corso…",notif_muted:"🔕 Non riceverai alcuna notifica",notif_all_muted:"⚠️ Hai deselezionato entrambe le categorie: non riceverai più alcuna notifica. Rischi di perdere una scadenza e di perdere a tavolino. Seleziona almeno una casella.",prefs_loading:"Caricamento delle tue preferenze…",prefs_close_btn:"✓ OK",auto_notif_title:"⚙️ Impostazioni automatiche",prefs_title:"🔔 Le mie notifiche",late_check_admin_dead:"Il dispositivo admin non era più raggiungibile: abbonamento e registrazione rimossi. Registra un dispositivo qui sopra.",pin_current:"PIN attuale",reg_closed:"Le iscrizioni sono chiuse.",pin_new:"Nuovo PIN",pin_confirm:"Confermare",set_semis:"Formato semifinali",set_final:"Formato finale",whatsapp_title:"📲 Promemoria WhatsApp",save_seed:"💾 Salvare",
     tab_home:"Torneo",tab_groups:"Gruppi",tab_matches:"Partite",tab_finals:"Finali",
     tab_info:"Info",confirm_archive_before_reset:"⚠️ ARCHIVIARE IL TORNEO?\n\nLa classifica finale di {n} giocatore/i verrà inserita nell'albo d'oro, con tutte le statistiche.\n\n✅ OK = archiviare, poi azzerare\n❌ Annulla = azzerare SENZA archiviare\n\n(Una copia di sicurezza del torneo viene conservata in ogni caso.)",palmares_admin_title:"🏅 Albo d'oro",palmares_edition_name_placeholder:"Nome dell'edizione",info_rules_btn:"📜 Regolamento",info_palmares_btn:"🏅 Albo d'oro",info_ranking_btn:"📊 Classifica in diretta",live_rank_title:"Classifica in diretta",info_admin_btn:"⚙️ Admin",info_rules_title:"Regolamento",info_palmares_title:"Albo d'oro",
     status_registration:"Iscrizioni aperte",status_playing:"Fase a gironi",status_finals:"Fase finale",status_finished:"Terminato",
@@ -1393,7 +1520,7 @@ const T = {
     reg_title:"Iscriversi al torneo",reg_nick:"Nome utente Chess.com *",
     reg_nick_hint:"Utilizzato per trovarti e invitarti su Chess.com",reg_name:"Nome / Nickname *",
     reg_name_hint:"Nome, soprannome o nome reale — a tua scelta",reg_sector:"Settore / Unità (opzionale)",reg_btn:"Iscriversi",
-    edition_moved:"✓ Ordine delle edizioni aggiornato",known_title:"👋 Ci conosciamo?",known_body_1:"Lo pseudonimo Chess.com <b>{pseudo}</b> ha già partecipato a una precedente edizione del torneo, con il nome <b>« {ancien} »</b>.<br><br>Hai inserito <b>« {nouveau} »</b>.<br><br>Cosa vuoi fare?",known_body_n:"Lo pseudonimo Chess.com <b>{pseudo}</b> ha già partecipato a precedenti edizioni del torneo, con il nome <b>« {ancien} »</b>.<br><br>Hai inserito <b>« {nouveau} »</b>.<br><br>Cosa vuoi fare?",known_keep:"✅ Mantenere « {ancien} »",known_update:"✏️ Usare « {nouveau} » ovunque",known_cancel:"✕ Annullare l'iscrizione",reg_name_updated:"✓ Nome aggiornato in {n} edizione/i dell'albo d'oro.",reg_ok:"Iscrizione riuscita! Benvenuto/a ",reg_err_fields:"Soprannome e nome richiesti.",reg_err_exists:"Questo soprannome è già utilizzato.",
+    edition_moved:"✓ Ordine delle edizioni aggiornato",invite_title:"🔔 Resta informato",invite_text:"Risultati delle partite e annunci del torneo, direttamente sul tuo telefono.",invite_ios:"Installa l'app per attivare le notifiche:",invite_step1:"Tocca Condividi ⬆️",invite_step2:"Scegli « Aggiungi a Home »",invite_step3:"Tocca « Aggiungi »",invite_step4:"Apri l'app: lì potrai attivare le notifiche",notif_ios_install_first:"⚠️ Su iPhone le notifiche funzionano solo dall'app installata. Segui i passaggi qui sotto, poi attivale dall'app.",invite_btn:"🔔 Attivare le notifiche",known_title:"👋 Ci conosciamo?",known_body_1:"Lo pseudonimo Chess.com <b>{pseudo}</b> ha già partecipato a una precedente edizione del torneo, con il nome <b>« {ancien} »</b>.<br><br>Hai inserito <b>« {nouveau} »</b>.<br><br>Cosa vuoi fare?",known_body_n:"Lo pseudonimo Chess.com <b>{pseudo}</b> ha già partecipato a precedenti edizioni del torneo, con il nome <b>« {ancien} »</b>.<br><br>Hai inserito <b>« {nouveau} »</b>.<br><br>Cosa vuoi fare?",known_keep:"✅ Mantenere « {ancien} »",known_update:"✏️ Usare « {nouveau} » ovunque",known_cancel:"✕ Annullare l'iscrizione",reg_name_updated:"✓ Nome aggiornato in {n} edizione/i dell'albo d'oro.",reg_ok:"Iscrizione riuscita! Benvenuto/a ",reg_err_fields:"Soprannome e nome richiesti.",reg_err_exists:"Questo soprannome è già utilizzato.",
     players_title:"Giocatori iscritti",
     admin_players_title:"Giocatori",
     notif_prefs_link:"⚙️ Preferenze di notifica",
@@ -1454,7 +1581,7 @@ const T = {
     notif_enabled:"✓ Notifiche attivate!",
     notif_disabled_warn:"⚠️ Notifiche disattivate. Non riceverai più gli annunci del torneo né i risultati — rischi di perdere una scadenza e di perdere a tavolino. Riattivale appena possibile.",notif_cut_server:"⚠️ Le tue notifiche sono state disattivate lato server — riattivale se lo desideri.",notif_lost:"⚠️ Le tue notifiche non funzionavano più (abbonamento perso dal browser). Riattivale per non perdere una scadenza.",
     notif_test_body:"🔔 Questa è una notifica di prova.",
-    notif_test_sent:"✓ Notifica di prova inviata!",
+    notif_activating:"⏳ Attivazione in corso…",notif_test_sending:"📤 Invio del test…",notif_test_no_entry:"❌ Nessuna voce sul server per questo dispositivo. Disattiva e riattiva le notifiche.",notif_test_dead:"❌ Il tuo abbonamento non è più valido (indirizzo scaduto). È stato rimosso: riattiva le notifiche.",notif_test_error:"❌ Il server non è riuscito a inviare. Riprova tra poco.",notif_test_network:"❌ Server irraggiungibile. Controlla la connessione.",notif_test_sent:"✓ Notifica di prova inviata!",
     notif_test_nosub:"Nessun abbonamento attivo. Disattiva e riattiva le notifiche.",
     notif_enter_msg:"Inserire un messaggio.",
     notif_sent:"✓ Notifica salvata!",
@@ -1520,6 +1647,10 @@ const T = {
 
 // ── LANG ──
 let lang = localStorage.getItem('abct-lang') || 'fr';
+// Lecture directe depuis le stockage : utilisable AVANT la déclaration ci-dessus,
+// donc partout. Sert à enregistrer la langue dans l'abonnement, pour que le
+// serveur envoie à chaque joueur la notification dans sa langue.
+window.langueCourante = () => localStorage.getItem('abct-lang') || 'fr';
 function t(key) { return T[lang][key] || T['fr'][key] || key; }
 
 window.setLang = function(l) {
@@ -1531,6 +1662,13 @@ window.setLang = function(l) {
   applyMaintenanceOverlay();
   applyTranslations();
   renderPage(currentPage);
+  // Répercuter la langue sur l'abonnement : sans cela, un joueur qui change de
+  // langue continuerait de recevoir ses notifications dans l'ancienne.
+  const subId = localStorage.getItem('abct-notif-subid');
+  if (subId && localStorage.getItem('abct-notif') === 'on') {
+    set(ref(db, SUB_PATH + '/' + subId + '/lang'), l)
+      .catch(e => console.log('[ABCT] Langue de l\'abonnement non mise à jour :', e.message));
+  }
 };
 
 function applyTranslations() {
@@ -1648,8 +1786,6 @@ function applyTranslations() {
   setT('auto-notif-title', 'auto_notif_title');
   setT('prefs-title', 'prefs_title');
   setT('prefs-close-btn', 'prefs_close_btn');
-  setT('clean-subs-btn', 'clean_subs_btn');
-  setT('clean-subs-hint', 'clean_subs_hint');
   setT('reset-subs-warn', 'reset_subs_warn');
   setT('reset-subs-btn', 'reset_subs_btn');
   setT('copy-whatsapp-btn', 'copy_whatsapp_btn');
@@ -4254,8 +4390,10 @@ function renderHome(){
   const regDeadlineEl = document.getElementById('home-reg-deadline');
   if (regDeadlineEl) {
     if (s.status === 'registration' && s.registrationDeadline) {
-      const d = new Date(s.registrationDeadline);
-      regDeadlineEl.textContent = isNaN(d.getTime()) ? '' : '⏳ ' + t('reg_deadline_until') + ' ' + formatEstimate(d);
+      // Analyse en heure LOCALE : new Date('2026-09-30') vaut minuit UTC, ce qui
+      // affiche la veille sur un appareil réglé sur un fuseau en retard sur UTC.
+      const d = ABCT_DATES.parseDateLocale(s.registrationDeadline);
+      regDeadlineEl.textContent = !d ? '' : '⏳ ' + t('reg_deadline_until') + ' ' + formatEstimate(d);
       regDeadlineEl.style.display = isNaN(d.getTime()) ? 'none' : 'block';
     } else {
       regDeadlineEl.style.display = 'none';
@@ -4488,7 +4626,21 @@ function renderAdmin(){
     // Show subscriber count
     const subsCount = Object.values(state?.[SUB_PATH] || {}).filter(s => s?.endpoint && s?.keys).length;
     const subsEl = document.getElementById('notif-subscribers-count');
-    if (subsEl) subsEl.textContent = subsCount + (subsCount > 1 ? t('notif_subscribers') : t('notif_subscriber')) + ' aux notifications';
+    if (subsEl) {
+      // Répartition par langue : indique si une annonce mérite d'être écrite
+      // bilingue. Les abonnements antérieurs n'ont pas de langue enregistrée —
+      // ils apparaissent sous « ? » et se résoudront à leur prochaine ouverture.
+      const parLangue = {};
+      Object.values(state?.[SUB_PATH] || {}).forEach(s => {
+        const l = (s && s.lang) ? String(s.lang).toUpperCase() : '?';
+        parLangue[l] = (parLangue[l] || 0) + 1;
+      });
+      const detail = Object.entries(parLangue)
+        .sort((a, b) => b[1] - a[1])
+        .map(([l, n]) => n + ' ' + l).join(' · ');
+      subsEl.textContent = subsCount + (subsCount > 1 ? t('notif_subscribers') : t('notif_subscriber')) + ' aux notifications'
+        + (detail && subsCount ? '  —  ' + detail : '');
+    }
     // Sync auto-notify toggle with Firebase (source of truth)
     const autoNotifCb = document.getElementById('auto-notify-toggle');
     if (autoNotifCb) autoNotifCb.checked = state?.settings?.autoNotifyResults === true;
@@ -4666,7 +4818,7 @@ function surDonneesChangees() {
               const o = existing.toJSON();
               const currentSubId = btoa(o.endpoint).slice(-20);
               await set(ref(db, SUB_PATH + '/' + currentSubId), {
-                endpoint: o.endpoint, keys: o.keys, timestamp: Date.now(),
+                endpoint: o.endpoint, keys: o.keys, timestamp: Date.now(), lang: langueCourante(),
                 prefs: { officiel: true, match: true }
               });
               if (currentSubId !== mySubId) localStorage.setItem('abct-notif-subid', currentSubId);
@@ -4782,17 +4934,21 @@ setTimeout(async () => {
         if (existing) {
           const o = existing.toJSON();
           const subId = btoa(o.endpoint).slice(-20);
-          localStorage.setItem('abct-notif', 'on');
-          localStorage.setItem('abct-notif-subid', subId);
+          // L'écriture Firebase D'ABORD, le drapeau ENSUITE — même ordre que
+          // subscribeToNotifications. Si l'écriture échoue, le catch se déclenche
+          // et le bouton reste gris : mieux vaut demander un clic de plus que
+          // d'afficher « activées » à quelqu'un qui ne recevra rien.
           if (!state?.[SUB_PATH]?.[subId]) {
             await set(ref(db, SUB_PATH + '/' + subId), {
-              endpoint: o.endpoint, keys: o.keys, timestamp: Date.now(),
+              endpoint: o.endpoint, keys: o.keys, timestamp: Date.now(), lang: langueCourante(),
               prefs: { officiel: true, match: true }
             });
             console.log('État restauré ET entrée Firebase recréée (était absente)');
           } else {
             console.log('État notifications restauré depuis le service worker');
           }
+          localStorage.setItem('abct-notif', 'on');
+          localStorage.setItem('abct-notif-subid', subId);
         }
       }
     } catch(e) { console.log('Recovery notif (non bloquant) :', e.message); }
@@ -4851,7 +5007,7 @@ setTimeout(async () => {
           });
           const o = sub.toJSON();
           const subId = btoa(o.endpoint).slice(-20);
-          await set(ref(db, SUB_PATH + '/' + subId), { endpoint: o.endpoint, keys: o.keys, timestamp: Date.now(), prefs: carriedPrefs || { officiel: true, match: true } });
+          await set(ref(db, SUB_PATH + '/' + subId), { endpoint: o.endpoint, keys: o.keys, timestamp: Date.now(), lang: langueCourante(), prefs: carriedPrefs || { officiel: true, match: true } });
           localStorage.setItem('abct-notif-subid', subId);
           localStorage.removeItem('abct-notif-token');
           console.log('Abonnement push migré (clé VAPID différente)');
@@ -4866,7 +5022,7 @@ setTimeout(async () => {
             // on met à jour le pointeur "appareil admin" s'il désignait l'ancienne.
             const o = old.toJSON();
             const prefs = state?.[SUB_PATH]?.[storedSubId]?.prefs || { officiel: true, match: true };
-            await set(ref(db, SUB_PATH + '/' + currentSubId), { endpoint: o.endpoint, keys: o.keys, timestamp: Date.now(), prefs });
+            await set(ref(db, SUB_PATH + '/' + currentSubId), { endpoint: o.endpoint, keys: o.keys, timestamp: Date.now(), lang: langueCourante(), prefs });
             await set(ref(db, SUB_PATH + '/' + storedSubId), null);
             if (state?.settings?.[ADMIN_SUB_KEY] === storedSubId) {
               await set(ref(db, 'settings/' + ADMIN_SUB_KEY), currentSubId);
@@ -4882,6 +5038,11 @@ setTimeout(async () => {
       console.log('Migration silencieuse (non bloquant) :', e.message);
     }
   }
+
+  // Invite aux notifications : APRÈS toutes les vérifications d'abonnement, sinon
+  // on la proposerait à quelqu'un qui vient d'être reconnu comme déjà abonné.
+  // Délai supplémentaire : le site doit être lisible avant qu'un bandeau surgisse.
+  setTimeout(proposerNotifications, 1800);
 }, 500);
 
 window.addEventListener('online',()=>document.getElementById('offline-bar').style.display='none');

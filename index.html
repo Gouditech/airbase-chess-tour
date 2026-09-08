@@ -817,16 +817,24 @@ function proposerNotifications(forcer) {
     bBtn.textContent = t('invite_btn');
     bBtn.style.display = 'block';
   }
+  // Annuler une fermeture en attente, sinon elle masquerait ce qu'on vient d'ouvrir.
+  if (minuteurInvite) { clearTimeout(minuteurInvite); minuteurInvite = null; }
   box.style.display = 'block';
   // Laisser le site s'afficher d'abord : surgir instantanément fait publicité.
   setTimeout(() => { box.style.transform = 'translateY(0)'; }, 50);
 }
 
+// Le masquage attend la fin de l'animation avant de retirer le bandeau du flux.
+// Ce minuteur DOIT être annulable : sur iPhone, cliquer le bouton de la carte
+// masque puis rouvre aussitôt le bandeau — sans annulation, la fermeture
+// programmée l'effacerait 350 ms plus tard, après un bref clignotement.
+let minuteurInvite = null;
 function masquerInvite() {
   const box = document.getElementById('notif-invite');
   if (!box) return;
   box.style.transform = 'translateY(120%)';
-  setTimeout(() => { box.style.display = 'none'; }, 350);
+  if (minuteurInvite) clearTimeout(minuteurInvite);
+  minuteurInvite = setTimeout(() => { box.style.display = 'none'; minuteurInvite = null; }, 350);
 }
 
 window.fermerInviteNotif = function() {
@@ -1026,33 +1034,8 @@ window.testNotification = async function() {
   }
 };
 
-let lastNotifTimestamp = 0;
 
-function checkNewNotification(data) {
-  const notifs = data?.notifications || {};
-  const entries = Object.values(notifs).sort((a,b) => b.timestamp - a.timestamp);
-  if (!entries.length) return;
-  const latest = entries[0];
-  if (latest.timestamp > lastNotifTimestamp && lastNotifTimestamp > 0) {
-    // Show in-app banner
-    showInAppNotification(latest.title, latest.body);
-  }
-  if (lastNotifTimestamp === 0) lastNotifTimestamp = latest.timestamp;
-  else lastNotifTimestamp = Math.max(lastNotifTimestamp, latest.timestamp);
-}
 
-function showInAppNotification(title, body) {
-  // Create or update notification banner
-  let banner = document.getElementById('inapp-notif-banner');
-  if (!banner) {
-    banner = document.createElement('div');
-    banner.id = 'inapp-notif-banner';
-    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:8000;background:var(--dark);color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:flex-start;box-shadow:0 2px 8px rgba(0,0,0,0.3)';
-    document.body.appendChild(banner);
-  }
-  banner.innerHTML = `<div><div style="font-weight:700;font-size:13px;color:var(--gold)">🔔 ${esc(title)}</div><div style="font-size:12px;margin-top:3px;color:#ddd">${esc(body)}</div></div><button onclick="document.getElementById('inapp-notif-banner').remove()" style="border:none;background:none;color:#888;font-size:18px;cursor:pointer;padding:0 0 0 12px">✕</button>`;
-  setTimeout(() => { if (banner.parentNode) banner.remove(); }, 8000);
-}
 
 window.toggleNotifications = async function() {
   const on = localStorage.getItem('abct-notif') === 'on';

@@ -462,19 +462,13 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
      notifications DÉFINITIVEMENT — le joueur ne pourrait plus les activer depuis
      le site. Ici, le clic sur « Activer » constitue le geste attendu : la vraie
      demande s'affiche alors partout, et fermer le bandeau ne bloque rien. -->
-<div id="notif-invite" style="display:none;position:fixed;left:12px;right:12px;bottom:12px;z-index:9998;
+<div id="notif-invite" style="display:none;position:fixed;left:12px;right:12px;bottom:calc(66px + env(safe-area-inset-bottom));z-index:9998;
      background:#fff;border-radius:14px;box-shadow:0 6px 28px rgba(0,0,0,0.18);padding:14px 16px;
      max-width:420px;margin:0 auto;transform:translateY(120%);transition:transform .35s ease">
   <button onclick="fermerInviteNotif()" aria-label="Fermer" style="position:absolute;top:8px;right:10px;border:none;background:none;font-size:17px;color:#bbb;cursor:pointer;padding:2px 6px;line-height:1">✕</button>
   <div style="font-size:14px;font-weight:800;margin-bottom:4px;padding-right:22px" id="invite-title">🔔 Reste informé</div>
   <div style="font-size:12.5px;color:#555;line-height:1.5;margin-bottom:12px" id="invite-text"></div>
   <button class="btn btn-gold" style="font-size:13px" onclick="accepterInviteNotif()" id="invite-btn"></button>
-  <!-- Visible uniquement dans le navigateur. Sur Android l'abonnement est partagé
-       (même origine), donc installer ou non ne change rien au nombre de notifications.
-       Mais sur iPhone/iPad, Apple ne délivre le push QU'AUX sites ajoutés à l'écran
-       d'accueil : sans installation, l'abonnement semble réussir et n'arrive jamais.
-       D'où la proposition d'installer, utile partout, indispensable sur iOS. -->
-  <button class="btn btn-gray btn-sm" style="width:auto;margin:8px auto 0;font-size:11.5px;display:none" onclick="inviteInstaller()" id="invite-install-btn"></button>
 </div>
 
 <!-- Reconnaissance d'un ancien participant : trois issues claires, dont annuler
@@ -588,6 +582,14 @@ function urlBase64ToUint8Array(base64String) {
 
 async function subscribeToNotifications() {
   try {
+    // FILET iPhone : si le joueur a fermé le bandeau puis clique ce bouton, il ne
+    // doit pas se heurter à un échec muet. On lui réaffiche la marche à suivre —
+    // c'est ici qu'il apprend que l'installation est un préalable, pas une option.
+    if (estIOS() && !estInstallee()) {
+      showMsg('notif-msg', t('notif_ios_install_first'), false, true);
+      proposerNotifications(true);   // réouvre le bandeau, même après 3 fermetures
+      return;
+    }
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
       showMsg('notif-msg', t('notif_install_hint'), false, true); return;
     }
@@ -729,12 +731,31 @@ window.fermerPrefsPanel = function() {
 //   - il n'a jamais refusé au niveau du navigateur (sinon rien ne servirait)
 //   - il a fermé le bandeau moins de 3 fois (au-delà, insister l'agacerait)
 const INVITE_MAX = 3;
+function estIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent)
+      || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+// Compteur de fermetures, DISTINCT selon le contexte : quelqu'un qui a fermé le
+// bandeau trois fois dans son navigateur vient peut-être d'installer l'app — le
+// contexte a changé, l'invitation redevient pertinente. Sans ces deux clés, il
+// aurait fait toute la manipulation sans jamais revoir la proposition.
+function cleRefus() { return estInstallee() ? 'abct-invite-refus-app' : 'abct-invite-refus'; }
+
 function peutProposerNotif() {
-  if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) return false;
   if (localStorage.getItem('abct-notif') === 'on') return false;
+  const refus = parseInt(localStorage.getItem(cleRefus()) || '0', 10);
+  if (refus >= INVITE_MAX) return false;
+
+  // ⚠️ Sur iPhone/iPad hors app installée, l'API Notification N'EXISTE PAS : Apple
+  // ne l'expose qu'aux sites ajoutés à l'écran d'accueil. Exiger sa présence ici
+  // empêcherait le bandeau de s'afficher précisément là où il est indispensable —
+  // c'est le seul endroit où le joueur apprend qu'il doit installer l'app.
+  if (estIOS() && !estInstallee()) return true;
+
+  if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) return false;
   if (Notification.permission !== 'default') return false;   // déjà accordé ou refusé
-  const refus = parseInt(localStorage.getItem('abct-invite-refus') || '0', 10);
-  return refus < INVITE_MAX;
+  return true;
 }
 
 // Le site tourne-t-il comme application installée ?
@@ -743,25 +764,44 @@ function estInstallee() {
       || window.navigator.standalone === true;
 }
 
-window.inviteInstaller = function() {
-  masquerInvite();
-  openInstallModal();
-};
 
-function proposerNotifications() {
-  if (!peutProposerNotif()) return;
+// forcer=true : rouvre le bandeau même si le joueur l'a déjà fermé trois fois.
+// Utilisé quand il clique lui-même le bouton — c'est une demande explicite.
+function proposerNotifications(forcer) {
+  if (!forcer && !peutProposerNotif()) return;
   const box = document.getElementById('notif-invite');
   if (!box) return;
+
   const installee = estInstallee();
-  document.getElementById('invite-title').textContent = t('invite_title');
-  // Dans le navigateur, on explique pourquoi installer d'abord ; dans l'app, on
-  // va droit au but.
-  document.getElementById('invite-text').textContent = t(installee ? 'invite_text' : 'invite_text_web');
-  document.getElementById('invite-btn').textContent = t('invite_btn');
-  const bInst = document.getElementById('invite-install-btn');
-  if (bInst) {
-    bInst.textContent = t('invite_install_btn');
-    bInst.style.display = installee ? 'none' : 'block';
+  // Depuis iOS 16.4 (mars 2023), TOUS les navigateurs iOS proposent « Sur l'écran
+  // d'accueil » — Chrome, Edge, Firefox, Brave compris — et le push fonctionne
+  // quelle que soit l'app qui a installé. Inutile donc de renvoyer vers Safari :
+  // ce serait un détour sans raison. Mêmes étapes pour tout le monde.
+  const iosSansApp = estIOS() && !installee;
+
+  const titre = document.getElementById('invite-title');
+  const texte = document.getElementById('invite-text');
+  const bBtn  = document.getElementById('invite-btn');
+
+  if (iosSansApp) {
+    // Les étapes sont AFFICHÉES, pas cachées derrière un bouton : trois lignes
+    // numérotées se lisent, un bouton « voir les instructions » ne se clique pas.
+    titre.textContent = t('invite_title');
+    texte.innerHTML = `<div style="margin-bottom:9px">${esc(t('invite_ios'))}</div>
+      <div style="font-size:12.5px;line-height:2;color:#333">
+        <b>1.</b> ${esc(t('invite_step1'))}<br>
+        <b>2.</b> ${esc(t('invite_step2'))}<br>
+        <b>3.</b> ${esc(t('invite_step3'))}<br>
+        <b>4.</b> ${esc(t('invite_step4'))}
+      </div>`;
+    bBtn.style.display = 'none';
+  } else {
+    // Android, ordinateur, ou app installée : les notifications fonctionnent
+    // directement, une seule action.
+    titre.textContent = t('invite_title');
+    texte.textContent = t('invite_text');
+    bBtn.textContent = t('invite_btn');
+    bBtn.style.display = 'block';
   }
   box.style.display = 'block';
   // Laisser le site s'afficher d'abord : surgir instantanément fait publicité.
@@ -776,9 +816,10 @@ function masquerInvite() {
 }
 
 window.fermerInviteNotif = function() {
-  // On compte les refus pour ne pas insister indéfiniment.
-  const n = parseInt(localStorage.getItem('abct-invite-refus') || '0', 10) + 1;
-  localStorage.setItem('abct-invite-refus', String(n));
+  // On compte les refus pour ne pas insister indéfiniment, dans le contexte courant.
+  const cle = cleRefus();
+  const n = parseInt(localStorage.getItem(cle) || '0', 10) + 1;
+  localStorage.setItem(cle, String(n));
   masquerInvite();
 };
 
@@ -1038,7 +1079,7 @@ const T = {
     reg_title:"S'inscrire au tournoi",reg_nick:"Pseudo Chess.com *",
     reg_nick_hint:"Utilisé pour vous retrouver et vous inviter sur Chess.com",reg_name:"Nom / Nickname *",
     reg_name_hint:"Prénom, surnom ou nom réel — à votre choix",reg_sector:"Secteur / Unité (optionnel)",reg_btn:"S'inscrire",
-    edition_moved:"✓ Ordre des éditions mis à jour",invite_title:"🔔 Reste informé",invite_text:"Résultats des matchs et annonces du tournoi, directement sur ton téléphone.",invite_text_web:"Résultats des matchs et annonces du tournoi, directement sur ton téléphone. Sur iPhone, installe d'abord l'app : Apple ne les envoie qu'aux sites ajoutés à l'écran d'accueil.",invite_install_btn:"📲 Installer l'app (recommandé)",invite_btn:"🔔 Activer les notifications",known_title:"👋 On se connaît ?",known_body_1:"Le pseudo Chess.com <b>{pseudo}</b> a déjà participé à une édition précédente du tournoi, sous le nom <b>« {ancien} »</b>.<br><br>Tu viens de saisir <b>« {nouveau} »</b>.<br><br>Que faire ?",known_body_n:"Le pseudo Chess.com <b>{pseudo}</b> a déjà participé à des éditions précédentes du tournoi, sous le nom <b>« {ancien} »</b>.<br><br>Tu viens de saisir <b>« {nouveau} »</b>.<br><br>Que faire ?",known_keep:"✅ Garder « {ancien} »",known_update:"✏️ Utiliser « {nouveau} » partout",known_cancel:"✕ Annuler l'inscription",reg_name_updated:"✓ Nom mis à jour dans {n} édition(s) du palmarès.",reg_ok:"Inscription réussie ! Bienvenue ",reg_err_fields:"Pseudo et nom requis.",reg_err_exists:"Ce pseudo est déjà pris.",
+    edition_moved:"✓ Ordre des éditions mis à jour",invite_title:"🔔 Reste informé",invite_text:"Résultats des matchs et annonces du tournoi, directement sur ton téléphone.",invite_ios:"Installe l'app pour activer les notifications :",invite_step1:"Appuie sur Partager ⬆️",invite_step2:"Choisis « Sur l'écran d'accueil »",invite_step3:"Appuie sur « Ajouter »",invite_step4:"Ouvre l'app : tu pourras y activer les notifications",notif_ios_install_first:"⚠️ Sur iPhone, les notifications ne fonctionnent que depuis l'app installée. Suis les étapes ci-dessous, puis active-les depuis l'app.",invite_btn:"🔔 Activer les notifications",known_title:"👋 On se connaît ?",known_body_1:"Le pseudo Chess.com <b>{pseudo}</b> a déjà participé à une édition précédente du tournoi, sous le nom <b>« {ancien} »</b>.<br><br>Tu viens de saisir <b>« {nouveau} »</b>.<br><br>Que faire ?",known_body_n:"Le pseudo Chess.com <b>{pseudo}</b> a déjà participé à des éditions précédentes du tournoi, sous le nom <b>« {ancien} »</b>.<br><br>Tu viens de saisir <b>« {nouveau} »</b>.<br><br>Que faire ?",known_keep:"✅ Garder « {ancien} »",known_update:"✏️ Utiliser « {nouveau} » partout",known_cancel:"✕ Annuler l'inscription",reg_name_updated:"✓ Nom mis à jour dans {n} édition(s) du palmarès.",reg_ok:"Inscription réussie ! Bienvenue ",reg_err_fields:"Pseudo et nom requis.",reg_err_exists:"Ce pseudo est déjà pris.",
     players_title:"Joueurs inscrits",
     admin_players_title:"Joueurs",
     notif_prefs_link:"⚙️ Préférences de notification",
@@ -1173,7 +1214,7 @@ const T = {
     reg_title:"Zum Turnier anmelden",reg_nick:"Chess.com-Benutzername *",
     reg_nick_hint:"Wird verwendet, um Sie auf Chess.com zu finden und einzuladen",reg_name:"Name / Nickname *",
     reg_name_hint:"Vorname, Spitzname oder echter Name — Ihre Wahl",reg_sector:"Sektor / Einheit (optional)",reg_btn:"Anmelden",
-    edition_moved:"✓ Reihenfolge der Ausgaben aktualisiert",invite_title:"🔔 Bleib informiert",invite_text:"Spielergebnisse und Turnierankündigungen, direkt auf dein Handy.",invite_text_web:"Spielergebnisse und Turnierankündigungen direkt auf dein Handy. Auf dem iPhone zuerst die App installieren: Apple sendet sie nur an Websites auf dem Startbildschirm.",invite_install_btn:"📲 App installieren (empfohlen)",invite_btn:"🔔 Benachrichtigungen aktivieren",known_title:"👋 Kennen wir uns?",known_body_1:"Das Chess.com-Pseudo <b>{pseudo}</b> hat bereits an einer früheren Turnierausgabe teilgenommen, unter dem Namen <b>« {ancien} »</b>.<br><br>Du hast <b>« {nouveau} »</b> eingegeben.<br><br>Was möchtest du tun?",known_body_n:"Das Chess.com-Pseudo <b>{pseudo}</b> hat bereits an früheren Turnierausgaben teilgenommen, unter dem Namen <b>« {ancien} »</b>.<br><br>Du hast <b>« {nouveau} »</b> eingegeben.<br><br>Was möchtest du tun?",known_keep:"✅ « {ancien} » behalten",known_update:"✏️ Überall « {nouveau} » verwenden",known_cancel:"✕ Anmeldung abbrechen",reg_name_updated:"✓ Name in {n} Ausgabe(n) der Siegerliste aktualisiert.",reg_ok:"Erfolgreich angemeldet! Willkommen ",reg_err_fields:"Spitzname und Name erforderlich.",reg_err_exists:"Dieser Spitzname ist bereits vergeben.",
+    edition_moved:"✓ Reihenfolge der Ausgaben aktualisiert",invite_title:"🔔 Bleib informiert",invite_text:"Spielergebnisse und Turnierankündigungen, direkt auf dein Handy.",invite_ios:"Installiere die App, um Benachrichtigungen zu aktivieren:",invite_step1:"Tippe auf Teilen ⬆️",invite_step2:"Wähle « Zum Home-Bildschirm »",invite_step3:"Tippe auf « Hinzufügen »",invite_step4:"Öffne die App: dort kannst du die Benachrichtigungen aktivieren",notif_ios_install_first:"⚠️ Auf dem iPhone funktionieren Benachrichtigungen nur über die installierte App. Folge den Schritten unten und aktiviere sie dann in der App.",invite_btn:"🔔 Benachrichtigungen aktivieren",known_title:"👋 Kennen wir uns?",known_body_1:"Das Chess.com-Pseudo <b>{pseudo}</b> hat bereits an einer früheren Turnierausgabe teilgenommen, unter dem Namen <b>« {ancien} »</b>.<br><br>Du hast <b>« {nouveau} »</b> eingegeben.<br><br>Was möchtest du tun?",known_body_n:"Das Chess.com-Pseudo <b>{pseudo}</b> hat bereits an früheren Turnierausgaben teilgenommen, unter dem Namen <b>« {ancien} »</b>.<br><br>Du hast <b>« {nouveau} »</b> eingegeben.<br><br>Was möchtest du tun?",known_keep:"✅ « {ancien} » behalten",known_update:"✏️ Überall « {nouveau} » verwenden",known_cancel:"✕ Anmeldung abbrechen",reg_name_updated:"✓ Name in {n} Ausgabe(n) der Siegerliste aktualisiert.",reg_ok:"Erfolgreich angemeldet! Willkommen ",reg_err_fields:"Spitzname und Name erforderlich.",reg_err_exists:"Dieser Spitzname ist bereits vergeben.",
     players_title:"Angemeldete Spieler",
     admin_players_title:"Spieler",
     notif_prefs_link:"⚙️ Benachrichtigungseinstellungen",
@@ -1307,7 +1348,7 @@ const T = {
     reg_title:"Register for the tournament",reg_nick:"Chess.com username *",
     reg_nick_hint:"Used to find and invite you on Chess.com",reg_name:"Name / Nickname *",
     reg_name_hint:"First name, nickname or real name — your choice",reg_sector:"Sector / Unit (optional)",reg_btn:"Register",
-    edition_moved:"✓ Edition order updated",invite_title:"🔔 Stay informed",invite_text:"Match results and tournament announcements, straight to your phone.",invite_text_web:"Match results and tournament announcements straight to your phone. On iPhone, install the app first: Apple only delivers them to sites added to the home screen.",invite_install_btn:"📲 Install the app (recommended)",invite_btn:"🔔 Enable notifications",known_title:"👋 Do we know each other?",known_body_1:"The Chess.com username <b>{pseudo}</b> has already taken part in a previous edition of the tournament, under the name <b>« {ancien} »</b>.<br><br>You entered <b>« {nouveau} »</b>.<br><br>What would you like to do?",known_body_n:"The Chess.com username <b>{pseudo}</b> has already taken part in previous editions of the tournament, under the name <b>« {ancien} »</b>.<br><br>You entered <b>« {nouveau} »</b>.<br><br>What would you like to do?",known_keep:"✅ Keep « {ancien} »",known_update:"✏️ Use « {nouveau} » everywhere",known_cancel:"✕ Cancel registration",reg_name_updated:"✓ Name updated in {n} edition(s) of the hall of fame.",reg_ok:"Registration successful! Welcome ",reg_err_fields:"Nickname and name are required.",reg_err_exists:"This nickname is already taken.",
+    edition_moved:"✓ Edition order updated",invite_title:"🔔 Stay informed",invite_text:"Match results and tournament announcements, straight to your phone.",invite_ios:"Install the app to enable notifications:",invite_step1:"Tap Share ⬆️",invite_step2:"Choose « Add to Home Screen »",invite_step3:"Tap « Add »",invite_step4:"Open the app: you can enable notifications there",notif_ios_install_first:"⚠️ On iPhone, notifications only work from the installed app. Follow the steps below, then enable them from the app.",invite_btn:"🔔 Enable notifications",known_title:"👋 Do we know each other?",known_body_1:"The Chess.com username <b>{pseudo}</b> has already taken part in a previous edition of the tournament, under the name <b>« {ancien} »</b>.<br><br>You entered <b>« {nouveau} »</b>.<br><br>What would you like to do?",known_body_n:"The Chess.com username <b>{pseudo}</b> has already taken part in previous editions of the tournament, under the name <b>« {ancien} »</b>.<br><br>You entered <b>« {nouveau} »</b>.<br><br>What would you like to do?",known_keep:"✅ Keep « {ancien} »",known_update:"✏️ Use « {nouveau} » everywhere",known_cancel:"✕ Cancel registration",reg_name_updated:"✓ Name updated in {n} edition(s) of the hall of fame.",reg_ok:"Registration successful! Welcome ",reg_err_fields:"Nickname and name are required.",reg_err_exists:"This nickname is already taken.",
     players_title:"Registered players",
     admin_players_title:"Players",
     notif_prefs_link:"⚙️ Notification preferences",
@@ -1441,7 +1482,7 @@ const T = {
     reg_title:"Iscriversi al torneo",reg_nick:"Nome utente Chess.com *",
     reg_nick_hint:"Utilizzato per trovarti e invitarti su Chess.com",reg_name:"Nome / Nickname *",
     reg_name_hint:"Nome, soprannome o nome reale — a tua scelta",reg_sector:"Settore / Unità (opzionale)",reg_btn:"Iscriversi",
-    edition_moved:"✓ Ordine delle edizioni aggiornato",invite_title:"🔔 Resta informato",invite_text:"Risultati delle partite e annunci del torneo, direttamente sul tuo telefono.",invite_text_web:"Risultati delle partite e annunci del torneo direttamente sul tuo telefono. Su iPhone installa prima l'app: Apple li invia solo ai siti aggiunti alla schermata Home.",invite_install_btn:"📲 Installare l'app (consigliato)",invite_btn:"🔔 Attivare le notifiche",known_title:"👋 Ci conosciamo?",known_body_1:"Lo pseudonimo Chess.com <b>{pseudo}</b> ha già partecipato a una precedente edizione del torneo, con il nome <b>« {ancien} »</b>.<br><br>Hai inserito <b>« {nouveau} »</b>.<br><br>Cosa vuoi fare?",known_body_n:"Lo pseudonimo Chess.com <b>{pseudo}</b> ha già partecipato a precedenti edizioni del torneo, con il nome <b>« {ancien} »</b>.<br><br>Hai inserito <b>« {nouveau} »</b>.<br><br>Cosa vuoi fare?",known_keep:"✅ Mantenere « {ancien} »",known_update:"✏️ Usare « {nouveau} » ovunque",known_cancel:"✕ Annullare l'iscrizione",reg_name_updated:"✓ Nome aggiornato in {n} edizione/i dell'albo d'oro.",reg_ok:"Iscrizione riuscita! Benvenuto/a ",reg_err_fields:"Soprannome e nome richiesti.",reg_err_exists:"Questo soprannome è già utilizzato.",
+    edition_moved:"✓ Ordine delle edizioni aggiornato",invite_title:"🔔 Resta informato",invite_text:"Risultati delle partite e annunci del torneo, direttamente sul tuo telefono.",invite_ios:"Installa l'app per attivare le notifiche:",invite_step1:"Tocca Condividi ⬆️",invite_step2:"Scegli « Aggiungi a Home »",invite_step3:"Tocca « Aggiungi »",invite_step4:"Apri l'app: lì potrai attivare le notifiche",notif_ios_install_first:"⚠️ Su iPhone le notifiche funzionano solo dall'app installata. Segui i passaggi qui sotto, poi attivale dall'app.",invite_btn:"🔔 Attivare le notifiche",known_title:"👋 Ci conosciamo?",known_body_1:"Lo pseudonimo Chess.com <b>{pseudo}</b> ha già partecipato a una precedente edizione del torneo, con il nome <b>« {ancien} »</b>.<br><br>Hai inserito <b>« {nouveau} »</b>.<br><br>Cosa vuoi fare?",known_body_n:"Lo pseudonimo Chess.com <b>{pseudo}</b> ha già partecipato a precedenti edizioni del torneo, con il nome <b>« {ancien} »</b>.<br><br>Hai inserito <b>« {nouveau} »</b>.<br><br>Cosa vuoi fare?",known_keep:"✅ Mantenere « {ancien} »",known_update:"✏️ Usare « {nouveau} » ovunque",known_cancel:"✕ Annullare l'iscrizione",reg_name_updated:"✓ Nome aggiornato in {n} edizione/i dell'albo d'oro.",reg_ok:"Iscrizione riuscita! Benvenuto/a ",reg_err_fields:"Soprannome e nome richiesti.",reg_err_exists:"Questo soprannome è già utilizzato.",
     players_title:"Giocatori iscritti",
     admin_players_title:"Giocatori",
     notif_prefs_link:"⚙️ Preferenze di notifica",

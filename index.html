@@ -2038,6 +2038,7 @@ window.voirJoueurPalmares = function(pseudo) {
 
 window.fermerFichePalmares = function() {
   joueurSelectionne = null;
+  editionOuverte = null;   // sinon la fiche du joueur suivant s'ouvrirait dépliée
   const champ = document.getElementById('palmares-search');
   if (champ) champ.value = '';
   renderPalmares();

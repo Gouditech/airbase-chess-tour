@@ -196,6 +196,9 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
   <div class="card">
     <h2 id="players-title">Joueurs inscrits (<span id="player-list-count">0</span>)</h2>
     <div id="player-list"></div>
+    <!-- Sans cette mention, personne ne devinerait que les cartes sont cliquables.
+         Masquée dès la fin des inscriptions : la modification n'est plus possible. -->
+    <div id="edit-hint" style="display:none;font-size:11px;color:var(--gray);margin-top:8px;text-align:center"></div>
   </div>
 </div>
 
@@ -470,6 +473,25 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
   <div style="font-size:14px;font-weight:800;margin-bottom:4px;padding-right:22px" id="invite-title">🔔 Reste informé</div>
   <div style="font-size:12.5px;color:#555;line-height:1.5;margin-bottom:12px" id="invite-text"></div>
   <button class="btn btn-gold" style="font-size:13px" onclick="accepterInviteNotif()" id="invite-btn"></button>
+</div>
+
+<!-- VÉRIFICATION AVANT MODIFICATION D'UNE INSCRIPTION
+     La page d'inscription est publique : sans ce verrou, n'importe quel visiteur
+     pouvait renommer ou désinscrire n'importe quel joueur d'un simple clic. Retaper
+     le pseudo ne protège pas d'une malveillance déterminée — le pseudo est affiché
+     juste au-dessus — mais transforme un geste distrait en acte délibéré. -->
+<div id="edit-verify-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;align-items:center;justify-content:center;padding:16px">
+  <div onclick="event.stopPropagation()" style="background:#fff;border-radius:16px;padding:20px;max-width:380px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.2)">
+    <div style="font-size:16px;font-weight:800;margin-bottom:10px" id="ev-title">✏️ Modifier une inscription</div>
+    <div style="font-size:13px;color:#444;line-height:1.6;margin-bottom:12px" id="ev-text"></div>
+    <input id="ev-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false"
+      oninput="verifierSaisiePseudo()" onkeydown="if(event.key==='Enter')validerModifJoueur()"
+      style="width:100%;padding:11px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:14px">
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-gold" style="flex:1;font-size:13px" onclick="validerModifJoueur()" id="ev-ok" disabled></button>
+      <button class="btn btn-gray" style="width:auto;font-size:13px" onclick="fermerModifJoueur()" id="ev-cancel"></button>
+    </div>
+  </div>
 </div>
 
 <!-- Reconnaissance d'un ancien participant : trois issues claires, dont annuler
@@ -1124,7 +1146,7 @@ const T = {
     reg_title:"S'inscrire au tournoi",reg_nick:"Pseudo Chess.com *",
     reg_nick_hint:"Utilisé pour vous retrouver et vous inviter sur Chess.com",reg_name:"Nom / Nickname *",
     reg_name_hint:"Prénom, surnom ou nom réel — à votre choix",reg_sector:"Secteur / Unité (optionnel)",reg_btn:"S'inscrire",
-    edition_moved:"✓ Ordre des éditions mis à jour",invite_title:"🔔 Reste informé",invite_text:"Résultats des matchs et annonces du tournoi, directement sur ton téléphone.",invite_ios:"Installe l'app pour activer les notifications :",invite_step1:"Appuie sur Partager ⬆️",invite_step2:"Choisis « Sur l'écran d'accueil »",invite_step3:"Appuie sur « Ajouter »",invite_step4:"Ouvre l'app : tu pourras y activer les notifications",notif_ios_install_first:"⚠️ Sur iPhone, les notifications ne fonctionnent que depuis l'app installée. Suis les étapes ci-dessous, puis active-les depuis l'app.",invite_btn:"🔔 Activer les notifications",known_title:"👋 On se connaît ?",known_body_1:"Le pseudo Chess.com <b>{pseudo}</b> a déjà participé à une édition précédente du tournoi, sous le nom <b>« {ancien} »</b>.<br><br>Tu viens de saisir <b>« {nouveau} »</b>.<br><br>Que faire ?",known_body_n:"Le pseudo Chess.com <b>{pseudo}</b> a déjà participé à des éditions précédentes du tournoi, sous le nom <b>« {ancien} »</b>.<br><br>Tu viens de saisir <b>« {nouveau} »</b>.<br><br>Que faire ?",known_keep:"✅ Garder « {ancien} »",known_update:"✏️ Utiliser « {nouveau} » partout",known_cancel:"✕ Annuler l'inscription",reg_name_updated:"✓ Nom mis à jour dans {n} édition(s) du palmarès.",reg_ok:"Inscription réussie ! Bienvenue ",reg_err_fields:"Pseudo et nom requis.",reg_err_exists:"Ce pseudo est déjà pris.",
+    edition_moved:"✓ Ordre des éditions mis à jour",invite_title:"🔔 Reste informé",invite_text:"Résultats des matchs et annonces du tournoi, directement sur ton téléphone.",invite_ios:"Installe l'app pour activer les notifications :",invite_step1:"Appuie sur Partager ⬆️",invite_step2:"Choisis « Sur l'écran d'accueil »",invite_step3:"Appuie sur « Ajouter »",invite_step4:"Ouvre l'app : tu pourras y activer les notifications",notif_ios_install_first:"⚠️ Sur iPhone, les notifications ne fonctionnent que depuis l'app installée. Suis les étapes ci-dessous, puis active-les depuis l'app.",invite_btn:"🔔 Activer les notifications",known_title:"👋 On se connaît ?",known_body_1:"Le pseudo Chess.com <b>{pseudo}</b> a déjà participé à une édition précédente du tournoi, sous le nom <b>« {ancien} »</b>.<br><br>Tu viens de saisir <b>« {nouveau} »</b>.<br><br>Que faire ?",known_body_n:"Le pseudo Chess.com <b>{pseudo}</b> a déjà participé à des éditions précédentes du tournoi, sous le nom <b>« {ancien} »</b>.<br><br>Tu viens de saisir <b>« {nouveau} »</b>.<br><br>Que faire ?",known_keep:"✅ Garder « {ancien} »",known_update:"✏️ Utiliser « {nouveau} » partout",known_cancel:"✕ Annuler l'inscription",reg_name_updated:"✓ Nom mis à jour dans {n} édition(s) du palmarès.",ev_title:"✏️ Modifier une inscription",ev_text:"Pour modifier {nom}, retape son pseudo Chess.com :",ev_ok:"Continuer",ev_cancel:"Annuler",edit_hint:"✏️ Clique sur ton nom pour modifier ton inscription",reg_ok:"Inscription réussie ! Bienvenue ",reg_err_fields:"Pseudo et nom requis.",reg_err_exists:"Ce pseudo est déjà pris.",
     players_title:"Joueurs inscrits",
     admin_players_title:"Joueurs",
     notif_prefs_link:"⚙️ Préférences de notification",
@@ -1259,7 +1281,7 @@ const T = {
     reg_title:"Zum Turnier anmelden",reg_nick:"Chess.com-Benutzername *",
     reg_nick_hint:"Wird verwendet, um Sie auf Chess.com zu finden und einzuladen",reg_name:"Name / Nickname *",
     reg_name_hint:"Vorname, Spitzname oder echter Name — Ihre Wahl",reg_sector:"Sektor / Einheit (optional)",reg_btn:"Anmelden",
-    edition_moved:"✓ Reihenfolge der Ausgaben aktualisiert",invite_title:"🔔 Bleib informiert",invite_text:"Spielergebnisse und Turnierankündigungen, direkt auf dein Handy.",invite_ios:"Installiere die App, um Benachrichtigungen zu aktivieren:",invite_step1:"Tippe auf Teilen ⬆️",invite_step2:"Wähle « Zum Home-Bildschirm »",invite_step3:"Tippe auf « Hinzufügen »",invite_step4:"Öffne die App: dort kannst du die Benachrichtigungen aktivieren",notif_ios_install_first:"⚠️ Auf dem iPhone funktionieren Benachrichtigungen nur über die installierte App. Folge den Schritten unten und aktiviere sie dann in der App.",invite_btn:"🔔 Benachrichtigungen aktivieren",known_title:"👋 Kennen wir uns?",known_body_1:"Das Chess.com-Pseudo <b>{pseudo}</b> hat bereits an einer früheren Turnierausgabe teilgenommen, unter dem Namen <b>« {ancien} »</b>.<br><br>Du hast <b>« {nouveau} »</b> eingegeben.<br><br>Was möchtest du tun?",known_body_n:"Das Chess.com-Pseudo <b>{pseudo}</b> hat bereits an früheren Turnierausgaben teilgenommen, unter dem Namen <b>« {ancien} »</b>.<br><br>Du hast <b>« {nouveau} »</b> eingegeben.<br><br>Was möchtest du tun?",known_keep:"✅ « {ancien} » behalten",known_update:"✏️ Überall « {nouveau} » verwenden",known_cancel:"✕ Anmeldung abbrechen",reg_name_updated:"✓ Name in {n} Ausgabe(n) der Siegerliste aktualisiert.",reg_ok:"Erfolgreich angemeldet! Willkommen ",reg_err_fields:"Spitzname und Name erforderlich.",reg_err_exists:"Dieser Spitzname ist bereits vergeben.",
+    edition_moved:"✓ Reihenfolge der Ausgaben aktualisiert",invite_title:"🔔 Bleib informiert",invite_text:"Spielergebnisse und Turnierankündigungen, direkt auf dein Handy.",invite_ios:"Installiere die App, um Benachrichtigungen zu aktivieren:",invite_step1:"Tippe auf Teilen ⬆️",invite_step2:"Wähle « Zum Home-Bildschirm »",invite_step3:"Tippe auf « Hinzufügen »",invite_step4:"Öffne die App: dort kannst du die Benachrichtigungen aktivieren",notif_ios_install_first:"⚠️ Auf dem iPhone funktionieren Benachrichtigungen nur über die installierte App. Folge den Schritten unten und aktiviere sie dann in der App.",invite_btn:"🔔 Benachrichtigungen aktivieren",known_title:"👋 Kennen wir uns?",known_body_1:"Das Chess.com-Pseudo <b>{pseudo}</b> hat bereits an einer früheren Turnierausgabe teilgenommen, unter dem Namen <b>« {ancien} »</b>.<br><br>Du hast <b>« {nouveau} »</b> eingegeben.<br><br>Was möchtest du tun?",known_body_n:"Das Chess.com-Pseudo <b>{pseudo}</b> hat bereits an früheren Turnierausgaben teilgenommen, unter dem Namen <b>« {ancien} »</b>.<br><br>Du hast <b>« {nouveau} »</b> eingegeben.<br><br>Was möchtest du tun?",known_keep:"✅ « {ancien} » behalten",known_update:"✏️ Überall « {nouveau} » verwenden",known_cancel:"✕ Anmeldung abbrechen",reg_name_updated:"✓ Name in {n} Ausgabe(n) der Siegerliste aktualisiert.",ev_title:"✏️ Anmeldung ändern",ev_text:"Um {nom} zu ändern, gib das Chess.com-Pseudo erneut ein:",ev_ok:"Weiter",ev_cancel:"Abbrechen",edit_hint:"✏️ Tippe auf deinen Namen, um deine Anmeldung zu ändern",reg_ok:"Erfolgreich angemeldet! Willkommen ",reg_err_fields:"Spitzname und Name erforderlich.",reg_err_exists:"Dieser Spitzname ist bereits vergeben.",
     players_title:"Angemeldete Spieler",
     admin_players_title:"Spieler",
     notif_prefs_link:"⚙️ Benachrichtigungseinstellungen",
@@ -1393,7 +1415,7 @@ const T = {
     reg_title:"Register for the tournament",reg_nick:"Chess.com username *",
     reg_nick_hint:"Used to find and invite you on Chess.com",reg_name:"Name / Nickname *",
     reg_name_hint:"First name, nickname or real name — your choice",reg_sector:"Sector / Unit (optional)",reg_btn:"Register",
-    edition_moved:"✓ Edition order updated",invite_title:"🔔 Stay informed",invite_text:"Match results and tournament announcements, straight to your phone.",invite_ios:"Install the app to enable notifications:",invite_step1:"Tap Share ⬆️",invite_step2:"Choose « Add to Home Screen »",invite_step3:"Tap « Add »",invite_step4:"Open the app: you can enable notifications there",notif_ios_install_first:"⚠️ On iPhone, notifications only work from the installed app. Follow the steps below, then enable them from the app.",invite_btn:"🔔 Enable notifications",known_title:"👋 Do we know each other?",known_body_1:"The Chess.com username <b>{pseudo}</b> has already taken part in a previous edition of the tournament, under the name <b>« {ancien} »</b>.<br><br>You entered <b>« {nouveau} »</b>.<br><br>What would you like to do?",known_body_n:"The Chess.com username <b>{pseudo}</b> has already taken part in previous editions of the tournament, under the name <b>« {ancien} »</b>.<br><br>You entered <b>« {nouveau} »</b>.<br><br>What would you like to do?",known_keep:"✅ Keep « {ancien} »",known_update:"✏️ Use « {nouveau} » everywhere",known_cancel:"✕ Cancel registration",reg_name_updated:"✓ Name updated in {n} edition(s) of the hall of fame.",reg_ok:"Registration successful! Welcome ",reg_err_fields:"Nickname and name are required.",reg_err_exists:"This nickname is already taken.",
+    edition_moved:"✓ Edition order updated",invite_title:"🔔 Stay informed",invite_text:"Match results and tournament announcements, straight to your phone.",invite_ios:"Install the app to enable notifications:",invite_step1:"Tap Share ⬆️",invite_step2:"Choose « Add to Home Screen »",invite_step3:"Tap « Add »",invite_step4:"Open the app: you can enable notifications there",notif_ios_install_first:"⚠️ On iPhone, notifications only work from the installed app. Follow the steps below, then enable them from the app.",invite_btn:"🔔 Enable notifications",known_title:"👋 Do we know each other?",known_body_1:"The Chess.com username <b>{pseudo}</b> has already taken part in a previous edition of the tournament, under the name <b>« {ancien} »</b>.<br><br>You entered <b>« {nouveau} »</b>.<br><br>What would you like to do?",known_body_n:"The Chess.com username <b>{pseudo}</b> has already taken part in previous editions of the tournament, under the name <b>« {ancien} »</b>.<br><br>You entered <b>« {nouveau} »</b>.<br><br>What would you like to do?",known_keep:"✅ Keep « {ancien} »",known_update:"✏️ Use « {nouveau} » everywhere",known_cancel:"✕ Cancel registration",reg_name_updated:"✓ Name updated in {n} edition(s) of the hall of fame.",ev_title:"✏️ Edit a registration",ev_text:"To edit {nom}, type their Chess.com username again:",ev_ok:"Continue",ev_cancel:"Cancel",edit_hint:"✏️ Tap your name to edit your registration",reg_ok:"Registration successful! Welcome ",reg_err_fields:"Nickname and name are required.",reg_err_exists:"This nickname is already taken.",
     players_title:"Registered players",
     admin_players_title:"Players",
     notif_prefs_link:"⚙️ Notification preferences",
@@ -1527,7 +1549,7 @@ const T = {
     reg_title:"Iscriversi al torneo",reg_nick:"Nome utente Chess.com *",
     reg_nick_hint:"Utilizzato per trovarti e invitarti su Chess.com",reg_name:"Nome / Nickname *",
     reg_name_hint:"Nome, soprannome o nome reale — a tua scelta",reg_sector:"Settore / Unità (opzionale)",reg_btn:"Iscriversi",
-    edition_moved:"✓ Ordine delle edizioni aggiornato",invite_title:"🔔 Resta informato",invite_text:"Risultati delle partite e annunci del torneo, direttamente sul tuo telefono.",invite_ios:"Installa l'app per attivare le notifiche:",invite_step1:"Tocca Condividi ⬆️",invite_step2:"Scegli « Aggiungi a Home »",invite_step3:"Tocca « Aggiungi »",invite_step4:"Apri l'app: lì potrai attivare le notifiche",notif_ios_install_first:"⚠️ Su iPhone le notifiche funzionano solo dall'app installata. Segui i passaggi qui sotto, poi attivale dall'app.",invite_btn:"🔔 Attivare le notifiche",known_title:"👋 Ci conosciamo?",known_body_1:"Lo pseudonimo Chess.com <b>{pseudo}</b> ha già partecipato a una precedente edizione del torneo, con il nome <b>« {ancien} »</b>.<br><br>Hai inserito <b>« {nouveau} »</b>.<br><br>Cosa vuoi fare?",known_body_n:"Lo pseudonimo Chess.com <b>{pseudo}</b> ha già partecipato a precedenti edizioni del torneo, con il nome <b>« {ancien} »</b>.<br><br>Hai inserito <b>« {nouveau} »</b>.<br><br>Cosa vuoi fare?",known_keep:"✅ Mantenere « {ancien} »",known_update:"✏️ Usare « {nouveau} » ovunque",known_cancel:"✕ Annullare l'iscrizione",reg_name_updated:"✓ Nome aggiornato in {n} edizione/i dell'albo d'oro.",reg_ok:"Iscrizione riuscita! Benvenuto/a ",reg_err_fields:"Soprannome e nome richiesti.",reg_err_exists:"Questo soprannome è già utilizzato.",
+    edition_moved:"✓ Ordine delle edizioni aggiornato",invite_title:"🔔 Resta informato",invite_text:"Risultati delle partite e annunci del torneo, direttamente sul tuo telefono.",invite_ios:"Installa l'app per attivare le notifiche:",invite_step1:"Tocca Condividi ⬆️",invite_step2:"Scegli « Aggiungi a Home »",invite_step3:"Tocca « Aggiungi »",invite_step4:"Apri l'app: lì potrai attivare le notifiche",notif_ios_install_first:"⚠️ Su iPhone le notifiche funzionano solo dall'app installata. Segui i passaggi qui sotto, poi attivale dall'app.",invite_btn:"🔔 Attivare le notifiche",known_title:"👋 Ci conosciamo?",known_body_1:"Lo pseudonimo Chess.com <b>{pseudo}</b> ha già partecipato a una precedente edizione del torneo, con il nome <b>« {ancien} »</b>.<br><br>Hai inserito <b>« {nouveau} »</b>.<br><br>Cosa vuoi fare?",known_body_n:"Lo pseudonimo Chess.com <b>{pseudo}</b> ha già partecipato a precedenti edizioni del torneo, con il nome <b>« {ancien} »</b>.<br><br>Hai inserito <b>« {nouveau} »</b>.<br><br>Cosa vuoi fare?",known_keep:"✅ Mantenere « {ancien} »",known_update:"✏️ Usare « {nouveau} » ovunque",known_cancel:"✕ Annullare l'iscrizione",reg_name_updated:"✓ Nome aggiornato in {n} edizione/i dell'albo d'oro.",ev_title:"✏️ Modificare un'iscrizione",ev_text:"Per modificare {nom}, digita di nuovo il suo pseudonimo Chess.com:",ev_ok:"Continua",ev_cancel:"Annulla",edit_hint:"✏️ Tocca il tuo nome per modificare la tua iscrizione",reg_ok:"Iscrizione riuscita! Benvenuto/a ",reg_err_fields:"Soprannome e nome richiesti.",reg_err_exists:"Questo soprannome è già utilizzato.",
     players_title:"Giocatori iscritti",
     admin_players_title:"Giocatori",
     notif_prefs_link:"⚙️ Preferenze di notifica",
@@ -3217,6 +3239,51 @@ window.startEditPlayer = function(id) {
   refreshPlayerLists();
 };
 
+// ── VÉRIFICATION AVANT MODIFICATION (page publique) ──
+// Depuis l'admin, aucune vérification : le PIN a déjà été donné.
+let joueurAVerifier = null;
+window.demanderModifJoueur = function(id) {
+  if (isAdmin) { startEditPlayer(id); return; }
+  // Déjà ouvert sur ce joueur : un second clic referme, comme le crayon avant.
+  if (editingPlayerId === id) { startEditPlayer(id); return; }
+  const p = getPlayers().find(x => x.id === id);
+  if (!p) return;
+  joueurAVerifier = p;
+  document.getElementById('ev-title').textContent = t('ev_title');
+  document.getElementById('ev-text').innerHTML = t('ev_text')
+    .replace('{nom}', '<b>' + esc(p.name || p.nickname) + '</b>')
+    .replace('{pseudo}', '<b>' + esc(p.nickname) + '</b>');
+  document.getElementById('ev-ok').textContent = t('ev_ok');
+  document.getElementById('ev-cancel').textContent = t('ev_cancel');
+  const inp = document.getElementById('ev-input');
+  inp.value = '';
+  inp.placeholder = p.nickname;
+  document.getElementById('ev-ok').disabled = true;
+  document.getElementById('edit-verify-modal').style.display = 'flex';
+  setTimeout(() => inp.focus(), 80);
+};
+
+// Le bouton ne s'active que si la saisie correspond — casse et espaces ignorés :
+// le but est d'écarter le clic distrait, pas de piéger sur une majuscule.
+window.verifierSaisiePseudo = function() {
+  const inp = document.getElementById('ev-input');
+  const ok = !!joueurAVerifier && inp.value.trim().toLowerCase() === joueurAVerifier.nickname.trim().toLowerCase();
+  document.getElementById('ev-ok').disabled = !ok;
+  inp.style.borderColor = inp.value ? (ok ? 'var(--green)' : '#ddd') : '#ddd';
+};
+
+window.validerModifJoueur = function() {
+  if (document.getElementById('ev-ok').disabled) return;
+  const id = joueurAVerifier?.id;
+  fermerModifJoueur();
+  if (id) startEditPlayer(id);
+};
+
+window.fermerModifJoueur = function() {
+  document.getElementById('edit-verify-modal').style.display = 'none';
+  joueurAVerifier = null;
+};
+
 window.saveEditPlayer = async function(id) {
   const nick = document.getElementById('edit-nick-'+id)?.value.trim();
   const name = document.getElementById('edit-name-'+id)?.value.trim();
@@ -4395,6 +4462,13 @@ function playerEditForm(p) {
   </div>`;
 }
 
+function majEditHint(isReg, nbJoueurs) {
+  const el = document.getElementById('edit-hint');
+  if (!el) return;
+  el.textContent = t('edit_hint');
+  el.style.display = (isReg && nbJoueurs > 0) ? 'block' : 'none';
+}
+
 function renderHome(){
   const s=state?.settings||{};
   const players=getPlayers();
@@ -4437,17 +4511,18 @@ function renderHome(){
   pl.innerHTML=players.sort((a,b)=>a.nickname.localeCompare(b.nickname)).map(p=>{
     const isEditing = editingPlayerId===p.id;
     return `<div style="padding:8px 0;border-bottom:1px solid #F5F5F5">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div onclick="demanderModifJoueur('${p.id}')" style="display:flex;justify-content:space-between;align-items:flex-start;${isReg?'cursor:pointer':''}">
         <div style="flex:1">
           <div style="font-weight:700;font-size:13px">${esc(p.nickname)}</div>
           <div style="font-size:12px;color:#555;margin-top:2px">${esc(p.name)}${p.sector?' · <span style="color:var(--gray)">'+esc(p.sector)+'</span>':''}</div>
           ${p.group?`<div style="font-size:11px;color:var(--gold);margin-top:2px;font-weight:600">${esc(p.group)}</div>`:''}
         </div>
-        ${isReg?`<button onclick="startEditPlayer('${p.id}')" style="border:none;background:none;color:var(--gold);cursor:pointer;font-size:15px;padding:2px 4px" title="Modifier">✏️</button>`:''}
+        ${isReg?`<span style="color:#ccc;font-size:13px;padding:2px 4px">✏️</span>`:''}
       </div>
       ${isEditing ? playerEditForm(p) : ''}
     </div>`;
   }).join('');
+  majEditHint(isReg, players.length);
 }
 
 function renderGroups(){

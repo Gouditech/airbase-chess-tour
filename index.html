@@ -180,15 +180,15 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
     <div class="gap">
       <div class="form-group">
         <label id="reg-label-nick">Pseudo Chess.com *</label>
-        <input id="reg-nick" type="text" autocomplete="off">
+        <input maxlength="25" id="reg-nick" type="text" autocomplete="off">
         <div id="reg-nick-hint" style="font-size:11px;color:var(--gray);margin-top:3px"></div>
       </div>
       <div class="form-group">
         <label id="reg-label-name">Nom / Nickname *</label>
-        <input id="reg-name" type="text" autocomplete="off">
+        <input maxlength="30" id="reg-name" type="text" autocomplete="off">
         <div id="reg-name-hint" style="font-size:11px;color:var(--gray);margin-top:3px"></div>
       </div>
-      <div class="form-group"><label id="reg-label-sector">Secteur / Unité</label><input id="reg-sector" type="text" autocomplete="off"></div>
+      <div class="form-group"><label id="reg-label-sector">Secteur / Unité</label><input maxlength="30" id="reg-sector" type="text" autocomplete="off"></div>
       <button class="btn btn-gold" onclick="registerPlayer()" id="reg-btn">S'inscrire</button>
       <div id="reg-msg"></div>
     </div>
@@ -289,7 +289,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
 <div class="card" style="margin-top:0">
         <h2 id="notif-admin-title">🔔 Envoyer une notification</h2>
         <div style="margin-bottom:12px">
-          <textarea rows="5" id="notif-admin-msg" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;min-height:120px;resize:vertical" placeholder="Message de notification..."></textarea>
+          <textarea maxlength="500" rows="5" id="notif-admin-msg" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;min-height:120px;resize:vertical" placeholder="Message de notification..."></textarea>
           <button class="btn btn-gray" style="margin-top:8px" onclick="confirmAction('sendPushToAll')" id="send-notif-btn">📤 Envoyer à tous les abonnés</button>
           <div id="notif-admin-msg-result" style="font-size:12px;margin-top:4px"></div>
         </div>
@@ -363,7 +363,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
           <div style="font-size:13px;font-weight:700;margin-bottom:10px" id="palmares-admin-title">🏅 Palmarès</div>
           <div id="palmares-admin-content"></div>
           <div style="display:flex;gap:6px;margin-top:10px">
-            <input id="new-edition-name" placeholder="Nom de l'édition" style="flex:2;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:12px">
+            <input maxlength="40" id="new-edition-name" placeholder="Nom de l'édition" style="flex:2;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:12px">
             <input id="new-edition-year" placeholder="Année" style="flex:1;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:12px">
             <button class="btn btn-gold btn-sm" style="width:auto" onclick="addPalmaresEdition()">+</button>
           </div>
@@ -1147,8 +1147,8 @@ const T = {
     status_registration:"Inscriptions ouvertes",status_playing:"Phase de poules",status_finals:"Phases finales",status_finished:"Terminé",
     players_count_1:"joueur inscrit",players_count_n:"joueurs inscrits",
     reg_title:"S'inscrire au tournoi",reg_nick:"Pseudo Chess.com *",
-    reg_nick_hint:"Utilisé pour vous retrouver et vous inviter sur Chess.com",reg_name:"Nom / Nickname *",
-    reg_name_hint:"Prénom, surnom ou nom réel — à votre choix",reg_sector:"Secteur / Unité (optionnel)",reg_btn:"S'inscrire",
+    reg_nick_hint:"Utilisé pour te retrouver et t'inviter sur Chess.com",reg_name:"Nom / Nickname *",
+    reg_name_hint:"Prénom, surnom ou nom réel — à ton choix",reg_sector:"Secteur / Unité (optionnel)",reg_btn:"S'inscrire",
     edition_moved:"✓ Ordre des éditions mis à jour",invite_title:"🔔 Reste informé",invite_text:"Résultats des matchs et annonces du tournoi, directement sur ton téléphone.",invite_ios:"Installe l'app pour activer les notifications :",invite_step1:"Appuie sur Partager ⬆️",invite_step2:"Choisis « Sur l'écran d'accueil »",invite_step3:"Appuie sur « Ajouter »",invite_step4:"Ouvre l'app : tu pourras y activer les notifications",notif_ios_install_first:"⚠️ Sur iPhone, les notifications ne fonctionnent que depuis l'app installée. Suis les étapes ci-dessous, puis active-les depuis l'app.",invite_btn:"🔔 Activer les notifications",known_title:"👋 On se connaît ?",known_body_1:"Le pseudo Chess.com <b>{pseudo}</b> a déjà participé à une édition précédente du tournoi, sous le nom <b>« {ancien} »</b>.<br><br>Tu viens de saisir <b>« {nouveau} »</b>.<br><br>Que faire ?",known_body_n:"Le pseudo Chess.com <b>{pseudo}</b> a déjà participé à des éditions précédentes du tournoi, sous le nom <b>« {ancien} »</b>.<br><br>Tu viens de saisir <b>« {nouveau} »</b>.<br><br>Que faire ?",known_keep:"✅ Garder « {ancien} »",known_update:"✏️ Utiliser « {nouveau} » partout",known_cancel:"✕ Annuler l'inscription",reg_name_updated:"✓ Nom mis à jour dans {n} édition(s) du palmarès.",ev_title:"✏️ Modifier une inscription",ev_text:"Pour modifier {nom}, retape son pseudo Chess.com :",ev_err_empty:"⚠️ Pseudo non renseigné.",ev_err_wrong:"❌ Ce pseudo ne correspond pas. Recopie-le exactement tel qu'il est affiché.",ev_ok:"Continuer",ev_cancel:"Annuler",edit_hint:"✏️ Clique sur ton nom pour modifier ton inscription",reg_ok:"Inscription réussie ! Bienvenue ",reg_err_fields:"Pseudo et nom requis.",reg_err_exists:"Ce pseudo est déjà pris.",
     players_title:"Joueurs inscrits",
     admin_players_title:"Joueurs",
@@ -1183,8 +1183,8 @@ const T = {
     palmares_name_optional_placeholder:"Nom (optionnel)",
     palmares_bulk_placeholder:"Un joueur par ligne : pseudo-Nom, ou juste le pseudo",
     palmares_bulk_btn:"➕ Ajouter la liste",palmares_fill_names_btn:"🔗 Retrouver les noms",palmares_search_ph:"🔎 Rechercher un joueur…",palmares_player_none:"Aucun joueur trouvé.",palmares_edition:"édition",palmares_editions:"éditions",palmares_podium:"podium",palmares_podiums:"podiums",palmares_best:"meilleur rang :",palmares_of:" sur ",palmares_stats_btn:"Statistiques des joueurs",tri_points:"📊 Points",tri_ratio:"⚡ Par match",tri_titres:"🏆 Titres",legende_general_poules:"ℹ️ <b>Ordre du classement :</b> 1) rang dans le groupe — tous les 1ers de groupe, puis tous les 2es, etc. 2) points par match 3) victoires par match 4) victoires avec les Noirs par match 5) Buchholz par match — la force des adversaires rencontrés en poules 6) tête de série.<br>Les valeurs sont ramenées au match car les groupes n'ont pas tous la même taille.",legende_general_finales:"ℹ️ <b>Ordre du classement :</b> 1) le tour atteint en phases finales passe avant tout — un demi-finaliste devance un quart de finaliste, même avec moins de points 2) puis le rang dans le groupe 3) puis points, victoires et victoires avec les Noirs, par match 4) puis le Buchholz, figé sur les poules 5) puis tête de série.<br>Un joueur peut donc afficher plus de points qu'un autre placé au-dessus de lui : c'est le parcours en finales qui décide.",legende_edition:"ℹ️ <b>Ordre du classement final :</b> le tour atteint en phases finales passe avant tout, puis le rang dans le groupe, puis les statistiques par match et le Buchholz. Un joueur peut donc afficher plus de points qu'un autre placé au-dessus de lui.",palmares_stats_desc:"Tous les joueurs ayant participé, classés sur l'ensemble des éditions.",palmares_ongoing:"en cours",palmares_pick:"Choisis un tournoi ci-dessus.",palmares_no_result_yet:"Aucun match encore joué.",palmares_provisional:"⏳ Classement provisoire — le tournoi est en cours",palmares_qualified:"Qualifiés",palmares_virtual:"Classement virtuel",palmares_virtual_desc:"⏳ Qui serait qualifié si les poules s'arrêtaient maintenant",palmares_qualified_desc:"✅ Joueurs qualifiés pour les phases finales",palmares_grp:"groupe",palmares_player:"joueur",palmares_players:"joueurs",palmares_format_help:"<b>Un joueur par ligne, dans l'ordre du classement :</b><br><code>pseudo-Nom</code> &nbsp;— sans statistiques<br><code>pseudo-Nom;V;N;D;V;N;D</code> &nbsp;— avec statistiques<br>Les 3 premiers chiffres = victoires, nulles, défaites <b>avec les Blancs</b> ⬜<br>Les 3 suivants = victoires, nulles, défaites <b>avec les Noirs</b> ⬛<br>Exemple : <code>Goudi8-Romain;1;3;1;4;0;1</code><br>Matchs joués et points se calculent automatiquement.",qual_rg:"Rg",qual_grp:"Grp",qual_ptsm:"Pts/M",qual_vm:"V/M",qual_vnm:"VN/M",qual_tbm:"TB/M",qual_seed:"Seed",sep_virtuels:"— LIMITE DE QUALIFICATION ({n}) —",sep_qualifies:"— QUALIFIÉS ({n}) —",qual_legend:"Départage, dans l'ordre : Pts/M (points par match) → V/M (victoires par match) → VN/M (victoires avec les Noirs par match) → TB/M (Buchholz par match) → Seed (tête de série). Rg = rang dans le groupe.",palmares_pts:"pts",palmares_m:"m",palmares_v:"V",palmares_n:"N",palmares_d:"D",palmares_white:"Blancs",palmares_black:"Noirs",palmares_total:"Total",palmares_on:"sur",palmares_names_filled:"✓ {n} nom(s) retrouvé(s) !",palmares_no_name_found:"Aucun nom à retrouver.",
-    rules:`<p>🚀 Consultez l'onglet Matchs pour voir vos parties dès que la phase de poules est lancée. Envoyez une invitation à votre adversaire sur Chess.com (pseudo visible dans l'onglet Tournoi) ou jouez sur échiquier physique. Inscrivez le résultat dès la fin de chaque partie directement dans l'app.</p><br>
-<p>⏰ <strong>Commencez vos parties dès le début du tournoi</strong> et terminez-les avant l'échéance affichée sur chaque match. Vous pouvez jouer plusieurs parties en parallèle, mais <strong>respectez l'ordre des rondes</strong> : traitez d'abord celles dont l'échéance est la plus proche. Même à cadence lente, enchaînez vos coups pour finir dans les délais.</p><br>
+    rules:`<p>🚀 Consulte l'onglet Matchs pour voir tes parties dès que la phase de poules est lancée. Envoie une invitation à ton adversaire sur Chess.com (pseudo visible dans l'onglet Tournoi) ou jouez sur échiquier physique. Inscrivez le résultat dès la fin de chaque partie directement dans l'app.</p><br>
+<p>⏰ <strong>Commence tes parties dès le début du tournoi</strong> et termine-les avant l'échéance affichée sur chaque match. Tu peux jouer plusieurs parties en parallèle, mais <strong>respecte l'ordre des rondes</strong> : traite d'abord celles dont l'échéance est la plus proche. Même à cadence lente, enchaîne tes coups pour finir dans les délais.</p><br>
 <p>Format : Poules round-robin, puis phases finales à élimination directe.</p><br>
 <p>Scores : 1 (victoire) · 0.5 (nul) · 0 (défaite)</p><br>
 <p>Départage dans les groupes : ① Points ② Victoires ③ Victoires avec les Noirs ④ Confrontation directe ⑤ Tête de série</p><p>Départage global (finalistes) : ① Points/match ② Victoires/match ③ Victoires Noirs/match ④ Buchholz/match ⑤ Tête de série</p><br>
@@ -1200,7 +1200,7 @@ const T = {
     presential:"Présentiel",
     notif_disable_btn:"🔕 Désactiver les notifications",
     late_msg:"Certains matchs sont en retard, jouez rapidement !",
-    pending_msg:"Certains matchs sont encore en attente, pensez à organiser vos parties rapidement !",
+    pending_msg:"Certains matchs sont encore en attente, pense à organiser tes parties rapidement !",
     notif_unsupported:"Notifications non supportées sur ce navigateur.",
     notif_denied:"Permission refusée. Ouvre les réglages du site (🔒 dans la barre d'adresse) → Autorisations → Notifications → Autoriser, puis recharge la page.",
     notif_denied_pwa:"Permission refusée. Va dans Paramètres de ton téléphone → Applications → ton navigateur → Notifications, et autorise ce site. Puis réouvre l'app.",
@@ -1241,7 +1241,7 @@ const T = {
     enter_score:"Entrer le score",whites:"⬜ Blancs",blacks:"⬛ Noirs",
     finals_empty:"Les phases finales ne sont pas encore lancées.",
     admin_title:"Accès administrateur",admin_pin:"Code PIN",admin_login_btn:"Connexion",
-    admin_pin_hint:"Première utilisation ? Créez votre PIN maintenant.",admin_pin_err:"PIN incorrect.",
+    admin_pin_hint:"Première utilisation ? Crée ton PIN maintenant.",admin_pin_err:"PIN incorrect.",
     admin_logout:"Déconnexion",
     subtab_settings:"Réglages",subtab_players:"Joueurs",subtab_notifs:"Notifs",subtab_actions:"Tournoi",
     subtab_ranking:"Classement",
@@ -1264,7 +1264,7 @@ const T = {
     scores_reset:"Scores réinitialisés.",tournament_reset:"Tournoi réinitialisé.",
     no_matches:"Aucun match joué.",
     pool_cta:"♟️ JOUEZ !",pool_reminder_title:"🚀 Phase de poules lancée !",
-    pool_reminder_text:"Consultez l'onglet Matchs pour voir vos parties. Envoyez une invitation à votre adversaire sur Chess.com (pseudo visible dans l'onglet Tournoi) ou jouez sur échiquier physique. Inscrivez le résultat dès la fin de chaque partie.\n\n⏰ Commencez dès maintenant et terminez avant l'échéance affichée sur chaque match. Vous pouvez jouer plusieurs parties en parallèle, mais traitez d'abord celles de la ronde 1, puis la 2, etc. — les échéances les plus proches en priorité.",
+    pool_reminder_text:"Consulte l'onglet Matchs pour voir tes parties. Envoie une invitation à ton adversaire sur Chess.com (pseudo visible dans l'onglet Tournoi) ou jouez sur échiquier physique. Inscrivez le résultat dès la fin de chaque partie.\n\n⏰ Commencez dès maintenant et terminez avant l'échéance affichée sur chaque match. Tu peux jouer plusieurs parties en parallèle, mais traite d'abord celles de la ronde 1, puis la 2, etc. — les échéances les plus proches en priorité.",
     install_btn:"📲 Installer l'app",install_title:"Installer l'application",
     install_android:["Ouvrir dans Chrome","Menu ⋮ en haut à droite","Sélectionner: Ajouter à l'écran d'accueil","Appuyer sur Ajouter"],
     install_ios:["Ouvrir dans Safari (pas Chrome)","Icône Partager (carré avec flèche ↑)","Sélectionner: Sur l'écran d'accueil","Appuyer sur Ajouter en haut à droite"],
@@ -1282,8 +1282,8 @@ const T = {
     status_registration:"Anmeldung offen",status_playing:"Gruppenphase",status_finals:"Finalphase",status_finished:"Beendet",
     players_count_1:"Spieler angemeldet",players_count_n:"Spieler angemeldet",
     reg_title:"Zum Turnier anmelden",reg_nick:"Chess.com-Benutzername *",
-    reg_nick_hint:"Wird verwendet, um Sie auf Chess.com zu finden und einzuladen",reg_name:"Name / Nickname *",
-    reg_name_hint:"Vorname, Spitzname oder echter Name — Ihre Wahl",reg_sector:"Sektor / Einheit (optional)",reg_btn:"Anmelden",
+    reg_nick_hint:"Wird verwendet, um dich auf Chess.com zu finden und einzuladen",reg_name:"Name / Nickname *",
+    reg_name_hint:"Vorname, Spitzname oder echter Name — deine Wahl",reg_sector:"Sektor / Einheit (optional)",reg_btn:"Anmelden",
     edition_moved:"✓ Reihenfolge der Ausgaben aktualisiert",invite_title:"🔔 Bleib informiert",invite_text:"Spielergebnisse und Turnierankündigungen, direkt auf dein Handy.",invite_ios:"Installiere die App, um Benachrichtigungen zu aktivieren:",invite_step1:"Tippe auf Teilen ⬆️",invite_step2:"Wähle « Zum Home-Bildschirm »",invite_step3:"Tippe auf « Hinzufügen »",invite_step4:"Öffne die App: dort kannst du die Benachrichtigungen aktivieren",notif_ios_install_first:"⚠️ Auf dem iPhone funktionieren Benachrichtigungen nur über die installierte App. Folge den Schritten unten und aktiviere sie dann in der App.",invite_btn:"🔔 Benachrichtigungen aktivieren",known_title:"👋 Kennen wir uns?",known_body_1:"Das Chess.com-Pseudo <b>{pseudo}</b> hat bereits an einer früheren Turnierausgabe teilgenommen, unter dem Namen <b>« {ancien} »</b>.<br><br>Du hast <b>« {nouveau} »</b> eingegeben.<br><br>Was möchtest du tun?",known_body_n:"Das Chess.com-Pseudo <b>{pseudo}</b> hat bereits an früheren Turnierausgaben teilgenommen, unter dem Namen <b>« {ancien} »</b>.<br><br>Du hast <b>« {nouveau} »</b> eingegeben.<br><br>Was möchtest du tun?",known_keep:"✅ « {ancien} » behalten",known_update:"✏️ Überall « {nouveau} » verwenden",known_cancel:"✕ Anmeldung abbrechen",reg_name_updated:"✓ Name in {n} Ausgabe(n) der Siegerliste aktualisiert.",ev_title:"✏️ Anmeldung ändern",ev_text:"Um {nom} zu ändern, gib das Chess.com-Pseudo erneut ein:",ev_err_empty:"⚠️ Pseudo nicht eingegeben.",ev_err_wrong:"❌ Dieses Pseudo stimmt nicht. Gib es genau so ein, wie es angezeigt wird.",ev_ok:"Weiter",ev_cancel:"Abbrechen",edit_hint:"✏️ Tippe auf deinen Namen, um deine Anmeldung zu ändern",reg_ok:"Erfolgreich angemeldet! Willkommen ",reg_err_fields:"Spitzname und Name erforderlich.",reg_err_exists:"Dieser Spitzname ist bereits vergeben.",
     players_title:"Angemeldete Spieler",
     admin_players_title:"Spieler",
@@ -1302,7 +1302,7 @@ const T = {
     reset_subs_btn:"↺ Alle Abonnements zurücksetzen",
     copy_whatsapp_btn:"📋 Nachricht kopieren",
     maint_title:"Wartung läuft",maint_btn:"🔧 Wartungsmodus",
-    maint_text:"Die Website ist vorübergehend nicht verfügbar.<br>Bitte versuchen Sie es in Kürze erneut.",
+    maint_text:"Die Website ist vorübergehend nicht verfügbar.<br>Bitte versuche es in Kürze erneut.",
     maint_admin_access:"Administratorzugang",
     maint_login_btn:"Admin-Anmeldung",
     notif_invite_info:"💡 Aktiviere die Benachrichtigungen auf der Turnier-Seite, um nichts zu verpassen.",
@@ -1319,7 +1319,7 @@ const T = {
     palmares_bulk_placeholder:"Ein Spieler pro Zeile: Pseudo-Name, oder nur das Pseudo",
     palmares_bulk_btn:"➕ Liste hinzufügen",palmares_fill_names_btn:"🔗 Namen ergänzen",palmares_search_ph:"🔎 Spieler suchen…",palmares_player_none:"Kein Spieler gefunden.",palmares_edition:"Ausgabe",palmares_editions:"Ausgaben",palmares_podium:"Podium",palmares_podiums:"Podien",palmares_best:"beste Platzierung:",palmares_of:" von ",palmares_stats_btn:"Spielerstatistiken",tri_points:"📊 Punkte",tri_ratio:"⚡ Pro Partie",tri_titres:"🏆 Titel",legende_general_poules:"ℹ️ <b>Reihenfolge:</b> 1) Rang in der Gruppe — zuerst alle Gruppenersten, dann alle Zweiten usw. 2) Punkte pro Partie 3) Siege pro Partie 4) Siege mit Schwarz pro Partie 5) Buchholz pro Partie — die Stärke der Gegner aus der Gruppenphase 6) Setzrang.<br>Die Werte sind auf die Partie umgerechnet, da die Gruppen unterschiedlich gross sind.",legende_general_finales:"ℹ️ <b>Reihenfolge:</b> 1) die erreichte Finalrunde zählt zuerst — ein Halbfinalist steht vor einem Viertelfinalisten, auch mit weniger Punkten 2) dann der Rang in der Gruppe 3) dann Punkte, Siege und Siege mit Schwarz, pro Partie 4) dann Buchholz, auf die Gruppenphase eingefroren 5) dann Setzrang.<br>Ein Spieler kann also mehr Punkte haben als jemand über ihm: entscheidend ist der Weg in den Finalrunden.",legende_edition:"ℹ️ <b>Endrangliste:</b> die erreichte Finalrunde zählt zuerst, dann der Rang in der Gruppe, dann die Statistiken pro Partie und Buchholz. Ein Spieler kann also mehr Punkte haben als jemand über ihm.",palmares_stats_desc:"Alle Teilnehmer, über alle Ausgaben hinweg gewertet.",palmares_ongoing:"laufend",palmares_pick:"Wähle oben ein Turnier.",palmares_no_result_yet:"Noch keine Partie gespielt.",palmares_provisional:"⏳ Vorläufige Rangliste — das Turnier läuft",palmares_qualified:"Qualifiziert",palmares_virtual:"Virtuelle Rangliste",palmares_virtual_desc:"⏳ Wer sich qualifizieren würde, wenn die Gruppenphase jetzt endete",palmares_qualified_desc:"✅ Für die Finalrunden qualifizierte Spieler",palmares_grp:"Gruppe",palmares_player:"Spieler",palmares_players:"Spieler",palmares_format_help:"<b>Ein Spieler pro Zeile, in der Reihenfolge der Rangliste:</b><br><code>Pseudo-Name</code> &nbsp;— ohne Statistik<br><code>Pseudo-Name;S;R;N;S;R;N</code> &nbsp;— mit Statistik<br>Die ersten 3 Zahlen = Siege, Remis, Niederlagen <b>mit Weiß</b> ⬜<br>Die nächsten 3 = Siege, Remis, Niederlagen <b>mit Schwarz</b> ⬛<br>Beispiel: <code>Goudi8-Romain;1;3;1;4;0;1</code><br>Partien und Punkte werden automatisch berechnet.",qual_rg:"Rg",qual_grp:"Gr",qual_ptsm:"Pkt/P",qual_vm:"S/P",qual_vnm:"SS/P",qual_tbm:"TB/P",qual_seed:"Setz",sep_virtuels:"— QUALIFIKATIONSGRENZE ({n}) —",sep_qualifies:"— QUALIFIZIERT ({n}) —",qual_legend:"Tiebreak in dieser Reihenfolge: Pkt/P (Punkte pro Partie) → S/P (Siege pro Partie) → SS/P (Siege mit Schwarz pro Partie) → TB/P (Buchholz pro Partie) → Setzrang. Rg = Rang in der Gruppe.",palmares_pts:"Pkt",palmares_m:"P",palmares_v:"S",palmares_n:"R",palmares_d:"N",palmares_white:"Weiß",palmares_black:"Schwarz",palmares_total:"Gesamt",palmares_on:"von",palmares_names_filled:"✓ {n} Name(n) ergänzt!",palmares_no_name_found:"Keine Namen zu ergänzen.",
     rules:`<p>🚀 Sieh dir deine Partien im Tab <strong>Partien</strong> an, sobald die Gruppenphase gestartet ist. Sende deinem Gegner eine Einladung auf Chess.com (Benutzername im Tab <strong>Turnier</strong>) oder spiele auf dem Brett. Trage das Ergebnis direkt im Tab <strong>Partien</strong> ein.</p><br>
-<p>⏰ <strong>Beginnt eure Partien gleich zu Turnierbeginn</strong> und beendet sie vor der bei jeder Partie angezeigten Frist. Ihr dürft mehrere Partien parallel spielen, aber <strong>haltet die Reihenfolge der Runden ein</strong>: spielt zuerst die Partien mit der nächstliegenden Frist. Auch bei langsamem Tempo: zieht zügig weiter, um fristgerecht fertig zu werden.</p><br>
+<p>⏰ <strong>Beginne deine Partien gleich zu Turnierbeginn</strong> und beende sie vor der bei jeder Partie angezeigten Frist. Ihr dürft mehrere Partien parallel spielen, aber <strong>haltet die Reihenfolge der Runden ein</strong>: spielt zuerst die Partien mit der nächstliegenden Frist. Auch bei langsamem Tempo: zieht zügig weiter, um fristgerecht fertig zu werden.</p><br>
 <p>Format: Round-Robin-Gruppen, dann K.o.-Finalrunden.</p><br>
 <p>Punkte: 1 (Sieg) · 0.5 (Remis) · 0 (Niederlage)</p><br>
 <p>Tiebreak Gruppen: ① Punkte ② Siege ③ Siege mit Schwarz ④ Direkter Vergleich ⑤ Setzrang</p><p>Globaler Tiebreak (Finalisten): ① Punkte/Partie ② Siege/Partie ③ Siege Schwarz/Partie ④ Buchholz/Partie ⑤ Setzrang</p><br>
@@ -1333,7 +1333,7 @@ const T = {
     enter_score:"Ergebnis eintragen",whites:"⬜ Weiß",blacks:"⬛ Schwarz",
     finals_empty:"Die Finalrunden haben noch nicht begonnen.",
     admin_title:"Administrator-Zugang",admin_pin:"PIN-Code",admin_login_btn:"Anmelden",
-    admin_pin_hint:"Erste Verwendung? Erstellen Sie jetzt Ihren PIN.",admin_pin_err:"Falscher PIN.",
+    admin_pin_hint:"Erste Verwendung? Erstelle jetzt deinen PIN.",admin_pin_err:"Falscher PIN.",
     admin_logout:"Abmelden",
     subtab_settings:"Einstellungen",subtab_players:"Spieler",subtab_notifs:"Mitteil.",subtab_actions:"Turnier",
     subtab_ranking:"Rangliste",
@@ -1356,7 +1356,7 @@ const T = {
     scores_reset:"Ergebnisse zurückgesetzt.",tournament_reset:"Turnier zurückgesetzt.",
     no_matches:"Keine Partien gespielt.",
     pool_cta:"♟️ SPIELT!",pool_reminder_title:"🚀 Gruppenphase gestartet!",
-    pool_reminder_text:"Sieh dir deine Partien im Tab Partien an. Sende deinem Gegner eine Einladung auf Chess.com (Benutzername im Tab Turnier) oder spiele auf dem Brett. Trage das Ergebnis direkt nach jeder Partie ein.\n\n⏰ Beginnt sofort und beendet vor der bei jeder Partie angezeigten Frist. Ihr dürft mehrere Partien parallel spielen, aber spielt zuerst Runde 1, dann 2, usw. — die nächstliegenden Fristen zuerst.",
+    pool_reminder_text:"Sieh dir deine Partien im Tab Partien an. Sende deinem Gegner eine Einladung auf Chess.com (Benutzername im Tab Turnier) oder spiele auf dem Brett. Trage das Ergebnis direkt nach jeder Partie ein.\n\n⏰ Beginnt sofort und beendet vor der bei jeder Partie angezeigten Frist. Du darfst mehrere Partien parallel spielen, aber spiele zuerst Runde 1, dann 2, usw. — die nächstliegenden Fristen zuerst.",
     install_btn:"📲 App installieren",install_title:"App installieren",
     install_android:["Link in Chrome öffnen","Menü ⋮ oben rechts antippen","Zum Startbildschirm hinzufügen wählen","Hinzufügen antippen"],
     install_ios:["Link in Safari öffnen (nicht Chrome)","Teilen-Symbol antippen (Quadrat mit Pfeil ↑)","Zum Home-Bildschirm wählen","Oben rechts auf Hinzufügen tippen"],
@@ -1368,8 +1368,8 @@ const T = {
     late_match:"⏰ Partie verspätet",
     color_choice:"wählt die Farbe",color_pick:"— Farbe —",color_required:"Wähle deine Farbe, bevor du das Ergebnis bestätigst.",
     presential:"Präsenz",
-    late_msg:"Einige Partien sind verspätet, spielen Sie schnell!",
-    pending_msg:"Einige Partien sind noch ausstehend, bitte spielen Sie schnell!",
+    late_msg:"Einige Partien sind verspätet, spiel bitte bald!",
+    pending_msg:"Einige Partien sind noch ausstehend, spiel bitte bald!",
     notif_unsupported:"Benachrichtigungen nicht unterstützt.",
     notif_denied:"Berechtigung verweigert. Öffne die Website-Einstellungen (🔒 in der Adressleiste) → Berechtigungen → Benachrichtigungen → Zulassen, dann lade die Seite neu.",
     notif_denied_pwa:"Berechtigung verweigert. Gehe zu Einstellungen → Apps → dein Browser → Benachrichtigungen, und erlaube diese Seite. Dann öffne die App erneut.",
@@ -1587,7 +1587,7 @@ const T = {
     palmares_bulk_placeholder:"Un giocatore per riga: nomeutente-Nome, o solo il nome utente",
     palmares_bulk_btn:"➕ Aggiungi la lista",palmares_fill_names_btn:"🔗 Ritrovare i nomi",palmares_search_ph:"🔎 Cercare un giocatore…",palmares_player_none:"Nessun giocatore trovato.",palmares_edition:"edizione",palmares_editions:"edizioni",palmares_podium:"podio",palmares_podiums:"podi",palmares_best:"miglior posizione:",palmares_of:" su ",palmares_stats_btn:"Statistiche giocatori",tri_points:"📊 Punti",tri_ratio:"⚡ Per partita",tri_titres:"🏆 Titoli",legende_general_poules:"ℹ️ <b>Ordine della classifica:</b> 1) posizione nel girone — prima tutti i primi, poi tutti i secondi, ecc. 2) punti per partita 3) vittorie per partita 4) vittorie con i Neri per partita 5) Buchholz per partita — la forza degli avversari affrontati nei gironi 6) testa di serie.<br>I valori sono per partita perché i gironi non hanno tutti la stessa dimensione.",legende_general_finales:"ℹ️ <b>Ordine della classifica:</b> 1) il turno raggiunto nelle fasi finali viene prima di tutto — un semifinalista precede un quartofinalista, anche con meno punti 2) poi la posizione nel girone 3) poi punti, vittorie e vittorie con i Neri, per partita 4) poi il Buchholz, congelato sui gironi 5) poi testa di serie.<br>Un giocatore può quindi mostrare più punti di uno collocato sopra di lui: decide il percorso nelle finali.",legende_edition:"ℹ️ <b>Classifica finale:</b> il turno raggiunto nelle fasi finali viene prima di tutto, poi la posizione nel girone, poi le statistiche per partita e il Buchholz. Un giocatore può quindi mostrare più punti di uno collocato sopra di lui.",palmares_stats_desc:"Tutti i partecipanti, classificati su tutte le edizioni.",palmares_ongoing:"in corso",palmares_pick:"Scegli un torneo qui sopra.",palmares_no_result_yet:"Nessuna partita ancora giocata.",palmares_provisional:"⏳ Classifica provvisoria — torneo in corso",palmares_qualified:"Qualificati",palmares_virtual:"Classifica virtuale",palmares_virtual_desc:"⏳ Chi si qualificherebbe se i gironi finissero ora",palmares_qualified_desc:"✅ Giocatori qualificati per le fasi finali",palmares_grp:"girone",palmares_player:"giocatore",palmares_players:"giocatori",palmares_format_help:"<b>Un giocatore per riga, in ordine di classifica:</b><br><code>nomeutente-Nome</code> &nbsp;— senza statistiche<br><code>nomeutente-Nome;V;P;S;V;P;S</code> &nbsp;— con statistiche<br>I primi 3 numeri = vittorie, patte, sconfitte <b>con i Bianchi</b> ⬜<br>I 3 successivi = vittorie, patte, sconfitte <b>con i Neri</b> ⬛<br>Esempio: <code>Goudi8-Romain;1;3;1;4;0;1</code><br>Partite e punti si calcolano automaticamente.",qual_rg:"Pos",qual_grp:"Gir",qual_ptsm:"Pt/P",qual_vm:"V/P",qual_vnm:"VN/P",qual_tbm:"TB/P",qual_seed:"Testa",sep_virtuels:"— LIMITE DI QUALIFICAZIONE ({n}) —",sep_qualifies:"— QUALIFICATI ({n}) —",qual_legend:"Spareggio nell'ordine: Pt/P (punti per partita) → V/P (vittorie per partita) → VN/P (vittorie con i Neri per partita) → TB/P (Buchholz per partita) → testa di serie. Pos = posizione nel girone.",palmares_pts:"pt",palmares_m:"p",palmares_v:"V",palmares_n:"P",palmares_d:"S",palmares_white:"Bianchi",palmares_black:"Neri",palmares_total:"Totale",palmares_on:"su",palmares_names_filled:"✓ {n} nome(i) ritrovato(i)!",palmares_no_name_found:"Nessun nome da ritrovare.",
     rules:`<p>🚀 Consulta la scheda <strong>Partite</strong> per vedere le tue partite non appena inizia la fase a gironi. Invia un invito al tuo avversario su Chess.com (nome utente nella scheda <strong>Torneo</strong>) o gioca su una scacchiera. Inserisci il risultato nella scheda <strong>Partite</strong>.</p><br>
-<p>⏰ <strong>Iniziate le vostre partite fin dall'inizio del torneo</strong> e concludetele entro la scadenza indicata su ogni partita. Potete giocare più partite in parallelo, ma <strong>rispettate l'ordine dei turni</strong>: affrontate per prime quelle con la scadenza più vicina. Anche con un ritmo lento, continuate a muovere per finire nei tempi.</p><br>
+<p>⏰ <strong>Inizia le tue partite fin dall'inizio del torneo</strong> e concludile entro la scadenza indicata su ogni partita. Potete giocare più partite in parallelo, ma <strong>rispettate l'ordine dei turni</strong>: affrontate per prime quelle con la scadenza più vicina. Anche con un ritmo lento, continuate a muovere per finire nei tempi.</p><br>
 <p>Formato: Gironi round-robin, poi fasi finali ad eliminazione diretta.</p><br>
 <p>Punteggi: 1 (vittoria) · 0.5 (patta) · 0 (sconfitta)</p><br>
 <p>Spareggio gironi: ① Punti ② Vittorie ③ Vittorie con il Nero ④ Scontro diretto ⑤ Testa di serie</p><p>Spareggio globale (finalisti): ① Punti/partita ② Vittorie/partita ③ Vittorie Nero/partita ④ Buchholz/partita ⑤ Testa di serie</p><br>
@@ -1601,7 +1601,7 @@ const T = {
     color_choice:"sceglie il colore",color_pick:"— colore —",color_required:"Scegli il tuo colore prima di confermare il risultato.",
     presential:"Presenza",
     late_msg:"Alcune partite sono in ritardo, giocare rapidamente!",
-    pending_msg:"Alcune partite sono ancora in attesa, organizzate le vostre partite rapidamente!",
+    pending_msg:"Alcune partite sono ancora in attesa, organizza le tue partite rapidamente!",
     notif_unsupported:"Notifiche non supportate su questo browser.",
     notif_denied:"Autorizzazione negata. Apri le impostazioni del sito (🔒 nella barra degli indirizzi) → Autorizzazioni → Notifiche → Consenti, poi ricarica la pagina.",
     notif_denied_pwa:"Autorizzazione negata. Vai nelle Impostazioni del telefono → App → il tuo browser → Notifiche, e consenti questo sito. Poi riapri l'app.",
@@ -2475,7 +2475,7 @@ function renderPalmaresPlayerCard(recherche) {
   }
   // Titre : "Nom (pseudo)" si les deux existent, sinon le pseudo seul.
   const titreJoueur = nom
-    ? esc(nom) + ' <span style="font-weight:600;color:#8a7a4a;font-size:13px">(' + esc(pseudo || '') + ')</span>'
+    ? esc(nom) + ' <span style="font-weight:600;color:#7a6a3a;font-size:13px">(' + esc(pseudo || '') + ')</span>'
     : esc(pseudo || '');
 
   if (!parcours.length) {
@@ -2525,7 +2525,7 @@ function renderPalmaresPlayerCard(recherche) {
   box.innerHTML = `<div style="background:var(--gold-light);border-radius:10px;padding:12px">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
       <div style="flex:1;font-size:15px;font-weight:800">${titreJoueur}</div>
-      <button onclick="fermerFichePalmares()" style="border:none;background:none;color:#8a7a4a;font-size:16px;cursor:pointer;padding:0 4px">✕</button>
+      <button onclick="fermerFichePalmares()" style="border:none;background:none;color:#7a6a3a;font-size:16px;cursor:pointer;padding:0 4px">✕</button>
     </div>
     <div style="font-size:11px;color:#7a6a3a;margin-bottom:10px">
       ${parcours.length} ${t(parcours.length > 1 ? 'palmares_editions' : 'palmares_edition')}

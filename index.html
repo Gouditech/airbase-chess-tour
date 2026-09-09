@@ -644,6 +644,10 @@ async function subscribeToNotifications() {
     localStorage.setItem('abct-notif-subid', subId);
     localStorage.setItem('abct-notif', 'on');
     localStorage.removeItem('abct-notif-volontaire');   // il revient : le choix précédent est caduc
+    // Trace durable d'une activation passée. Elle ne dit PAS que les notifications
+    // marchent aujourd'hui — seulement que ce joueur n'est plus un inconnu. Sert à
+    // décider si le bandeau d'invitation a encore un sens : voir peutProposerNotif.
+    localStorage.setItem('abct-notif-deja', '1');
     // Le bandeau d'invitation n'a plus lieu d'être : le joueur vient de s'abonner.
     // Fermé ICI et non dans le bouton du bandeau, car l'activation peut aussi
     // venir du bouton de la carte d'accueil — le bandeau restait alors affiché à
@@ -800,6 +804,15 @@ function peutProposerNotif() {
   // empêcherait le bandeau de s'afficher précisément là où il est indispensable —
   // c'est le seul endroit où le joueur apprend qu'il doit installer l'app.
   if (estIOS() && !estInstallee()) return true;
+
+  // Ce joueur a déjà activé les notifications au moins une fois sur cet appareil.
+  // S'il ne les reçoit plus, la vérification d'ouverture le lui dit par un message,
+  // et le bouton d'activation se trouve juste au-dessus de ce message : le bandeau
+  // n'apporterait rien de plus. Il est réservé à qui n'a aucune trace d'activation
+  // passée — quelqu'un pour qui l'existence même de la fonction est une nouvelle.
+  // Si le joueur efface tout son stockage, ce marqueur part avec : il redevient un
+  // inconnu et le bandeau revient, ce qui est exact puisque le site ne sait plus rien.
+  if (localStorage.getItem('abct-notif-deja') === '1') return false;
 
   if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) return false;
   // 'granted' : le joueur a déjà autorisé. S'il est cassé, la vérification d'ouverture
@@ -5148,6 +5161,9 @@ setTimeout(async () => {
   // données effacées, révocation système). Le joueur ne reçoit plus rien et ne peut
   // pas le savoir. On le détecte ici, à chaque ouverture, et on le lui dit.
   if (localStorage.getItem('abct-notif') === 'on' && 'serviceWorker' in navigator && 'PushManager' in window) {
+    // Rattrapage : les joueurs abonnés AVANT l'introduction de ce marqueur ne l'ont
+    // pas. Le drapeau vaut 'on', donc l'activation a bien eu lieu — on le pose ici.
+    localStorage.setItem('abct-notif-deja', '1');
     try {
       const reg = await navigator.serviceWorker.ready;
       const vivant = await reg.pushManager.getSubscription();
@@ -5159,7 +5175,14 @@ setTimeout(async () => {
         localStorage.removeItem('abct-notif');
         localStorage.removeItem('abct-notif-subid');
         updateNotifBtn();
-        showMsg('notif-msg', t('notif_lost'), false, true);
+        // La cause n'est pas toujours la même, le message ne doit donc pas l'être.
+        // Permission REFUSÉE par le joueur : lui dire « abonnement perdu par ton
+        // navigateur » est faux et ne l'aide pas — il lui faut le chemin pour rouvrir
+        // l'autorisation, qui dépend de son appareil. Dans les autres cas (autorisation
+        // encore accordée mais abonnement disparu, ou autorisation remise à zéro), le
+        // constat de perte est exact.
+        const cleMort = (Notification.permission === 'denied') ? cleNotifBloquee() : 'notif_lost';
+        showMsg('notif-msg', t(cleMort), false, true);
         console.log('[ABCT] Abonnement perdu côté navigateur — entrée nettoyée, joueur prévenu');
       }
     } catch(e) { console.log('Vérification abonnement (non bloquant) :', e.message); }

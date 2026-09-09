@@ -126,7 +126,9 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
 <body>
 
 <div id="loading">
-  <img id="loading-logo" src="" alt="Logo">
+  <!-- Source posée ICI et non en JavaScript : le script est un module qui attend
+       les imports Firebase, et le logo restait une image brisée pendant ce temps. -->
+  <img id="loading-logo" src="data:image/jpeg;base64,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" alt="Logo">
   <p id="loading-text">Chargement...</p>
 </div>
 
@@ -1042,7 +1044,7 @@ window.testNotification = async function() {
   // — il réussissait même si l'entrée Firebase manquait ou si l'adresse était
   // périmée, donc même quand aucune notification réelle ne serait jamais arrivée.
   const subId = localStorage.getItem('abct-notif-subid');
-  if (!subId) { showMsg('notif-msg', '❌ ' + t('notif_test_nosub'), false, true); return; }
+  if (!subId) { showMsg('notif-msg', t('notif_test_nosub'), false, true); return; }
   const btn = document.getElementById('notif-test-btn');
   if (btn) btn.disabled = true;
   showMsg('notif-msg', t('notif_test_sending'));
@@ -1059,7 +1061,11 @@ window.testNotification = async function() {
       // L'état local doit suivre ce que le serveur vient de constater. Sans cela,
       // le bouton resterait VERT sous un message disant que l'abonnement a été
       // retiré — exactement le mensonge qu'on cherche à éliminer.
-      if (d.code === 'test_dead' || d.code === 'test_no_entry') {
+      // SEUL 'test_dead' (404/410 du service push) prouve que l'abonnement est mort.
+      // 'test_no_entry' signifie seulement que le serveur n'a pas VU l'entrée : juste
+      // après l'activation, l'écriture peut ne pas lui être encore parvenue. Détruire
+      // l'abonnement dans ce cas cassait un abonnement parfaitement valide.
+      if (d.code === 'test_dead') {
         localStorage.removeItem('abct-notif');
         localStorage.removeItem('abct-notif-subid');
         try {
@@ -1073,11 +1079,11 @@ window.testNotification = async function() {
       }
       // Chaque échec dit CE QUI est cassé, pas seulement qu'il y a un problème.
       const cle = 'notif_' + (d.code || 'test_error');
-      showMsg('notif-msg', '❌ ' + (T[lang]?.[cle] ? t(cle) : (d.detail || 'Erreur')), false, true);
+      showMsg('notif-msg', T[lang]?.[cle] ? t(cle) : ('❌ ' + (d.detail || 'Erreur')), false, true);
       updateNotifBtn();
     }
   } catch(e) {
-    showMsg('notif-msg', '❌ ' + t('notif_test_network'), false, true);
+    showMsg('notif-msg', t('notif_test_network'), false, true);
   } finally {
     if (btn) btn.disabled = false;
   }
@@ -1211,8 +1217,8 @@ const T = {
     notif_enabled:"✓ Notifications activées !",
     notif_disabled_warn:"⚠️ Notifications désactivées. Tu ne recevras plus les annonces du tournoi ni les résultats — tu risques de manquer une échéance et d'être déclaré forfait. Réactive-les dès que possible.",notif_cut_server:"⚠️ Tes notifications ont été coupées côté serveur — réactive-les si tu le souhaites.",notif_lost:"⚠️ Tes notifications ne fonctionnaient plus (abonnement perdu par ton navigateur). Réactive-les pour ne pas manquer d'échéance.",
     notif_test_body:"🔔 Ceci est un test de notification.",
-    notif_activating:"⏳ Activation en cours…",notif_test_sending:"📤 Envoi du test en cours…",notif_test_no_entry:"❌ Aucune entrée sur le serveur pour cet appareil. Désactive puis réactive tes notifications.",notif_test_dead:"❌ Ton abonnement n'est plus valide (adresse expirée). Il a été retiré : réactive tes notifications.",notif_test_error:"❌ Le serveur n'a pas pu envoyer. Réessaie dans un instant.",notif_test_network:"❌ Serveur injoignable. Vérifie ta connexion.",notif_test_sent:"✓ Notification test envoyée !",
-    notif_test_nosub:"Pas d'abonnement actif. Désactive puis réactive les notifications.",
+    notif_activating:"⏳ Activation en cours…",notif_test_sending:"📤 Envoi du test en cours…",notif_test_no_entry:"⏳ Synchronisation en cours, réessaie dans quelques secondes.",notif_test_dead:"❌ Ton abonnement n'est plus valide (adresse expirée). Il a été retiré : réactive tes notifications.",notif_test_error:"❌ Le serveur n'a pas pu envoyer. Réessaie dans un instant.",notif_test_network:"❌ Serveur injoignable. Vérifie ta connexion.",notif_test_sent:"✓ Notification test envoyée !",
+    notif_test_nosub:"❌ Pas d'abonnement actif. Désactive puis réactive les notifications.",
     notif_enter_msg:"Entrez un message.",
     notif_sent:"✓ Notification enregistrée !",
     notif_subscriber:" abonné",
@@ -1381,8 +1387,8 @@ const T = {
     notif_enabled:"✓ Benachrichtigungen aktiviert!",
     notif_disabled_warn:"⚠️ Benachrichtigungen deaktiviert. Du erhältst keine Turnierankündigungen und Ergebnisse mehr — du riskierst, eine Frist zu verpassen und kampflos zu verlieren. Aktiviere sie so bald wie möglich wieder.",notif_cut_server:"⚠️ Deine Benachrichtigungen wurden serverseitig abgeschaltet — aktiviere sie bei Bedarf erneut.",notif_lost:"⚠️ Deine Benachrichtigungen funktionierten nicht mehr (Abo vom Browser verloren). Aktiviere sie erneut, um keine Frist zu verpassen.",
     notif_test_body:"🔔 Dies ist eine Testbenachrichtigung.",
-    notif_activating:"⏳ Wird aktiviert…",notif_test_sending:"📤 Test wird gesendet…",notif_test_no_entry:"❌ Kein Eintrag auf dem Server für dieses Gerät. Deaktiviere und aktiviere deine Benachrichtigungen erneut.",notif_test_dead:"❌ Dein Abo ist nicht mehr gültig (Adresse abgelaufen). Es wurde entfernt: aktiviere die Benachrichtigungen erneut.",notif_test_error:"❌ Der Server konnte nicht senden. Versuche es gleich noch einmal.",notif_test_network:"❌ Server nicht erreichbar. Prüfe deine Verbindung.",notif_test_sent:"✓ Testbenachrichtigung gesendet!",
-    notif_test_nosub:"Kein aktives Abonnement. Deaktiviere und reaktiviere die Benachrichtigungen.",
+    notif_activating:"⏳ Wird aktiviert…",notif_test_sending:"📤 Test wird gesendet…",notif_test_no_entry:"⏳ Synchronisierung läuft, versuche es in ein paar Sekunden erneut.",notif_test_dead:"❌ Dein Abo ist nicht mehr gültig (Adresse abgelaufen). Es wurde entfernt: aktiviere die Benachrichtigungen erneut.",notif_test_error:"❌ Der Server konnte nicht senden. Versuche es gleich noch einmal.",notif_test_network:"❌ Server nicht erreichbar. Prüfe deine Verbindung.",notif_test_sent:"✓ Testbenachrichtigung gesendet!",
+    notif_test_nosub:"❌ Kein aktives Abo. Deaktiviere und reaktiviere die Benachrichtigungen.",
     notif_enter_msg:"Bitte eine Nachricht eingeben.",
     notif_sent:"✓ Benachrichtigung gespeichert!",
     notif_subscriber:" Abonnent",
@@ -1481,8 +1487,8 @@ const T = {
     notif_enabled:"✓ Notifications enabled!",
     notif_disabled_warn:"⚠️ Notifications disabled. You will no longer receive tournament announcements or results — you risk missing a deadline and forfeiting. Re-enable them as soon as possible.",notif_cut_server:"⚠️ Your notifications were cut off server-side — re-enable them if you wish.",notif_lost:"⚠️ Your notifications had stopped working (subscription lost by your browser). Re-enable them so you don't miss a deadline.",
     notif_test_body:"🔔 This is a test notification.",
-    notif_activating:"⏳ Enabling…",notif_test_sending:"📤 Sending test…",notif_test_no_entry:"❌ No entry on the server for this device. Turn your notifications off and on again.",notif_test_dead:"❌ Your subscription is no longer valid (address expired). It was removed: enable notifications again.",notif_test_error:"❌ The server could not send. Try again in a moment.",notif_test_network:"❌ Server unreachable. Check your connection.",notif_test_sent:"✓ Test notification sent!",
-    notif_test_nosub:"No active subscription. Disable then re-enable notifications.",
+    notif_activating:"⏳ Enabling…",notif_test_sending:"📤 Sending test…",notif_test_no_entry:"⏳ Still syncing, try again in a few seconds.",notif_test_dead:"❌ Your subscription is no longer valid (address expired). It was removed: enable notifications again.",notif_test_error:"❌ The server could not send. Try again in a moment.",notif_test_network:"❌ Server unreachable. Check your connection.",notif_test_sent:"✓ Test notification sent!",
+    notif_test_nosub:"❌ No active subscription. Disable then re-enable notifications.",
     notif_enter_msg:"Please enter a message.",
     notif_sent:"✓ Notification saved!",
     notif_subscriber:" subscriber",
@@ -1613,8 +1619,8 @@ const T = {
     notif_enabled:"✓ Notifiche attivate!",
     notif_disabled_warn:"⚠️ Notifiche disattivate. Non riceverai più gli annunci del torneo né i risultati — rischi di perdere una scadenza e di perdere a tavolino. Riattivale appena possibile.",notif_cut_server:"⚠️ Le tue notifiche sono state disattivate lato server — riattivale se lo desideri.",notif_lost:"⚠️ Le tue notifiche non funzionavano più (abbonamento perso dal browser). Riattivale per non perdere una scadenza.",
     notif_test_body:"🔔 Questa è una notifica di prova.",
-    notif_activating:"⏳ Attivazione in corso…",notif_test_sending:"📤 Invio del test…",notif_test_no_entry:"❌ Nessuna voce sul server per questo dispositivo. Disattiva e riattiva le notifiche.",notif_test_dead:"❌ Il tuo abbonamento non è più valido (indirizzo scaduto). È stato rimosso: riattiva le notifiche.",notif_test_error:"❌ Il server non è riuscito a inviare. Riprova tra poco.",notif_test_network:"❌ Server irraggiungibile. Controlla la connessione.",notif_test_sent:"✓ Notifica di prova inviata!",
-    notif_test_nosub:"Nessun abbonamento attivo. Disattiva e riattiva le notifiche.",
+    notif_activating:"⏳ Attivazione in corso…",notif_test_sending:"📤 Invio del test…",notif_test_no_entry:"⏳ Sincronizzazione in corso, riprova tra qualche secondo.",notif_test_dead:"❌ Il tuo abbonamento non è più valido (indirizzo scaduto). È stato rimosso: riattiva le notifiche.",notif_test_error:"❌ Il server non è riuscito a inviare. Riprova tra poco.",notif_test_network:"❌ Server irraggiungibile. Controlla la connessione.",notif_test_sent:"✓ Notifica di prova inviata!",
+    notif_test_nosub:"❌ Nessun abbonamento attivo. Disattiva e riattiva le notifiche.",
     notif_enter_msg:"Inserire un messaggio.",
     notif_sent:"✓ Notifica salvata!",
     notif_subscriber:" abbonato",

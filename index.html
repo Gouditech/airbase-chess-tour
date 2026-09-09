@@ -790,12 +790,6 @@ function estIOS() {
 // aurait fait toute la manipulation sans jamais revoir la proposition.
 function cleRefus() { return estInstallee() ? 'abct-invite-refus-app' : 'abct-invite-refus'; }
 
-// Vrai quand la vérification d'ouverture a constaté un abonnement CASSÉ : la permission
-// est accordée, mais le navigateur n'a plus d'abonnement push. Sans cet indicateur, le
-// bandeau se taisait dans le seul état où il est indispensable — la permission accordée
-// lui faisait conclure « déjà réglé », alors que plus rien n'était reçu.
-let abonnementCasse = false;
-
 function peutProposerNotif() {
   if (localStorage.getItem('abct-notif') === 'on') return false;
   const refus = parseInt(localStorage.getItem(cleRefus()) || '0', 10);
@@ -808,10 +802,11 @@ function peutProposerNotif() {
   if (estIOS() && !estInstallee()) return true;
 
   if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) return false;
-  if (Notification.permission === 'denied') return false;    // refusé : redemander est impossible
-  // Accordée ET saine : rien à proposer. Accordée mais CASSÉE : c'est précisément le cas
-  // où il faut proposer — le joueur croit être abonné et ne reçoit plus rien.
-  if (Notification.permission === 'granted' && !abonnementCasse) return false;
+  // 'granted' : le joueur a déjà autorisé. S'il est cassé, la vérification d'ouverture
+  //             affiche `notif_lost` sur la carte d'accueil, et le bouton d'activation
+  //             est juste au-dessus du message — un bandeau ferait doublon.
+  // 'denied'  : le navigateur interdit de redemander ; un bandeau ne mènerait à rien.
+  if (Notification.permission !== 'default') return false;
   return true;
 }
 
@@ -5131,7 +5126,6 @@ setTimeout(async () => {
             // sinon on lui répète à chaque ouverture qu'un problème existe alors que non.
             console.log('[ABCT] Notifications coupées volontairement — aucun signal');
           } else {
-            abonnementCasse = true;
             showMsg('notif-msg', t('notif_lost'), false, true);
             console.log('[ABCT] Permission accordée mais aucun abonnement navigateur — joueur prévenu, bandeau autorisé');
           }
@@ -5155,10 +5149,6 @@ setTimeout(async () => {
         if (orphelin) await set(ref(db, SUB_PATH + '/' + orphelin), null);
         localStorage.removeItem('abct-notif');
         localStorage.removeItem('abct-notif-subid');
-        // Même état que ci-dessus : si la permission reste accordée, le bandeau doit
-        // pouvoir s'afficher, sinon le message est le seul signal et il peut passer
-        // inaperçu en bas de la carte.
-        abonnementCasse = true;
         updateNotifBtn();
         showMsg('notif-msg', t('notif_lost'), false, true);
         console.log('[ABCT] Abonnement perdu côté navigateur — entrée nettoyée, joueur prévenu');

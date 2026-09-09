@@ -624,7 +624,7 @@ async function subscribeToNotifications() {
     if (!('Notification' in window)) { showMsg('notif-msg', t('notif_unsupported'), false, true); return; }
     showMsg('notif-msg', t('notif_activating'));
     const permission = await Notification.requestPermission();
-    if (permission !== 'granted') { const isPWA = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone; showMsg('notif-msg', t(isPWA ? 'notif_denied_pwa' : 'notif_denied'), false, true); return; }
+    if (permission !== 'granted') { showMsg('notif-msg', t(cleNotifBloquee()), false, true); return; }
     const reg = await navigator.serviceWorker.ready;
     const sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
@@ -643,6 +643,7 @@ async function subscribeToNotifications() {
     });
     localStorage.setItem('abct-notif-subid', subId);
     localStorage.setItem('abct-notif', 'on');
+    localStorage.removeItem('abct-notif-volontaire');   // il revient : le choix précédent est caduc
     // Le bandeau d'invitation n'a plus lieu d'être : le joueur vient de s'abonner.
     // Fermé ICI et non dans le bouton du bandeau, car l'activation peut aussi
     // venir du bouton de la carte d'accueil — le bandeau restait alors affiché à
@@ -669,6 +670,11 @@ window.unsubscribeFromNotifications = async function unsubscribeFromNotification
     // l'abonnement (message faux, puis écrasé). Voulu : un seul message, le bon.
     localStorage.removeItem('abct-notif');
     localStorage.removeItem('abct-notif-subid');
+    // Marqueur de CHOIX : après cette fonction, l'état du navigateur est identique à
+    // celui d'un abonnement cassé (permission gardée, abonnement révoqué, mémo effacé).
+    // Sans ce marqueur, la vérification d'ouverture annoncerait « tes notifications ne
+    // fonctionnaient plus » à chaque lancement, à quelqu'un qui les a coupées exprès.
+    localStorage.setItem('abct-notif-volontaire', '1');
     if (subId) await set(ref(db, SUB_PATH + '/' + subId), null);
     updateNotifBtn();
     // Avertissement rouge PERSISTANT : le joueur doit mesurer ce qu'il perd.
@@ -691,8 +697,7 @@ function updateNotifBtn() {
     localStorage.removeItem('abct-notif-subid');
     if (expiredSubId) set(ref(db, SUB_PATH + '/' + expiredSubId), null).catch(()=>{});
     on = false;
-    const isPWA = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
-    showMsg('notif-msg', t(isPWA ? 'notif_denied_pwa' : 'notif_denied'), false, true);
+    showMsg('notif-msg', t(cleNotifBloquee()), false, true);
   }
   // Abonné mais les deux catégories décochées : il ne reçoit rien. Le bouton doit
   // le montrer, sinon le vert ment.
@@ -785,6 +790,12 @@ function estIOS() {
 // aurait fait toute la manipulation sans jamais revoir la proposition.
 function cleRefus() { return estInstallee() ? 'abct-invite-refus-app' : 'abct-invite-refus'; }
 
+// Vrai quand la vérification d'ouverture a constaté un abonnement CASSÉ : la permission
+// est accordée, mais le navigateur n'a plus d'abonnement push. Sans cet indicateur, le
+// bandeau se taisait dans le seul état où il est indispensable — la permission accordée
+// lui faisait conclure « déjà réglé », alors que plus rien n'était reçu.
+let abonnementCasse = false;
+
 function peutProposerNotif() {
   if (localStorage.getItem('abct-notif') === 'on') return false;
   const refus = parseInt(localStorage.getItem(cleRefus()) || '0', 10);
@@ -797,7 +808,10 @@ function peutProposerNotif() {
   if (estIOS() && !estInstallee()) return true;
 
   if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) return false;
-  if (Notification.permission !== 'default') return false;   // déjà accordé ou refusé
+  if (Notification.permission === 'denied') return false;    // refusé : redemander est impossible
+  // Accordée ET saine : rien à proposer. Accordée mais CASSÉE : c'est précisément le cas
+  // où il faut proposer — le joueur croit être abonné et ne reçoit plus rien.
+  if (Notification.permission === 'granted' && !abonnementCasse) return false;
   return true;
 }
 
@@ -805,6 +819,15 @@ function peutProposerNotif() {
 function estInstallee() {
   return window.matchMedia('(display-mode: standalone)').matches
       || window.navigator.standalone === true;
+}
+
+// Le chemin pour rouvrir une autorisation bloquée dépend du SYSTÈME, pas seulement du
+// fait d'être installé. Un iPhone avec l'app n'a pas de « Applications → ton navigateur » :
+// une app web ajoutée à l'écran d'accueil a sa PROPRE entrée dans les Réglages. Les
+// joueurs iPhone recevaient donc des instructions Android qui ne mènent nulle part.
+function cleNotifBloquee() {
+  if (!estInstallee()) return 'notif_denied';           // navigateur : réglages du site
+  return estIOS() ? 'notif_denied_ios' : 'notif_denied_pwa';
 }
 
 
@@ -1209,7 +1232,7 @@ const T = {
     pending_msg:"Certains matchs sont encore en attente, pense à organiser tes parties rapidement !",
     notif_unsupported:"Notifications non supportées sur ce navigateur.",
     notif_denied:"Permission refusée. Ouvre les réglages du site (🔒 dans la barre d'adresse) → Autorisations → Notifications → Autoriser, puis recharge la page.",
-    notif_denied_pwa:"Permission refusée. Va dans Paramètres de ton téléphone → Applications → ton navigateur → Notifications, et autorise ce site. Puis réouvre l'app.",
+    notif_denied_pwa:"Permission refusée. Va dans Paramètres de ton téléphone → Applications → ton navigateur → Notifications, et autorise ce site. Puis réouvre l'app.",notif_denied_ios:"Permission refusée. Va dans Réglages de ton iPhone → Notifications → « Chess Tour », et autorise-les. Si l'app n'y figure pas, retire-la de l'écran d'accueil et réinstalle-la depuis le site.",
     notif_on:"🔔 Notifications activées",
     notif_off:"🔕 Activer les notifications",
     pref_officiel:"📢 Annonces officielles",
@@ -1378,7 +1401,7 @@ const T = {
     pending_msg:"Einige Partien sind noch ausstehend, spiel bitte bald!",
     notif_unsupported:"Benachrichtigungen nicht unterstützt.",
     notif_denied:"Berechtigung verweigert. Öffne die Website-Einstellungen (🔒 in der Adressleiste) → Berechtigungen → Benachrichtigungen → Zulassen, dann lade die Seite neu.",
-    notif_denied_pwa:"Berechtigung verweigert. Gehe zu Einstellungen → Apps → dein Browser → Benachrichtigungen, und erlaube diese Seite. Dann öffne die App erneut.",
+    notif_denied_pwa:"Berechtigung verweigert. Gehe zu Einstellungen → Apps → dein Browser → Benachrichtigungen, und erlaube diese Seite. Dann öffne die App erneut.",notif_denied_ios:"Berechtigung verweigert. Gehe zu Einstellungen deines iPhones → Mitteilungen → « Chess Tour » und erlaube sie. Falls die App dort fehlt, entferne sie vom Home-Bildschirm und installiere sie erneut über die Website.",
     notif_on:"🔔 Benachrichtigungen aktiviert",
     notif_disable_btn:"🔕 Benachrichtigungen deaktivieren",
     notif_off:"🔕 Benachrichtigungen aktivieren",
@@ -1478,7 +1501,7 @@ const T = {
     pending_msg:"Some matches are still pending, please organize your games quickly!",
     notif_unsupported:"Notifications not supported on this browser.",
     notif_denied:"Permission denied. Open site settings (🔒 in address bar) → Permissions → Notifications → Allow, then reload the page.",
-    notif_denied_pwa:"Permission denied. Go to your phone's Settings → Apps → your browser → Notifications, and allow this site. Then reopen the app.",
+    notif_denied_pwa:"Permission denied. Go to your phone's Settings → Apps → your browser → Notifications, and allow this site. Then reopen the app.",notif_denied_ios:"Permission denied. Go to your iPhone's Settings → Notifications → « Chess Tour » and allow them. If the app isn't listed, remove it from your Home Screen and reinstall it from the site.",
     notif_on:"🔔 Notifications enabled",
     notif_disable_btn:"🔕 Disable notifications",
     notif_off:"🔕 Enable notifications",
@@ -1610,7 +1633,7 @@ const T = {
     pending_msg:"Alcune partite sono ancora in attesa, organizza le tue partite rapidamente!",
     notif_unsupported:"Notifiche non supportate su questo browser.",
     notif_denied:"Autorizzazione negata. Apri le impostazioni del sito (🔒 nella barra degli indirizzi) → Autorizzazioni → Notifiche → Consenti, poi ricarica la pagina.",
-    notif_denied_pwa:"Autorizzazione negata. Vai nelle Impostazioni del telefono → App → il tuo browser → Notifiche, e consenti questo sito. Poi riapri l'app.",
+    notif_denied_pwa:"Autorizzazione negata. Vai nelle Impostazioni del telefono → App → il tuo browser → Notifiche, e consenti questo sito. Poi riapri l'app.",notif_denied_ios:"Autorizzazione negata. Vai in Impostazioni del tuo iPhone → Notifiche → « Chess Tour » e consentile. Se l'app non compare, rimuovila dalla schermata Home e reinstallala dal sito.",
     notif_on:"🔔 Notifiche attivate",
     notif_disable_btn:"🔕 Disattivare le notifiche",
     notif_off:"🔕 Attivare le notifiche",
@@ -5096,6 +5119,22 @@ setTimeout(async () => {
           }
           localStorage.setItem('abct-notif', 'on');
           localStorage.setItem('abct-notif-subid', subId);
+          localStorage.removeItem('abct-notif-volontaire');
+        } else {
+          // Permission accordée, mais AUCUN abonnement côté navigateur, et aucun drapeau
+          // local. C'est l'état laissé par un effacement des données de site sans
+          // effacement des paramètres : la permission survit, l'abonnement non.
+          // Aucun des deux autres contrôles ne le voyait — l'un exige un abonnement
+          // vivant, l'autre exige le drapeau local. Le joueur restait éteint en silence.
+          if (localStorage.getItem('abct-notif-volontaire') === '1') {
+            // Coupure assumée : cet état EST ce que le joueur a demandé. Rien à signaler,
+            // sinon on lui répète à chaque ouverture qu'un problème existe alors que non.
+            console.log('[ABCT] Notifications coupées volontairement — aucun signal');
+          } else {
+            abonnementCasse = true;
+            showMsg('notif-msg', t('notif_lost'), false, true);
+            console.log('[ABCT] Permission accordée mais aucun abonnement navigateur — joueur prévenu, bandeau autorisé');
+          }
         }
       }
     } catch(e) { console.log('Recovery notif (non bloquant) :', e.message); }
@@ -5116,6 +5155,10 @@ setTimeout(async () => {
         if (orphelin) await set(ref(db, SUB_PATH + '/' + orphelin), null);
         localStorage.removeItem('abct-notif');
         localStorage.removeItem('abct-notif-subid');
+        // Même état que ci-dessus : si la permission reste accordée, le bandeau doit
+        // pouvoir s'afficher, sinon le message est le seul signal et il peut passer
+        // inaperçu en bas de la carte.
+        abonnementCasse = true;
         updateNotifBtn();
         showMsg('notif-msg', t('notif_lost'), false, true);
         console.log('[ABCT] Abonnement perdu côté navigateur — entrée nettoyée, joueur prévenu');

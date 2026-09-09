@@ -180,15 +180,15 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
     <div class="gap">
       <div class="form-group">
         <label id="reg-label-nick">Pseudo Chess.com *</label>
-        <input id="reg-nick" type="text" autocomplete="off">
+        <input maxlength="25" id="reg-nick" type="text" autocomplete="off">
         <div id="reg-nick-hint" style="font-size:11px;color:var(--gray);margin-top:3px"></div>
       </div>
       <div class="form-group">
         <label id="reg-label-name">Nom / Nickname *</label>
-        <input id="reg-name" type="text" autocomplete="off">
+        <input maxlength="30" id="reg-name" type="text" autocomplete="off">
         <div id="reg-name-hint" style="font-size:11px;color:var(--gray);margin-top:3px"></div>
       </div>
-      <div class="form-group"><label id="reg-label-sector">Secteur / Unité</label><input id="reg-sector" type="text" autocomplete="off"></div>
+      <div class="form-group"><label id="reg-label-sector">Secteur / Unité</label><input maxlength="30" id="reg-sector" type="text" autocomplete="off"></div>
       <button class="btn btn-gold" onclick="registerPlayer()" id="reg-btn">S'inscrire</button>
       <div id="reg-msg"></div>
     </div>
@@ -196,6 +196,9 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
   <div class="card">
     <h2 id="players-title">Joueurs inscrits (<span id="player-list-count">0</span>)</h2>
     <div id="player-list"></div>
+    <!-- Sans cette mention, personne ne devinerait que les cartes sont cliquables.
+         Masquée dès la fin des inscriptions : la modification n'est plus possible. -->
+    <div id="edit-hint" style="display:none;font-size:11px;color:var(--gray);margin-top:8px;text-align:center"></div>
   </div>
 </div>
 
@@ -286,7 +289,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
 <div class="card" style="margin-top:0">
         <h2 id="notif-admin-title">🔔 Envoyer une notification</h2>
         <div style="margin-bottom:12px">
-          <textarea id="notif-admin-msg" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;min-height:80px;resize:vertical" placeholder="Message de notification..."></textarea>
+          <textarea maxlength="500" rows="5" id="notif-admin-msg" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;min-height:120px;resize:vertical" placeholder="Message de notification..."></textarea>
           <button class="btn btn-gray" style="margin-top:8px" onclick="confirmAction('sendPushToAll')" id="send-notif-btn">📤 Envoyer à tous les abonnés</button>
           <div id="notif-admin-msg-result" style="font-size:12px;margin-top:4px"></div>
         </div>
@@ -314,8 +317,8 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
           <div id="notif-subs-detail" style="display:none;font-size:11px;color:var(--gray);margin-top:6px;max-height:180px;overflow-y:auto;background:#fff;border-radius:6px;padding:8px"></div>
 
           <div style="margin-top:14px;padding-top:10px;border-top:1px dashed #ddd">
-            <div id="reset-subs-warn" style="font-size:11px;color:var(--gray);line-height:1.5;margin-bottom:6px"></div>
-            <button class="btn btn-sm" style="width:auto;margin-top:0;font-size:11px;color:var(--red);background:#fee" onclick="confirmAction('resetSubscriptions','','',false)" id="reset-subs-btn">↺ Réinitialiser tous les abonnements</button>
+              <button class="btn btn-sm" style="width:auto;margin-top:0;font-size:11px;color:var(--red);background:#fee" onclick="confirmAction('resetSubscriptions','','',false)" id="reset-subs-btn">↺ Réinitialiser tous les abonnements</button>
+          <div id="reset-subs-warn" style="font-size:11px;color:var(--gray);line-height:1.5;margin-top:7px"></div>
           </div>
         </div>
       </div>
@@ -360,7 +363,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
           <div style="font-size:13px;font-weight:700;margin-bottom:10px" id="palmares-admin-title">🏅 Palmarès</div>
           <div id="palmares-admin-content"></div>
           <div style="display:flex;gap:6px;margin-top:10px">
-            <input id="new-edition-name" placeholder="Nom de l'édition" style="flex:2;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:12px">
+            <input maxlength="40" id="new-edition-name" placeholder="Nom de l'édition" style="flex:2;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:12px">
             <input id="new-edition-year" placeholder="Année" style="flex:1;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:12px">
             <button class="btn btn-gold btn-sm" style="width:auto" onclick="addPalmaresEdition()">+</button>
           </div>
@@ -470,6 +473,28 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
   <div style="font-size:14px;font-weight:800;margin-bottom:4px;padding-right:22px" id="invite-title">🔔 Reste informé</div>
   <div style="font-size:12.5px;color:#555;line-height:1.5;margin-bottom:12px" id="invite-text"></div>
   <button class="btn btn-gold" style="font-size:13px" onclick="accepterInviteNotif()" id="invite-btn"></button>
+</div>
+
+<!-- VÉRIFICATION AVANT MODIFICATION D'UNE INSCRIPTION
+     La page d'inscription est publique : sans ce verrou, n'importe quel visiteur
+     pouvait renommer ou désinscrire n'importe quel joueur d'un simple clic. Retaper
+     le pseudo ne protège pas d'une malveillance déterminée — le pseudo est affiché
+     juste au-dessus — mais transforme un geste distrait en acte délibéré. -->
+<div id="edit-verify-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;align-items:center;justify-content:center;padding:16px">
+  <div onclick="event.stopPropagation()" style="background:#fff;border-radius:16px;padding:20px;max-width:380px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.2)">
+    <div style="font-size:16px;font-weight:800;margin-bottom:10px" id="ev-title">✏️ Modifier une inscription</div>
+    <div style="font-size:13px;color:#444;line-height:1.6;margin-bottom:12px" id="ev-text"></div>
+    <input id="ev-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false"
+      oninput="verifierSaisiePseudo()" onkeydown="if(event.key==='Enter')validerModifJoueur()"
+      style="width:100%;padding:11px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:6px">
+    <!-- Le bouton reste TOUJOURS actif : un bouton grisé sans explication laisse
+         cliquer dans le vide sans jamais dire pourquoi. Ici, chaque clic répond. -->
+    <div id="ev-error" style="font-size:12px;color:var(--red);min-height:16px;margin-bottom:10px;line-height:1.4"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-gold" style="flex:1;font-size:13px;margin:0" onclick="validerModifJoueur()" id="ev-ok"></button>
+      <button class="btn btn-gray" style="flex:1;font-size:13px;margin:0" onclick="fermerModifJoueur()" id="ev-cancel"></button>
+    </div>
+  </div>
 </div>
 
 <!-- Reconnaissance d'un ancien participant : trois issues claires, dont annuler
@@ -960,7 +985,14 @@ function renderAdminDeviceStatus() {
       devStatus.innerHTML = alertsOn ? t('dev_this_on') : t('dev_this_off');
       devActions.innerHTML = `<button class="btn btn-gray btn-sm" style="width:auto;font-size:12px;background:#fee;color:var(--red)" onclick="resetAdminDevice()">${t('dev_remove_this')}</button>`;
     } else {
-      devStatus.innerHTML = t('dev_other');
+      // Afficher QUAND l'appareil enregistré s'est abonné : c'est souvent un ancien
+      // appareil de l'admin lui-même, et la date permet de le reconnaître.
+      const sAdmin = state?.[SUB_PATH]?.[state?.settings?.[ADMIN_SUB_KEY]];
+      const quand = sAdmin?.timestamp
+        ? new Date(sAdmin.timestamp).toLocaleString(lang==='fr'?'fr-CH':lang==='de'?'de-CH':lang==='it'?'it-CH':'en-GB', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})
+        : null;
+      devStatus.innerHTML = t('dev_other')
+        + (quand ? `<div style="font-size:11px;color:var(--gray);margin-top:4px">${t('dev_other_since')} ${esc(quand)}</div>` : '');
       devActions.innerHTML = (d.thisIsSubscribed ? `<button class="btn btn-gold" onclick="registerThisDeviceAsAdmin()">${t('dev_register_instead')}</button>` : '') +
         `<button class="btn btn-gray btn-sm" style="width:auto;font-size:12px" onclick="resetAdminDevice()">${t('dev_remove_current')}</button>`;
     }
@@ -1108,16 +1140,16 @@ document.getElementById('manifest-link').href = URL.createObjectURL(mblob);
 const T = {
   fr:{
     loading:"Chargement...",offline:"⚠️ Hors ligne — données non synchronisées",write_denied:"⛔ Enregistrement refusé — recharge la page et réessaie.",
-    dev_none:"⚠️ Aucun appareil admin enregistré pour l'alerte retard.",dev_orphan:"⚠️ L'appareil admin enregistré n'a plus d'abonnement actif — l'alerte retard ne parvient à personne.",dev_this_on:"✅ C'est cet appareil qui est enregistré pour l'alerte retard.",dev_this_off:"⏸️ Cet appareil est enregistré, mais l'alerte automatique est désactivée (case ci-dessus).",dev_other:"⚠️ Un <b>autre</b> appareil est enregistré pour l'alerte retard — pas celui-ci.",dev_register_btn:"📍 Faire de cet appareil mon appareil admin",dev_register_instead:"📍 Enregistrer cet appareil à la place",dev_remove_this:"🔄 Retirer cet enregistrement",dev_remove_current:"🔄 Retirer l'enregistrement actuel",dev_enable_first:"Active tes notifications ci-dessus d'abord.",dev_enable_then_register:"Active tes notifications ci-dessus, puis enregistre cet appareil.",dev_home_this_on:"✅ Appareil admin — alerte retard active ici",dev_home_this_off:"⏸️ Appareil admin enregistré ici — alerte désactivée",dev_home_other:"⚠️ Pas l'appareil admin enregistré — aucune alerte retard ici",dev_home_orphan:"⚠️ L'appareil admin enregistré n'est plus abonné — alerte sans destinataire",dev_home_none:"⚠️ Aucun appareil admin enregistré",
+    dev_none:"⚠️ Aucun appareil admin enregistré pour l'alerte retard.",dev_orphan:"⚠️ L'appareil admin enregistré n'a plus d'abonnement actif — l'alerte retard ne parvient à personne.",dev_this_on:"✅ C'est cet appareil qui est enregistré pour l'alerte retard.",dev_this_off:"⏸️ Cet appareil est enregistré, mais l'alerte automatique est désactivée (case ci-dessus).",dev_other_since:"Abonné le",dev_other:"⚠️ Un <b>autre</b> appareil est enregistré pour l'alerte retard — pas celui-ci.",dev_register_btn:"📍 Faire de cet appareil mon appareil admin",dev_register_instead:"📍 Enregistrer cet appareil à la place",dev_remove_this:"🔄 Retirer cet enregistrement",dev_remove_current:"🔄 Retirer l'enregistrement actuel",dev_enable_first:"Active tes notifications ci-dessus d'abord.",dev_enable_then_register:"Active tes notifications ci-dessus, puis enregistre cet appareil.",dev_home_this_on:"✅ Appareil admin — alerte retard active ici",dev_home_this_off:"⏸️ Appareil admin enregistré ici — alerte désactivée",dev_home_other:"⚠️ Pas l'appareil admin enregistré — aucune alerte retard ici",dev_home_orphan:"⚠️ L'appareil admin enregistré n'est plus abonné — alerte sans destinataire",dev_home_none:"⚠️ Aucun appareil admin enregistré",
     late_check_alert_sent:"{n} match(s) en retard — alerte envoyée à l'appareil admin",late_check_nothing_late:"Aucun match en retard. Rien à envoyer.",late_check_proof_sent:"Aucun retard. Le message hebdomadaire de contrôle a été envoyé.",late_check_not_playing:"Le tournoi n'est pas en phase de jeu : aucun match ne peut être en retard.",late_check_no_admin_device:"Aucun appareil admin enregistré : l'alerte n'a pas de destinataire.",late_check_admin_sub_invalid:"L'abonnement de l'appareil admin est invalide. Réenregistre-le.",late_check_auto_off:"L'alerte automatique est désactivée (case dans l'onglet Notifs).",late_check_maintenance:"Mode maintenance actif : l'alerte est suspendue.",late_check_no_config:"Configuration serveur incomplète (clés manquantes sur Netlify).",notif_cleaned:"🧹 {n} abonnement(s) inactif(s) retiré(s).",subs_section_title:"👥 Abonnés",reset_subs_warn:"⚠️ Efface TOUS les abonnements, y compris les valides. Chacun devra rouvrir le site pour être réabonné, et ses préférences seront remises par défaut. À réserver aux cas de désordre : le nettoyage ci-dessus suffit d'ordinaire.",late_checking:"⏳ Vérification en cours…",notif_muted:"🔕 Aucune notification ne te parviendra",notif_all_muted:"⚠️ Tu as décoché les deux catégories : plus aucune notification ne te parviendra. Tu risques de manquer une échéance et d'être déclaré forfait. Recoche au moins une case.",prefs_loading:"Chargement de tes préférences…",prefs_close_btn:"✓ OK",auto_notif_title:"⚙️ Réglages automatiques",prefs_title:"🔔 Mes notifications",late_check_admin_dead:"L'appareil admin n'était plus joignable : abonnement et enregistrement retirés. Enregistre un appareil ci-dessus.",pin_current:"PIN actuel",reg_closed:"Les inscriptions sont fermées.",pin_new:"Nouveau PIN",pin_confirm:"Confirmer",set_semis:"Format demi-finales",set_final:"Format finale",whatsapp_title:"📲 Rappel WhatsApp",save_seed:"💾 Sauvegarder",
     tab_home:"Tournoi",tab_groups:"Groupes",tab_matches:"Matchs",tab_finals:"Finales",
     tab_info:"Infos",confirm_archive_before_reset:"⚠️ ARCHIVER LE TOURNOI ?\n\nLe classement final de {n} joueur(s) va être rangé dans le palmarès, avec toutes les statistiques.\n\n✅ OK = archiver, puis réinitialiser\n❌ Annuler = réinitialiser SANS archiver\n\n(Une copie de sécurité du tournoi est conservée dans tous les cas.)",palmares_admin_title:"🏅 Palmarès",palmares_edition_name_placeholder:"Nom de l'édition",info_rules_btn:"📜 Règlement",info_palmares_btn:"🏅 Palmarès",info_ranking_btn:"📊 Classement en direct",live_rank_title:"Classement en direct",info_admin_btn:"⚙️ Admin",info_rules_title:"Règlement",info_palmares_title:"Palmarès",
     status_registration:"Inscriptions ouvertes",status_playing:"Phase de poules",status_finals:"Phases finales",status_finished:"Terminé",
     players_count_1:"joueur inscrit",players_count_n:"joueurs inscrits",
     reg_title:"S'inscrire au tournoi",reg_nick:"Pseudo Chess.com *",
-    reg_nick_hint:"Utilisé pour vous retrouver et vous inviter sur Chess.com",reg_name:"Nom / Nickname *",
-    reg_name_hint:"Prénom, surnom ou nom réel — à votre choix",reg_sector:"Secteur / Unité (optionnel)",reg_btn:"S'inscrire",
-    edition_moved:"✓ Ordre des éditions mis à jour",invite_title:"🔔 Reste informé",invite_text:"Résultats des matchs et annonces du tournoi, directement sur ton téléphone.",invite_ios:"Installe l'app pour activer les notifications :",invite_step1:"Appuie sur Partager ⬆️",invite_step2:"Choisis « Sur l'écran d'accueil »",invite_step3:"Appuie sur « Ajouter »",invite_step4:"Ouvre l'app : tu pourras y activer les notifications",notif_ios_install_first:"⚠️ Sur iPhone, les notifications ne fonctionnent que depuis l'app installée. Suis les étapes ci-dessous, puis active-les depuis l'app.",invite_btn:"🔔 Activer les notifications",known_title:"👋 On se connaît ?",known_body_1:"Le pseudo Chess.com <b>{pseudo}</b> a déjà participé à une édition précédente du tournoi, sous le nom <b>« {ancien} »</b>.<br><br>Tu viens de saisir <b>« {nouveau} »</b>.<br><br>Que faire ?",known_body_n:"Le pseudo Chess.com <b>{pseudo}</b> a déjà participé à des éditions précédentes du tournoi, sous le nom <b>« {ancien} »</b>.<br><br>Tu viens de saisir <b>« {nouveau} »</b>.<br><br>Que faire ?",known_keep:"✅ Garder « {ancien} »",known_update:"✏️ Utiliser « {nouveau} » partout",known_cancel:"✕ Annuler l'inscription",reg_name_updated:"✓ Nom mis à jour dans {n} édition(s) du palmarès.",reg_ok:"Inscription réussie ! Bienvenue ",reg_err_fields:"Pseudo et nom requis.",reg_err_exists:"Ce pseudo est déjà pris.",
+    reg_nick_hint:"Utilisé pour te retrouver et t'inviter sur Chess.com",reg_name:"Nom / Nickname *",
+    reg_name_hint:"Prénom, surnom ou nom réel — à ton choix",reg_sector:"Secteur / Unité (optionnel)",reg_btn:"S'inscrire",
+    edition_moved:"✓ Ordre des éditions mis à jour",invite_title:"🔔 Reste informé",invite_text:"Résultats des matchs et annonces du tournoi, directement sur ton téléphone.",invite_ios:"Installe l'app pour activer les notifications :",invite_step1:"Appuie sur Partager ⬆️",invite_step2:"Choisis « Sur l'écran d'accueil »",invite_step3:"Appuie sur « Ajouter »",invite_step4:"Ouvre l'app : tu pourras y activer les notifications",notif_ios_install_first:"⚠️ Sur iPhone, les notifications ne fonctionnent que depuis l'app installée. Suis les étapes ci-dessous, puis active-les depuis l'app.",invite_btn:"🔔 Activer les notifications",known_title:"👋 On se connaît ?",known_body_1:"Le pseudo Chess.com <b>{pseudo}</b> a déjà participé à une édition précédente du tournoi, sous le nom <b>« {ancien} »</b>.<br><br>Tu viens de saisir <b>« {nouveau} »</b>.<br><br>Que faire ?",known_body_n:"Le pseudo Chess.com <b>{pseudo}</b> a déjà participé à des éditions précédentes du tournoi, sous le nom <b>« {ancien} »</b>.<br><br>Tu viens de saisir <b>« {nouveau} »</b>.<br><br>Que faire ?",known_keep:"✅ Garder « {ancien} »",known_update:"✏️ Utiliser « {nouveau} » partout",known_cancel:"✕ Annuler l'inscription",reg_name_updated:"✓ Nom mis à jour dans {n} édition(s) du palmarès.",ev_title:"✏️ Modifier une inscription",ev_text:"Pour modifier {nom}, retape son pseudo Chess.com :",ev_err_empty:"⚠️ Pseudo non renseigné.",ev_err_wrong:"❌ Ce pseudo ne correspond pas. Recopie-le exactement tel qu'il est affiché.",ev_ok:"Continuer",ev_cancel:"Annuler",edit_hint:"✏️ Clique sur ton nom pour modifier ton inscription",reg_ok:"Inscription réussie ! Bienvenue ",reg_err_fields:"Pseudo et nom requis.",reg_err_exists:"Ce pseudo est déjà pris.",
     players_title:"Joueurs inscrits",
     admin_players_title:"Joueurs",
     notif_prefs_link:"⚙️ Préférences de notification",
@@ -1151,8 +1183,8 @@ const T = {
     palmares_name_optional_placeholder:"Nom (optionnel)",
     palmares_bulk_placeholder:"Un joueur par ligne : pseudo-Nom, ou juste le pseudo",
     palmares_bulk_btn:"➕ Ajouter la liste",palmares_fill_names_btn:"🔗 Retrouver les noms",palmares_search_ph:"🔎 Rechercher un joueur…",palmares_player_none:"Aucun joueur trouvé.",palmares_edition:"édition",palmares_editions:"éditions",palmares_podium:"podium",palmares_podiums:"podiums",palmares_best:"meilleur rang :",palmares_of:" sur ",palmares_stats_btn:"Statistiques des joueurs",tri_points:"📊 Points",tri_ratio:"⚡ Par match",tri_titres:"🏆 Titres",legende_general_poules:"ℹ️ <b>Ordre du classement :</b> 1) rang dans le groupe — tous les 1ers de groupe, puis tous les 2es, etc. 2) points par match 3) victoires par match 4) victoires avec les Noirs par match 5) Buchholz par match — la force des adversaires rencontrés en poules 6) tête de série.<br>Les valeurs sont ramenées au match car les groupes n'ont pas tous la même taille.",legende_general_finales:"ℹ️ <b>Ordre du classement :</b> 1) le tour atteint en phases finales passe avant tout — un demi-finaliste devance un quart de finaliste, même avec moins de points 2) puis le rang dans le groupe 3) puis points, victoires et victoires avec les Noirs, par match 4) puis le Buchholz, figé sur les poules 5) puis tête de série.<br>Un joueur peut donc afficher plus de points qu'un autre placé au-dessus de lui : c'est le parcours en finales qui décide.",legende_edition:"ℹ️ <b>Ordre du classement final :</b> le tour atteint en phases finales passe avant tout, puis le rang dans le groupe, puis les statistiques par match et le Buchholz. Un joueur peut donc afficher plus de points qu'un autre placé au-dessus de lui.",palmares_stats_desc:"Tous les joueurs ayant participé, classés sur l'ensemble des éditions.",palmares_ongoing:"en cours",palmares_pick:"Choisis un tournoi ci-dessus.",palmares_no_result_yet:"Aucun match encore joué.",palmares_provisional:"⏳ Classement provisoire — le tournoi est en cours",palmares_qualified:"Qualifiés",palmares_virtual:"Classement virtuel",palmares_virtual_desc:"⏳ Qui serait qualifié si les poules s'arrêtaient maintenant",palmares_qualified_desc:"✅ Joueurs qualifiés pour les phases finales",palmares_grp:"groupe",palmares_player:"joueur",palmares_players:"joueurs",palmares_format_help:"<b>Un joueur par ligne, dans l'ordre du classement :</b><br><code>pseudo-Nom</code> &nbsp;— sans statistiques<br><code>pseudo-Nom;V;N;D;V;N;D</code> &nbsp;— avec statistiques<br>Les 3 premiers chiffres = victoires, nulles, défaites <b>avec les Blancs</b> ⬜<br>Les 3 suivants = victoires, nulles, défaites <b>avec les Noirs</b> ⬛<br>Exemple : <code>Goudi8-Romain;1;3;1;4;0;1</code><br>Matchs joués et points se calculent automatiquement.",qual_rg:"Rg",qual_grp:"Grp",qual_ptsm:"Pts/M",qual_vm:"V/M",qual_vnm:"VN/M",qual_tbm:"TB/M",qual_seed:"Seed",sep_virtuels:"— LIMITE DE QUALIFICATION ({n}) —",sep_qualifies:"— QUALIFIÉS ({n}) —",qual_legend:"Départage, dans l'ordre : Pts/M (points par match) → V/M (victoires par match) → VN/M (victoires avec les Noirs par match) → TB/M (Buchholz par match) → Seed (tête de série). Rg = rang dans le groupe.",palmares_pts:"pts",palmares_m:"m",palmares_v:"V",palmares_n:"N",palmares_d:"D",palmares_white:"Blancs",palmares_black:"Noirs",palmares_total:"Total",palmares_on:"sur",palmares_names_filled:"✓ {n} nom(s) retrouvé(s) !",palmares_no_name_found:"Aucun nom à retrouver.",
-    rules:`<p>🚀 Consultez l'onglet Matchs pour voir vos parties dès que la phase de poules est lancée. Envoyez une invitation à votre adversaire sur Chess.com (pseudo visible dans l'onglet Tournoi) ou jouez sur échiquier physique. Inscrivez le résultat dès la fin de chaque partie directement dans l'app.</p><br>
-<p>⏰ <strong>Commencez vos parties dès le début du tournoi</strong> et terminez-les avant l'échéance affichée sur chaque match. Vous pouvez jouer plusieurs parties en parallèle, mais <strong>respectez l'ordre des rondes</strong> : traitez d'abord celles dont l'échéance est la plus proche. Même à cadence lente, enchaînez vos coups pour finir dans les délais.</p><br>
+    rules:`<p>🚀 Consulte l'onglet Matchs pour voir tes parties dès que la phase de poules est lancée. Envoie une invitation à ton adversaire sur Chess.com (pseudo visible dans l'onglet Tournoi) ou jouez sur échiquier physique. Inscrivez le résultat dès la fin de chaque partie directement dans l'app.</p><br>
+<p>⏰ <strong>Commence tes parties dès le début du tournoi</strong> et termine-les avant l'échéance affichée sur chaque match. Tu peux jouer plusieurs parties en parallèle, mais <strong>respecte l'ordre des rondes</strong> : traite d'abord celles dont l'échéance est la plus proche. Même à cadence lente, enchaîne tes coups pour finir dans les délais.</p><br>
 <p>Format : Poules round-robin, puis phases finales à élimination directe.</p><br>
 <p>Scores : 1 (victoire) · 0.5 (nul) · 0 (défaite)</p><br>
 <p>Départage dans les groupes : ① Points ② Victoires ③ Victoires avec les Noirs ④ Confrontation directe ⑤ Tête de série</p><p>Départage global (finalistes) : ① Points/match ② Victoires/match ③ Victoires Noirs/match ④ Buchholz/match ⑤ Tête de série</p><br>
@@ -1168,7 +1200,7 @@ const T = {
     presential:"Présentiel",
     notif_disable_btn:"🔕 Désactiver les notifications",
     late_msg:"Certains matchs sont en retard, jouez rapidement !",
-    pending_msg:"Certains matchs sont encore en attente, pensez à organiser vos parties rapidement !",
+    pending_msg:"Certains matchs sont encore en attente, pense à organiser tes parties rapidement !",
     notif_unsupported:"Notifications non supportées sur ce navigateur.",
     notif_denied:"Permission refusée. Ouvre les réglages du site (🔒 dans la barre d'adresse) → Autorisations → Notifications → Autoriser, puis recharge la page.",
     notif_denied_pwa:"Permission refusée. Va dans Paramètres de ton téléphone → Applications → ton navigateur → Notifications, et autorise ce site. Puis réouvre l'app.",
@@ -1209,7 +1241,7 @@ const T = {
     enter_score:"Entrer le score",whites:"⬜ Blancs",blacks:"⬛ Noirs",
     finals_empty:"Les phases finales ne sont pas encore lancées.",
     admin_title:"Accès administrateur",admin_pin:"Code PIN",admin_login_btn:"Connexion",
-    admin_pin_hint:"Première utilisation ? Créez votre PIN maintenant.",admin_pin_err:"PIN incorrect.",
+    admin_pin_hint:"Première utilisation ? Crée ton PIN maintenant.",admin_pin_err:"PIN incorrect.",
     admin_logout:"Déconnexion",
     subtab_settings:"Réglages",subtab_players:"Joueurs",subtab_notifs:"Notifs",subtab_actions:"Tournoi",
     subtab_ranking:"Classement",
@@ -1232,7 +1264,7 @@ const T = {
     scores_reset:"Scores réinitialisés.",tournament_reset:"Tournoi réinitialisé.",
     no_matches:"Aucun match joué.",
     pool_cta:"♟️ JOUEZ !",pool_reminder_title:"🚀 Phase de poules lancée !",
-    pool_reminder_text:"Consultez l'onglet Matchs pour voir vos parties. Envoyez une invitation à votre adversaire sur Chess.com (pseudo visible dans l'onglet Tournoi) ou jouez sur échiquier physique. Inscrivez le résultat dès la fin de chaque partie.\n\n⏰ Commencez dès maintenant et terminez avant l'échéance affichée sur chaque match. Vous pouvez jouer plusieurs parties en parallèle, mais traitez d'abord celles de la ronde 1, puis la 2, etc. — les échéances les plus proches en priorité.",
+    pool_reminder_text:"Consulte l'onglet Matchs pour voir tes parties. Envoie une invitation à ton adversaire sur Chess.com (pseudo visible dans l'onglet Tournoi) ou jouez sur échiquier physique. Inscrivez le résultat dès la fin de chaque partie.\n\n⏰ Commencez dès maintenant et terminez avant l'échéance affichée sur chaque match. Tu peux jouer plusieurs parties en parallèle, mais traite d'abord celles de la ronde 1, puis la 2, etc. — les échéances les plus proches en priorité.",
     install_btn:"📲 Installer l'app",install_title:"Installer l'application",
     install_android:["Ouvrir dans Chrome","Menu ⋮ en haut à droite","Sélectionner: Ajouter à l'écran d'accueil","Appuyer sur Ajouter"],
     install_ios:["Ouvrir dans Safari (pas Chrome)","Icône Partager (carré avec flèche ↑)","Sélectionner: Sur l'écran d'accueil","Appuyer sur Ajouter en haut à droite"],
@@ -1243,16 +1275,16 @@ const T = {
   },
   de:{
     loading:"Wird geladen...",offline:"⚠️ Offline — Daten werden nicht synchronisiert",write_denied:"⛔ Speichern abgelehnt — Seite neu laden und erneut versuchen.",
-    dev_none:"⚠️ Kein Admin-Gerät für die Verspätungswarnung registriert.",dev_orphan:"⚠️ Das registrierte Admin-Gerät hat kein aktives Abonnement mehr — die Warnung erreicht niemanden.",dev_this_on:"✅ Dieses Gerät ist für die Verspätungswarnung registriert.",dev_this_off:"⏸️ Dieses Gerät ist registriert, aber die automatische Warnung ist deaktiviert (Kästchen oben).",dev_other:"⚠️ Ein <b>anderes</b> Gerät ist für die Verspätungswarnung registriert — nicht dieses.",dev_register_btn:"📍 Dieses Gerät zu meinem Admin-Gerät machen",dev_register_instead:"📍 Stattdessen dieses Gerät registrieren",dev_remove_this:"🔄 Diese Registrierung entfernen",dev_remove_current:"🔄 Aktuelle Registrierung entfernen",dev_enable_first:"Aktiviere zuerst oben deine Benachrichtigungen.",dev_enable_then_register:"Aktiviere oben deine Benachrichtigungen und registriere dann dieses Gerät.",dev_home_this_on:"✅ Admin-Gerät — Verspätungswarnung hier aktiv",dev_home_this_off:"⏸️ Admin-Gerät hier registriert — Warnung deaktiviert",dev_home_other:"⚠️ Nicht das registrierte Admin-Gerät — keine Warnung hier",dev_home_orphan:"⚠️ Registriertes Admin-Gerät nicht mehr abonniert — Warnung ohne Empfänger",dev_home_none:"⚠️ Kein Admin-Gerät registriert",
+    dev_none:"⚠️ Kein Admin-Gerät für die Verspätungswarnung registriert.",dev_orphan:"⚠️ Das registrierte Admin-Gerät hat kein aktives Abonnement mehr — die Warnung erreicht niemanden.",dev_this_on:"✅ Dieses Gerät ist für die Verspätungswarnung registriert.",dev_this_off:"⏸️ Dieses Gerät ist registriert, aber die automatische Warnung ist deaktiviert (Kästchen oben).",dev_other_since:"Angemeldet am",dev_other:"⚠️ Ein <b>anderes</b> Gerät ist für die Verspätungswarnung registriert — nicht dieses.",dev_register_btn:"📍 Dieses Gerät zu meinem Admin-Gerät machen",dev_register_instead:"📍 Stattdessen dieses Gerät registrieren",dev_remove_this:"🔄 Diese Registrierung entfernen",dev_remove_current:"🔄 Aktuelle Registrierung entfernen",dev_enable_first:"Aktiviere zuerst oben deine Benachrichtigungen.",dev_enable_then_register:"Aktiviere oben deine Benachrichtigungen und registriere dann dieses Gerät.",dev_home_this_on:"✅ Admin-Gerät — Verspätungswarnung hier aktiv",dev_home_this_off:"⏸️ Admin-Gerät hier registriert — Warnung deaktiviert",dev_home_other:"⚠️ Nicht das registrierte Admin-Gerät — keine Warnung hier",dev_home_orphan:"⚠️ Registriertes Admin-Gerät nicht mehr abonniert — Warnung ohne Empfänger",dev_home_none:"⚠️ Kein Admin-Gerät registriert",
     late_check_alert_sent:"{n} verspätete Partie(n) — Warnung an das Admin-Gerät gesendet",late_check_nothing_late:"Keine verspätete Partie. Nichts zu senden.",late_check_proof_sent:"Keine Verspätung. Die wöchentliche Kontrollnachricht wurde gesendet.",late_check_not_playing:"Das Turnier ist nicht in der Spielphase: keine Partie kann verspätet sein.",late_check_no_admin_device:"Kein Admin-Gerät registriert: die Warnung hat keinen Empfänger.",late_check_admin_sub_invalid:"Das Abonnement des Admin-Geräts ist ungültig. Bitte neu registrieren.",late_check_auto_off:"Die automatische Warnung ist deaktiviert (Kästchen im Tab Benachrichtigungen).",late_check_maintenance:"Wartungsmodus aktiv: die Warnung ist ausgesetzt.",late_check_no_config:"Serverkonfiguration unvollständig (fehlende Schlüssel auf Netlify).",notif_cleaned:"🧹 {n} inaktive(s) Abonnement(s) entfernt.",subs_section_title:"👥 Abonnenten",reset_subs_warn:"⚠️ Löscht ALLE Abonnements, auch die gültigen. Jeder muss die Website erneut öffnen, um wieder angemeldet zu werden, und seine Einstellungen werden zurückgesetzt. Nur bei Problemen verwenden: die Bereinigung oben genügt normalerweise.",late_checking:"⏳ Prüfung läuft…",notif_muted:"🔕 Du erhältst keine Benachrichtigungen",notif_all_muted:"⚠️ Du hast beide Kategorien abgewählt: du erhältst keine Benachrichtigung mehr. Du riskierst, eine Frist zu verpassen und kampflos zu verlieren. Wähle mindestens eine wieder aus.",prefs_loading:"Deine Einstellungen werden geladen…",prefs_close_btn:"✓ OK",auto_notif_title:"⚙️ Automatische Einstellungen",prefs_title:"🔔 Meine Benachrichtigungen",late_check_admin_dead:"Das Admin-Gerät war nicht mehr erreichbar: Abonnement und Registrierung entfernt. Registriere oben ein Gerät.",pin_current:"Aktueller PIN",reg_closed:"Die Anmeldung ist geschlossen.",pin_new:"Neuer PIN",pin_confirm:"Bestätigen",set_semis:"Format Halbfinale",set_final:"Format Finale",whatsapp_title:"📲 WhatsApp-Erinnerung",save_seed:"💾 Speichern",
     tab_home:"Turnier",tab_groups:"Gruppen",tab_matches:"Partien",tab_finals:"Finale",
     tab_info:"Infos",confirm_archive_before_reset:"⚠️ TURNIER ARCHIVIEREN?\n\nDie Endrangliste von {n} Spieler(n) wird mit allen Statistiken in der Siegerliste abgelegt.\n\n✅ OK = archivieren, dann zurücksetzen\n❌ Abbrechen = zurücksetzen OHNE Archivierung\n\n(Eine Sicherungskopie des Turniers bleibt in jedem Fall erhalten.)",palmares_admin_title:"🏅 Siegerliste",palmares_edition_name_placeholder:"Name der Ausgabe",info_rules_btn:"📜 Reglement",info_palmares_btn:"🏅 Siegerliste",info_ranking_btn:"📊 Live-Rangliste",live_rank_title:"Live-Rangliste",info_admin_btn:"⚙️ Admin",info_rules_title:"Reglement",info_palmares_title:"Siegerliste",
     status_registration:"Anmeldung offen",status_playing:"Gruppenphase",status_finals:"Finalphase",status_finished:"Beendet",
     players_count_1:"Spieler angemeldet",players_count_n:"Spieler angemeldet",
     reg_title:"Zum Turnier anmelden",reg_nick:"Chess.com-Benutzername *",
-    reg_nick_hint:"Wird verwendet, um Sie auf Chess.com zu finden und einzuladen",reg_name:"Name / Nickname *",
-    reg_name_hint:"Vorname, Spitzname oder echter Name — Ihre Wahl",reg_sector:"Sektor / Einheit (optional)",reg_btn:"Anmelden",
-    edition_moved:"✓ Reihenfolge der Ausgaben aktualisiert",invite_title:"🔔 Bleib informiert",invite_text:"Spielergebnisse und Turnierankündigungen, direkt auf dein Handy.",invite_ios:"Installiere die App, um Benachrichtigungen zu aktivieren:",invite_step1:"Tippe auf Teilen ⬆️",invite_step2:"Wähle « Zum Home-Bildschirm »",invite_step3:"Tippe auf « Hinzufügen »",invite_step4:"Öffne die App: dort kannst du die Benachrichtigungen aktivieren",notif_ios_install_first:"⚠️ Auf dem iPhone funktionieren Benachrichtigungen nur über die installierte App. Folge den Schritten unten und aktiviere sie dann in der App.",invite_btn:"🔔 Benachrichtigungen aktivieren",known_title:"👋 Kennen wir uns?",known_body_1:"Das Chess.com-Pseudo <b>{pseudo}</b> hat bereits an einer früheren Turnierausgabe teilgenommen, unter dem Namen <b>« {ancien} »</b>.<br><br>Du hast <b>« {nouveau} »</b> eingegeben.<br><br>Was möchtest du tun?",known_body_n:"Das Chess.com-Pseudo <b>{pseudo}</b> hat bereits an früheren Turnierausgaben teilgenommen, unter dem Namen <b>« {ancien} »</b>.<br><br>Du hast <b>« {nouveau} »</b> eingegeben.<br><br>Was möchtest du tun?",known_keep:"✅ « {ancien} » behalten",known_update:"✏️ Überall « {nouveau} » verwenden",known_cancel:"✕ Anmeldung abbrechen",reg_name_updated:"✓ Name in {n} Ausgabe(n) der Siegerliste aktualisiert.",reg_ok:"Erfolgreich angemeldet! Willkommen ",reg_err_fields:"Spitzname und Name erforderlich.",reg_err_exists:"Dieser Spitzname ist bereits vergeben.",
+    reg_nick_hint:"Wird verwendet, um dich auf Chess.com zu finden und einzuladen",reg_name:"Name / Nickname *",
+    reg_name_hint:"Vorname, Spitzname oder echter Name — deine Wahl",reg_sector:"Sektor / Einheit (optional)",reg_btn:"Anmelden",
+    edition_moved:"✓ Reihenfolge der Ausgaben aktualisiert",invite_title:"🔔 Bleib informiert",invite_text:"Spielergebnisse und Turnierankündigungen, direkt auf dein Handy.",invite_ios:"Installiere die App, um Benachrichtigungen zu aktivieren:",invite_step1:"Tippe auf Teilen ⬆️",invite_step2:"Wähle « Zum Home-Bildschirm »",invite_step3:"Tippe auf « Hinzufügen »",invite_step4:"Öffne die App: dort kannst du die Benachrichtigungen aktivieren",notif_ios_install_first:"⚠️ Auf dem iPhone funktionieren Benachrichtigungen nur über die installierte App. Folge den Schritten unten und aktiviere sie dann in der App.",invite_btn:"🔔 Benachrichtigungen aktivieren",known_title:"👋 Kennen wir uns?",known_body_1:"Das Chess.com-Pseudo <b>{pseudo}</b> hat bereits an einer früheren Turnierausgabe teilgenommen, unter dem Namen <b>« {ancien} »</b>.<br><br>Du hast <b>« {nouveau} »</b> eingegeben.<br><br>Was möchtest du tun?",known_body_n:"Das Chess.com-Pseudo <b>{pseudo}</b> hat bereits an früheren Turnierausgaben teilgenommen, unter dem Namen <b>« {ancien} »</b>.<br><br>Du hast <b>« {nouveau} »</b> eingegeben.<br><br>Was möchtest du tun?",known_keep:"✅ « {ancien} » behalten",known_update:"✏️ Überall « {nouveau} » verwenden",known_cancel:"✕ Anmeldung abbrechen",reg_name_updated:"✓ Name in {n} Ausgabe(n) der Siegerliste aktualisiert.",ev_title:"✏️ Anmeldung ändern",ev_text:"Um {nom} zu ändern, gib das Chess.com-Pseudo erneut ein:",ev_err_empty:"⚠️ Pseudo nicht eingegeben.",ev_err_wrong:"❌ Dieses Pseudo stimmt nicht. Gib es genau so ein, wie es angezeigt wird.",ev_ok:"Weiter",ev_cancel:"Abbrechen",edit_hint:"✏️ Tippe auf deinen Namen, um deine Anmeldung zu ändern",reg_ok:"Erfolgreich angemeldet! Willkommen ",reg_err_fields:"Spitzname und Name erforderlich.",reg_err_exists:"Dieser Spitzname ist bereits vergeben.",
     players_title:"Angemeldete Spieler",
     admin_players_title:"Spieler",
     notif_prefs_link:"⚙️ Benachrichtigungseinstellungen",
@@ -1270,7 +1302,7 @@ const T = {
     reset_subs_btn:"↺ Alle Abonnements zurücksetzen",
     copy_whatsapp_btn:"📋 Nachricht kopieren",
     maint_title:"Wartung läuft",maint_btn:"🔧 Wartungsmodus",
-    maint_text:"Die Website ist vorübergehend nicht verfügbar.<br>Bitte versuchen Sie es in Kürze erneut.",
+    maint_text:"Die Website ist vorübergehend nicht verfügbar.<br>Bitte versuche es in Kürze erneut.",
     maint_admin_access:"Administratorzugang",
     maint_login_btn:"Admin-Anmeldung",
     notif_invite_info:"💡 Aktiviere die Benachrichtigungen auf der Turnier-Seite, um nichts zu verpassen.",
@@ -1287,7 +1319,7 @@ const T = {
     palmares_bulk_placeholder:"Ein Spieler pro Zeile: Pseudo-Name, oder nur das Pseudo",
     palmares_bulk_btn:"➕ Liste hinzufügen",palmares_fill_names_btn:"🔗 Namen ergänzen",palmares_search_ph:"🔎 Spieler suchen…",palmares_player_none:"Kein Spieler gefunden.",palmares_edition:"Ausgabe",palmares_editions:"Ausgaben",palmares_podium:"Podium",palmares_podiums:"Podien",palmares_best:"beste Platzierung:",palmares_of:" von ",palmares_stats_btn:"Spielerstatistiken",tri_points:"📊 Punkte",tri_ratio:"⚡ Pro Partie",tri_titres:"🏆 Titel",legende_general_poules:"ℹ️ <b>Reihenfolge:</b> 1) Rang in der Gruppe — zuerst alle Gruppenersten, dann alle Zweiten usw. 2) Punkte pro Partie 3) Siege pro Partie 4) Siege mit Schwarz pro Partie 5) Buchholz pro Partie — die Stärke der Gegner aus der Gruppenphase 6) Setzrang.<br>Die Werte sind auf die Partie umgerechnet, da die Gruppen unterschiedlich gross sind.",legende_general_finales:"ℹ️ <b>Reihenfolge:</b> 1) die erreichte Finalrunde zählt zuerst — ein Halbfinalist steht vor einem Viertelfinalisten, auch mit weniger Punkten 2) dann der Rang in der Gruppe 3) dann Punkte, Siege und Siege mit Schwarz, pro Partie 4) dann Buchholz, auf die Gruppenphase eingefroren 5) dann Setzrang.<br>Ein Spieler kann also mehr Punkte haben als jemand über ihm: entscheidend ist der Weg in den Finalrunden.",legende_edition:"ℹ️ <b>Endrangliste:</b> die erreichte Finalrunde zählt zuerst, dann der Rang in der Gruppe, dann die Statistiken pro Partie und Buchholz. Ein Spieler kann also mehr Punkte haben als jemand über ihm.",palmares_stats_desc:"Alle Teilnehmer, über alle Ausgaben hinweg gewertet.",palmares_ongoing:"laufend",palmares_pick:"Wähle oben ein Turnier.",palmares_no_result_yet:"Noch keine Partie gespielt.",palmares_provisional:"⏳ Vorläufige Rangliste — das Turnier läuft",palmares_qualified:"Qualifiziert",palmares_virtual:"Virtuelle Rangliste",palmares_virtual_desc:"⏳ Wer sich qualifizieren würde, wenn die Gruppenphase jetzt endete",palmares_qualified_desc:"✅ Für die Finalrunden qualifizierte Spieler",palmares_grp:"Gruppe",palmares_player:"Spieler",palmares_players:"Spieler",palmares_format_help:"<b>Ein Spieler pro Zeile, in der Reihenfolge der Rangliste:</b><br><code>Pseudo-Name</code> &nbsp;— ohne Statistik<br><code>Pseudo-Name;S;R;N;S;R;N</code> &nbsp;— mit Statistik<br>Die ersten 3 Zahlen = Siege, Remis, Niederlagen <b>mit Weiß</b> ⬜<br>Die nächsten 3 = Siege, Remis, Niederlagen <b>mit Schwarz</b> ⬛<br>Beispiel: <code>Goudi8-Romain;1;3;1;4;0;1</code><br>Partien und Punkte werden automatisch berechnet.",qual_rg:"Rg",qual_grp:"Gr",qual_ptsm:"Pkt/P",qual_vm:"S/P",qual_vnm:"SS/P",qual_tbm:"TB/P",qual_seed:"Setz",sep_virtuels:"— QUALIFIKATIONSGRENZE ({n}) —",sep_qualifies:"— QUALIFIZIERT ({n}) —",qual_legend:"Tiebreak in dieser Reihenfolge: Pkt/P (Punkte pro Partie) → S/P (Siege pro Partie) → SS/P (Siege mit Schwarz pro Partie) → TB/P (Buchholz pro Partie) → Setzrang. Rg = Rang in der Gruppe.",palmares_pts:"Pkt",palmares_m:"P",palmares_v:"S",palmares_n:"R",palmares_d:"N",palmares_white:"Weiß",palmares_black:"Schwarz",palmares_total:"Gesamt",palmares_on:"von",palmares_names_filled:"✓ {n} Name(n) ergänzt!",palmares_no_name_found:"Keine Namen zu ergänzen.",
     rules:`<p>🚀 Sieh dir deine Partien im Tab <strong>Partien</strong> an, sobald die Gruppenphase gestartet ist. Sende deinem Gegner eine Einladung auf Chess.com (Benutzername im Tab <strong>Turnier</strong>) oder spiele auf dem Brett. Trage das Ergebnis direkt im Tab <strong>Partien</strong> ein.</p><br>
-<p>⏰ <strong>Beginnt eure Partien gleich zu Turnierbeginn</strong> und beendet sie vor der bei jeder Partie angezeigten Frist. Ihr dürft mehrere Partien parallel spielen, aber <strong>haltet die Reihenfolge der Runden ein</strong>: spielt zuerst die Partien mit der nächstliegenden Frist. Auch bei langsamem Tempo: zieht zügig weiter, um fristgerecht fertig zu werden.</p><br>
+<p>⏰ <strong>Beginne deine Partien gleich zu Turnierbeginn</strong> und beende sie vor der bei jeder Partie angezeigten Frist. Ihr dürft mehrere Partien parallel spielen, aber <strong>haltet die Reihenfolge der Runden ein</strong>: spielt zuerst die Partien mit der nächstliegenden Frist. Auch bei langsamem Tempo: zieht zügig weiter, um fristgerecht fertig zu werden.</p><br>
 <p>Format: Round-Robin-Gruppen, dann K.o.-Finalrunden.</p><br>
 <p>Punkte: 1 (Sieg) · 0.5 (Remis) · 0 (Niederlage)</p><br>
 <p>Tiebreak Gruppen: ① Punkte ② Siege ③ Siege mit Schwarz ④ Direkter Vergleich ⑤ Setzrang</p><p>Globaler Tiebreak (Finalisten): ① Punkte/Partie ② Siege/Partie ③ Siege Schwarz/Partie ④ Buchholz/Partie ⑤ Setzrang</p><br>
@@ -1301,7 +1333,7 @@ const T = {
     enter_score:"Ergebnis eintragen",whites:"⬜ Weiß",blacks:"⬛ Schwarz",
     finals_empty:"Die Finalrunden haben noch nicht begonnen.",
     admin_title:"Administrator-Zugang",admin_pin:"PIN-Code",admin_login_btn:"Anmelden",
-    admin_pin_hint:"Erste Verwendung? Erstellen Sie jetzt Ihren PIN.",admin_pin_err:"Falscher PIN.",
+    admin_pin_hint:"Erste Verwendung? Erstelle jetzt deinen PIN.",admin_pin_err:"Falscher PIN.",
     admin_logout:"Abmelden",
     subtab_settings:"Einstellungen",subtab_players:"Spieler",subtab_notifs:"Mitteil.",subtab_actions:"Turnier",
     subtab_ranking:"Rangliste",
@@ -1324,7 +1356,7 @@ const T = {
     scores_reset:"Ergebnisse zurückgesetzt.",tournament_reset:"Turnier zurückgesetzt.",
     no_matches:"Keine Partien gespielt.",
     pool_cta:"♟️ SPIELT!",pool_reminder_title:"🚀 Gruppenphase gestartet!",
-    pool_reminder_text:"Sieh dir deine Partien im Tab Partien an. Sende deinem Gegner eine Einladung auf Chess.com (Benutzername im Tab Turnier) oder spiele auf dem Brett. Trage das Ergebnis direkt nach jeder Partie ein.\n\n⏰ Beginnt sofort und beendet vor der bei jeder Partie angezeigten Frist. Ihr dürft mehrere Partien parallel spielen, aber spielt zuerst Runde 1, dann 2, usw. — die nächstliegenden Fristen zuerst.",
+    pool_reminder_text:"Sieh dir deine Partien im Tab Partien an. Sende deinem Gegner eine Einladung auf Chess.com (Benutzername im Tab Turnier) oder spiele auf dem Brett. Trage das Ergebnis direkt nach jeder Partie ein.\n\n⏰ Beginnt sofort und beendet vor der bei jeder Partie angezeigten Frist. Du darfst mehrere Partien parallel spielen, aber spiele zuerst Runde 1, dann 2, usw. — die nächstliegenden Fristen zuerst.",
     install_btn:"📲 App installieren",install_title:"App installieren",
     install_android:["Link in Chrome öffnen","Menü ⋮ oben rechts antippen","Zum Startbildschirm hinzufügen wählen","Hinzufügen antippen"],
     install_ios:["Link in Safari öffnen (nicht Chrome)","Teilen-Symbol antippen (Quadrat mit Pfeil ↑)","Zum Home-Bildschirm wählen","Oben rechts auf Hinzufügen tippen"],
@@ -1336,8 +1368,8 @@ const T = {
     late_match:"⏰ Partie verspätet",
     color_choice:"wählt die Farbe",color_pick:"— Farbe —",color_required:"Wähle deine Farbe, bevor du das Ergebnis bestätigst.",
     presential:"Präsenz",
-    late_msg:"Einige Partien sind verspätet, spielen Sie schnell!",
-    pending_msg:"Einige Partien sind noch ausstehend, bitte spielen Sie schnell!",
+    late_msg:"Einige Partien sind verspätet, spiel bitte bald!",
+    pending_msg:"Einige Partien sind noch ausstehend, spiel bitte bald!",
     notif_unsupported:"Benachrichtigungen nicht unterstützt.",
     notif_denied:"Berechtigung verweigert. Öffne die Website-Einstellungen (🔒 in der Adressleiste) → Berechtigungen → Benachrichtigungen → Zulassen, dann lade die Seite neu.",
     notif_denied_pwa:"Berechtigung verweigert. Gehe zu Einstellungen → Apps → dein Browser → Benachrichtigungen, und erlaube diese Seite. Dann öffne die App erneut.",
@@ -1377,7 +1409,7 @@ const T = {
   },
   en:{
     loading:"Loading...",offline:"⚠️ Offline — data not syncing",write_denied:"⛔ Save refused — reload the page and try again.",
-    dev_none:"⚠️ No admin device registered for the late alert.",dev_orphan:"⚠️ The registered admin device no longer has an active subscription — the late alert reaches no one.",dev_this_on:"✅ This device is registered for the late alert.",dev_this_off:"⏸️ This device is registered, but the automatic alert is disabled (checkbox above).",dev_other:"⚠️ <b>Another</b> device is registered for the late alert — not this one.",dev_register_btn:"📍 Make this device my admin device",dev_register_instead:"📍 Register this device instead",dev_remove_this:"🔄 Remove this registration",dev_remove_current:"🔄 Remove the current registration",dev_enable_first:"Enable your notifications above first.",dev_enable_then_register:"Enable your notifications above, then register this device.",dev_home_this_on:"✅ Admin device — late alert active here",dev_home_this_off:"⏸️ Admin device registered here — alert disabled",dev_home_other:"⚠️ Not the registered admin device — no late alert here",dev_home_orphan:"⚠️ Registered admin device no longer subscribed — alert has no recipient",dev_home_none:"⚠️ No admin device registered",
+    dev_none:"⚠️ No admin device registered for the late alert.",dev_orphan:"⚠️ The registered admin device no longer has an active subscription — the late alert reaches no one.",dev_this_on:"✅ This device is registered for the late alert.",dev_this_off:"⏸️ This device is registered, but the automatic alert is disabled (checkbox above).",dev_other_since:"Subscribed on",dev_other:"⚠️ <b>Another</b> device is registered for the late alert — not this one.",dev_register_btn:"📍 Make this device my admin device",dev_register_instead:"📍 Register this device instead",dev_remove_this:"🔄 Remove this registration",dev_remove_current:"🔄 Remove the current registration",dev_enable_first:"Enable your notifications above first.",dev_enable_then_register:"Enable your notifications above, then register this device.",dev_home_this_on:"✅ Admin device — late alert active here",dev_home_this_off:"⏸️ Admin device registered here — alert disabled",dev_home_other:"⚠️ Not the registered admin device — no late alert here",dev_home_orphan:"⚠️ Registered admin device no longer subscribed — alert has no recipient",dev_home_none:"⚠️ No admin device registered",
     late_check_alert_sent:"{n} late game(s) — alert sent to the admin device",late_check_nothing_late:"No late game. Nothing to send.",late_check_proof_sent:"No delay. The weekly check message was sent.",late_check_not_playing:"The tournament is not in a playing phase: no game can be late.",late_check_no_admin_device:"No admin device registered: the alert has no recipient.",late_check_admin_sub_invalid:"The admin device subscription is invalid. Please register it again.",late_check_auto_off:"The automatic alert is disabled (checkbox in the Notifs tab).",late_check_maintenance:"Maintenance mode active: the alert is suspended.",late_check_no_config:"Server configuration incomplete (missing keys on Netlify).",notif_cleaned:"🧹 {n} inactive subscription(s) removed.",subs_section_title:"👥 Subscribers",reset_subs_warn:"⚠️ Erases ALL subscriptions, including valid ones. Everyone will have to reopen the site to be resubscribed, and their preferences will be reset. Reserve this for real trouble: the cleanup above is usually enough.",late_checking:"⏳ Checking…",notif_muted:"🔕 You will receive no notifications",notif_all_muted:"⚠️ You unchecked both categories: you will receive no notification at all. You risk missing a deadline and forfeiting. Check at least one box again.",prefs_loading:"Loading your preferences…",prefs_close_btn:"✓ OK",auto_notif_title:"⚙️ Automatic settings",prefs_title:"🔔 My notifications",late_check_admin_dead:"The admin device was no longer reachable: subscription and registration removed. Register a device above.",pin_current:"Current PIN",reg_closed:"Registration is closed.",pin_new:"New PIN",pin_confirm:"Confirm",set_semis:"Semi-finals format",set_final:"Final format",whatsapp_title:"📲 WhatsApp reminder",save_seed:"💾 Save",
     tab_home:"Tournament",tab_groups:"Groups",tab_matches:"Matches",tab_finals:"Finals",
     tab_info:"Info",confirm_archive_before_reset:"⚠️ ARCHIVE THE TOURNAMENT?\n\nThe final ranking of {n} player(s) will be filed in the hall of fame, with all statistics.\n\n✅ OK = archive, then reset\n❌ Cancel = reset WITHOUT archiving\n\n(A safety copy of the tournament is kept either way.)",palmares_admin_title:"🏅 Hall of fame",palmares_edition_name_placeholder:"Edition name",info_rules_btn:"📜 Rules",info_palmares_btn:"🏅 Hall of fame",info_ranking_btn:"📊 Live ranking",live_rank_title:"Live ranking",info_admin_btn:"⚙️ Admin",info_rules_title:"Rules",info_palmares_title:"Hall of fame",
@@ -1386,7 +1418,7 @@ const T = {
     reg_title:"Register for the tournament",reg_nick:"Chess.com username *",
     reg_nick_hint:"Used to find and invite you on Chess.com",reg_name:"Name / Nickname *",
     reg_name_hint:"First name, nickname or real name — your choice",reg_sector:"Sector / Unit (optional)",reg_btn:"Register",
-    edition_moved:"✓ Edition order updated",invite_title:"🔔 Stay informed",invite_text:"Match results and tournament announcements, straight to your phone.",invite_ios:"Install the app to enable notifications:",invite_step1:"Tap Share ⬆️",invite_step2:"Choose « Add to Home Screen »",invite_step3:"Tap « Add »",invite_step4:"Open the app: you can enable notifications there",notif_ios_install_first:"⚠️ On iPhone, notifications only work from the installed app. Follow the steps below, then enable them from the app.",invite_btn:"🔔 Enable notifications",known_title:"👋 Do we know each other?",known_body_1:"The Chess.com username <b>{pseudo}</b> has already taken part in a previous edition of the tournament, under the name <b>« {ancien} »</b>.<br><br>You entered <b>« {nouveau} »</b>.<br><br>What would you like to do?",known_body_n:"The Chess.com username <b>{pseudo}</b> has already taken part in previous editions of the tournament, under the name <b>« {ancien} »</b>.<br><br>You entered <b>« {nouveau} »</b>.<br><br>What would you like to do?",known_keep:"✅ Keep « {ancien} »",known_update:"✏️ Use « {nouveau} » everywhere",known_cancel:"✕ Cancel registration",reg_name_updated:"✓ Name updated in {n} edition(s) of the hall of fame.",reg_ok:"Registration successful! Welcome ",reg_err_fields:"Nickname and name are required.",reg_err_exists:"This nickname is already taken.",
+    edition_moved:"✓ Edition order updated",invite_title:"🔔 Stay informed",invite_text:"Match results and tournament announcements, straight to your phone.",invite_ios:"Install the app to enable notifications:",invite_step1:"Tap Share ⬆️",invite_step2:"Choose « Add to Home Screen »",invite_step3:"Tap « Add »",invite_step4:"Open the app: you can enable notifications there",notif_ios_install_first:"⚠️ On iPhone, notifications only work from the installed app. Follow the steps below, then enable them from the app.",invite_btn:"🔔 Enable notifications",known_title:"👋 Do we know each other?",known_body_1:"The Chess.com username <b>{pseudo}</b> has already taken part in a previous edition of the tournament, under the name <b>« {ancien} »</b>.<br><br>You entered <b>« {nouveau} »</b>.<br><br>What would you like to do?",known_body_n:"The Chess.com username <b>{pseudo}</b> has already taken part in previous editions of the tournament, under the name <b>« {ancien} »</b>.<br><br>You entered <b>« {nouveau} »</b>.<br><br>What would you like to do?",known_keep:"✅ Keep « {ancien} »",known_update:"✏️ Use « {nouveau} » everywhere",known_cancel:"✕ Cancel registration",reg_name_updated:"✓ Name updated in {n} edition(s) of the hall of fame.",ev_title:"✏️ Edit a registration",ev_text:"To edit {nom}, type their Chess.com username again:",ev_err_empty:"⚠️ Username not entered.",ev_err_wrong:"❌ This username does not match. Copy it exactly as displayed.",ev_ok:"Continue",ev_cancel:"Cancel",edit_hint:"✏️ Tap your name to edit your registration",reg_ok:"Registration successful! Welcome ",reg_err_fields:"Nickname and name are required.",reg_err_exists:"This nickname is already taken.",
     players_title:"Registered players",
     admin_players_title:"Players",
     notif_prefs_link:"⚙️ Notification preferences",
@@ -1511,7 +1543,7 @@ const T = {
   },
   it:{
     loading:"Caricamento...",offline:"⚠️ Offline — dati non sincronizzati",write_denied:"⛔ Salvataggio rifiutato — ricarica la pagina e riprova.",
-    dev_none:"⚠️ Nessun dispositivo admin registrato per l'avviso di ritardo.",dev_orphan:"⚠️ Il dispositivo admin registrato non ha più un abbonamento attivo — l'avviso non raggiunge nessuno.",dev_this_on:"✅ Questo dispositivo è registrato per l'avviso di ritardo.",dev_this_off:"⏸️ Questo dispositivo è registrato, ma l'avviso automatico è disattivato (casella sopra).",dev_other:"⚠️ Un <b>altro</b> dispositivo è registrato per l'avviso di ritardo — non questo.",dev_register_btn:"📍 Rendere questo dispositivo il mio dispositivo admin",dev_register_instead:"📍 Registrare invece questo dispositivo",dev_remove_this:"🔄 Rimuovere questa registrazione",dev_remove_current:"🔄 Rimuovere la registrazione attuale",dev_enable_first:"Attiva prima le notifiche qui sopra.",dev_enable_then_register:"Attiva le notifiche qui sopra, poi registra questo dispositivo.",dev_home_this_on:"✅ Dispositivo admin — avviso di ritardo attivo qui",dev_home_this_off:"⏸️ Dispositivo admin registrato qui — avviso disattivato",dev_home_other:"⚠️ Non è il dispositivo admin registrato — nessun avviso qui",dev_home_orphan:"⚠️ Dispositivo admin registrato non più abbonato — avviso senza destinatario",dev_home_none:"⚠️ Nessun dispositivo admin registrato",
+    dev_none:"⚠️ Nessun dispositivo admin registrato per l'avviso di ritardo.",dev_orphan:"⚠️ Il dispositivo admin registrato non ha più un abbonamento attivo — l'avviso non raggiunge nessuno.",dev_this_on:"✅ Questo dispositivo è registrato per l'avviso di ritardo.",dev_this_off:"⏸️ Questo dispositivo è registrato, ma l'avviso automatico è disattivato (casella sopra).",dev_other_since:"Abbonato il",dev_other:"⚠️ Un <b>altro</b> dispositivo è registrato per l'avviso di ritardo — non questo.",dev_register_btn:"📍 Rendere questo dispositivo il mio dispositivo admin",dev_register_instead:"📍 Registrare invece questo dispositivo",dev_remove_this:"🔄 Rimuovere questa registrazione",dev_remove_current:"🔄 Rimuovere la registrazione attuale",dev_enable_first:"Attiva prima le notifiche qui sopra.",dev_enable_then_register:"Attiva le notifiche qui sopra, poi registra questo dispositivo.",dev_home_this_on:"✅ Dispositivo admin — avviso di ritardo attivo qui",dev_home_this_off:"⏸️ Dispositivo admin registrato qui — avviso disattivato",dev_home_other:"⚠️ Non è il dispositivo admin registrato — nessun avviso qui",dev_home_orphan:"⚠️ Dispositivo admin registrato non più abbonato — avviso senza destinatario",dev_home_none:"⚠️ Nessun dispositivo admin registrato",
     late_check_alert_sent:"{n} partita/e in ritardo — avviso inviato al dispositivo admin",late_check_nothing_late:"Nessuna partita in ritardo. Niente da inviare.",late_check_proof_sent:"Nessun ritardo. Il messaggio settimanale di controllo è stato inviato.",late_check_not_playing:"Il torneo non è in fase di gioco: nessuna partita può essere in ritardo.",late_check_no_admin_device:"Nessun dispositivo admin registrato: l'avviso non ha destinatario.",late_check_admin_sub_invalid:"L'abbonamento del dispositivo admin non è valido. Registralo di nuovo.",late_check_auto_off:"L'avviso automatico è disattivato (casella nella scheda Notifiche).",late_check_maintenance:"Modalità manutenzione attiva: l'avviso è sospeso.",late_check_no_config:"Configurazione server incompleta (chiavi mancanti su Netlify).",notif_cleaned:"🧹 {n} abbonamento/i inattivo/i rimosso/i.",subs_section_title:"👥 Abbonati",reset_subs_warn:"⚠️ Cancella TUTTI gli abbonamenti, compresi quelli validi. Ognuno dovrà riaprire il sito per essere riabbonato e le sue preferenze verranno ripristinate. Da riservare ai casi problematici: la pulizia qui sopra basta di solito.",late_checking:"⏳ Verifica in corso…",notif_muted:"🔕 Non riceverai alcuna notifica",notif_all_muted:"⚠️ Hai deselezionato entrambe le categorie: non riceverai più alcuna notifica. Rischi di perdere una scadenza e di perdere a tavolino. Seleziona almeno una casella.",prefs_loading:"Caricamento delle tue preferenze…",prefs_close_btn:"✓ OK",auto_notif_title:"⚙️ Impostazioni automatiche",prefs_title:"🔔 Le mie notifiche",late_check_admin_dead:"Il dispositivo admin non era più raggiungibile: abbonamento e registrazione rimossi. Registra un dispositivo qui sopra.",pin_current:"PIN attuale",reg_closed:"Le iscrizioni sono chiuse.",pin_new:"Nuovo PIN",pin_confirm:"Confermare",set_semis:"Formato semifinali",set_final:"Formato finale",whatsapp_title:"📲 Promemoria WhatsApp",save_seed:"💾 Salvare",
     tab_home:"Torneo",tab_groups:"Gruppi",tab_matches:"Partite",tab_finals:"Finali",
     tab_info:"Info",confirm_archive_before_reset:"⚠️ ARCHIVIARE IL TORNEO?\n\nLa classifica finale di {n} giocatore/i verrà inserita nell'albo d'oro, con tutte le statistiche.\n\n✅ OK = archiviare, poi azzerare\n❌ Annulla = azzerare SENZA archiviare\n\n(Una copia di sicurezza del torneo viene conservata in ogni caso.)",palmares_admin_title:"🏅 Albo d'oro",palmares_edition_name_placeholder:"Nome dell'edizione",info_rules_btn:"📜 Regolamento",info_palmares_btn:"🏅 Albo d'oro",info_ranking_btn:"📊 Classifica in diretta",live_rank_title:"Classifica in diretta",info_admin_btn:"⚙️ Admin",info_rules_title:"Regolamento",info_palmares_title:"Albo d'oro",
@@ -1520,7 +1552,7 @@ const T = {
     reg_title:"Iscriversi al torneo",reg_nick:"Nome utente Chess.com *",
     reg_nick_hint:"Utilizzato per trovarti e invitarti su Chess.com",reg_name:"Nome / Nickname *",
     reg_name_hint:"Nome, soprannome o nome reale — a tua scelta",reg_sector:"Settore / Unità (opzionale)",reg_btn:"Iscriversi",
-    edition_moved:"✓ Ordine delle edizioni aggiornato",invite_title:"🔔 Resta informato",invite_text:"Risultati delle partite e annunci del torneo, direttamente sul tuo telefono.",invite_ios:"Installa l'app per attivare le notifiche:",invite_step1:"Tocca Condividi ⬆️",invite_step2:"Scegli « Aggiungi a Home »",invite_step3:"Tocca « Aggiungi »",invite_step4:"Apri l'app: lì potrai attivare le notifiche",notif_ios_install_first:"⚠️ Su iPhone le notifiche funzionano solo dall'app installata. Segui i passaggi qui sotto, poi attivale dall'app.",invite_btn:"🔔 Attivare le notifiche",known_title:"👋 Ci conosciamo?",known_body_1:"Lo pseudonimo Chess.com <b>{pseudo}</b> ha già partecipato a una precedente edizione del torneo, con il nome <b>« {ancien} »</b>.<br><br>Hai inserito <b>« {nouveau} »</b>.<br><br>Cosa vuoi fare?",known_body_n:"Lo pseudonimo Chess.com <b>{pseudo}</b> ha già partecipato a precedenti edizioni del torneo, con il nome <b>« {ancien} »</b>.<br><br>Hai inserito <b>« {nouveau} »</b>.<br><br>Cosa vuoi fare?",known_keep:"✅ Mantenere « {ancien} »",known_update:"✏️ Usare « {nouveau} » ovunque",known_cancel:"✕ Annullare l'iscrizione",reg_name_updated:"✓ Nome aggiornato in {n} edizione/i dell'albo d'oro.",reg_ok:"Iscrizione riuscita! Benvenuto/a ",reg_err_fields:"Soprannome e nome richiesti.",reg_err_exists:"Questo soprannome è già utilizzato.",
+    edition_moved:"✓ Ordine delle edizioni aggiornato",invite_title:"🔔 Resta informato",invite_text:"Risultati delle partite e annunci del torneo, direttamente sul tuo telefono.",invite_ios:"Installa l'app per attivare le notifiche:",invite_step1:"Tocca Condividi ⬆️",invite_step2:"Scegli « Aggiungi a Home »",invite_step3:"Tocca « Aggiungi »",invite_step4:"Apri l'app: lì potrai attivare le notifiche",notif_ios_install_first:"⚠️ Su iPhone le notifiche funzionano solo dall'app installata. Segui i passaggi qui sotto, poi attivale dall'app.",invite_btn:"🔔 Attivare le notifiche",known_title:"👋 Ci conosciamo?",known_body_1:"Lo pseudonimo Chess.com <b>{pseudo}</b> ha già partecipato a una precedente edizione del torneo, con il nome <b>« {ancien} »</b>.<br><br>Hai inserito <b>« {nouveau} »</b>.<br><br>Cosa vuoi fare?",known_body_n:"Lo pseudonimo Chess.com <b>{pseudo}</b> ha già partecipato a precedenti edizioni del torneo, con il nome <b>« {ancien} »</b>.<br><br>Hai inserito <b>« {nouveau} »</b>.<br><br>Cosa vuoi fare?",known_keep:"✅ Mantenere « {ancien} »",known_update:"✏️ Usare « {nouveau} » ovunque",known_cancel:"✕ Annullare l'iscrizione",reg_name_updated:"✓ Nome aggiornato in {n} edizione/i dell'albo d'oro.",ev_title:"✏️ Modificare un'iscrizione",ev_text:"Per modificare {nom}, digita di nuovo il suo pseudonimo Chess.com:",ev_err_empty:"⚠️ Pseudonimo non inserito.",ev_err_wrong:"❌ Questo pseudonimo non corrisponde. Copialo esattamente come è visualizzato.",ev_ok:"Continua",ev_cancel:"Annulla",edit_hint:"✏️ Tocca il tuo nome per modificare la tua iscrizione",reg_ok:"Iscrizione riuscita! Benvenuto/a ",reg_err_fields:"Soprannome e nome richiesti.",reg_err_exists:"Questo soprannome è già utilizzato.",
     players_title:"Giocatori iscritti",
     admin_players_title:"Giocatori",
     notif_prefs_link:"⚙️ Preferenze di notifica",
@@ -1555,7 +1587,7 @@ const T = {
     palmares_bulk_placeholder:"Un giocatore per riga: nomeutente-Nome, o solo il nome utente",
     palmares_bulk_btn:"➕ Aggiungi la lista",palmares_fill_names_btn:"🔗 Ritrovare i nomi",palmares_search_ph:"🔎 Cercare un giocatore…",palmares_player_none:"Nessun giocatore trovato.",palmares_edition:"edizione",palmares_editions:"edizioni",palmares_podium:"podio",palmares_podiums:"podi",palmares_best:"miglior posizione:",palmares_of:" su ",palmares_stats_btn:"Statistiche giocatori",tri_points:"📊 Punti",tri_ratio:"⚡ Per partita",tri_titres:"🏆 Titoli",legende_general_poules:"ℹ️ <b>Ordine della classifica:</b> 1) posizione nel girone — prima tutti i primi, poi tutti i secondi, ecc. 2) punti per partita 3) vittorie per partita 4) vittorie con i Neri per partita 5) Buchholz per partita — la forza degli avversari affrontati nei gironi 6) testa di serie.<br>I valori sono per partita perché i gironi non hanno tutti la stessa dimensione.",legende_general_finales:"ℹ️ <b>Ordine della classifica:</b> 1) il turno raggiunto nelle fasi finali viene prima di tutto — un semifinalista precede un quartofinalista, anche con meno punti 2) poi la posizione nel girone 3) poi punti, vittorie e vittorie con i Neri, per partita 4) poi il Buchholz, congelato sui gironi 5) poi testa di serie.<br>Un giocatore può quindi mostrare più punti di uno collocato sopra di lui: decide il percorso nelle finali.",legende_edition:"ℹ️ <b>Classifica finale:</b> il turno raggiunto nelle fasi finali viene prima di tutto, poi la posizione nel girone, poi le statistiche per partita e il Buchholz. Un giocatore può quindi mostrare più punti di uno collocato sopra di lui.",palmares_stats_desc:"Tutti i partecipanti, classificati su tutte le edizioni.",palmares_ongoing:"in corso",palmares_pick:"Scegli un torneo qui sopra.",palmares_no_result_yet:"Nessuna partita ancora giocata.",palmares_provisional:"⏳ Classifica provvisoria — torneo in corso",palmares_qualified:"Qualificati",palmares_virtual:"Classifica virtuale",palmares_virtual_desc:"⏳ Chi si qualificherebbe se i gironi finissero ora",palmares_qualified_desc:"✅ Giocatori qualificati per le fasi finali",palmares_grp:"girone",palmares_player:"giocatore",palmares_players:"giocatori",palmares_format_help:"<b>Un giocatore per riga, in ordine di classifica:</b><br><code>nomeutente-Nome</code> &nbsp;— senza statistiche<br><code>nomeutente-Nome;V;P;S;V;P;S</code> &nbsp;— con statistiche<br>I primi 3 numeri = vittorie, patte, sconfitte <b>con i Bianchi</b> ⬜<br>I 3 successivi = vittorie, patte, sconfitte <b>con i Neri</b> ⬛<br>Esempio: <code>Goudi8-Romain;1;3;1;4;0;1</code><br>Partite e punti si calcolano automaticamente.",qual_rg:"Pos",qual_grp:"Gir",qual_ptsm:"Pt/P",qual_vm:"V/P",qual_vnm:"VN/P",qual_tbm:"TB/P",qual_seed:"Testa",sep_virtuels:"— LIMITE DI QUALIFICAZIONE ({n}) —",sep_qualifies:"— QUALIFICATI ({n}) —",qual_legend:"Spareggio nell'ordine: Pt/P (punti per partita) → V/P (vittorie per partita) → VN/P (vittorie con i Neri per partita) → TB/P (Buchholz per partita) → testa di serie. Pos = posizione nel girone.",palmares_pts:"pt",palmares_m:"p",palmares_v:"V",palmares_n:"P",palmares_d:"S",palmares_white:"Bianchi",palmares_black:"Neri",palmares_total:"Totale",palmares_on:"su",palmares_names_filled:"✓ {n} nome(i) ritrovato(i)!",palmares_no_name_found:"Nessun nome da ritrovare.",
     rules:`<p>🚀 Consulta la scheda <strong>Partite</strong> per vedere le tue partite non appena inizia la fase a gironi. Invia un invito al tuo avversario su Chess.com (nome utente nella scheda <strong>Torneo</strong>) o gioca su una scacchiera. Inserisci il risultato nella scheda <strong>Partite</strong>.</p><br>
-<p>⏰ <strong>Iniziate le vostre partite fin dall'inizio del torneo</strong> e concludetele entro la scadenza indicata su ogni partita. Potete giocare più partite in parallelo, ma <strong>rispettate l'ordine dei turni</strong>: affrontate per prime quelle con la scadenza più vicina. Anche con un ritmo lento, continuate a muovere per finire nei tempi.</p><br>
+<p>⏰ <strong>Inizia le tue partite fin dall'inizio del torneo</strong> e concludile entro la scadenza indicata su ogni partita. Potete giocare più partite in parallelo, ma <strong>rispettate l'ordine dei turni</strong>: affrontate per prime quelle con la scadenza più vicina. Anche con un ritmo lento, continuate a muovere per finire nei tempi.</p><br>
 <p>Formato: Gironi round-robin, poi fasi finali ad eliminazione diretta.</p><br>
 <p>Punteggi: 1 (vittoria) · 0.5 (patta) · 0 (sconfitta)</p><br>
 <p>Spareggio gironi: ① Punti ② Vittorie ③ Vittorie con il Nero ④ Scontro diretto ⑤ Testa di serie</p><p>Spareggio globale (finalisti): ① Punti/partita ② Vittorie/partita ③ Vittorie Nero/partita ④ Buchholz/partita ⑤ Testa di serie</p><br>
@@ -1569,7 +1601,7 @@ const T = {
     color_choice:"sceglie il colore",color_pick:"— colore —",color_required:"Scegli il tuo colore prima di confermare il risultato.",
     presential:"Presenza",
     late_msg:"Alcune partite sono in ritardo, giocare rapidamente!",
-    pending_msg:"Alcune partite sono ancora in attesa, organizzate le vostre partite rapidamente!",
+    pending_msg:"Alcune partite sono ancora in attesa, organizza le tue partite rapidamente!",
     notif_unsupported:"Notifiche non supportate su questo browser.",
     notif_denied:"Autorizzazione negata. Apri le impostazioni del sito (🔒 nella barra degli indirizzi) → Autorizzazioni → Notifiche → Consenti, poi ricarica la pagina.",
     notif_denied_pwa:"Autorizzazione negata. Vai nelle Impostazioni del telefono → App → il tuo browser → Notifiche, e consenti questo sito. Poi riapri l'app.",
@@ -2412,7 +2444,10 @@ function renderPalmaresPlayerCard(recherche) {
   if (!q) { box.style.display = 'none'; return; }
 
   const palmares = state?.palmares || {};
-  const editions = Object.entries(palmares).sort((a,b)=>(a[1].order||0)-(b[1].order||0));
+  // MÊME ordre que les boutons du palmarès (order décroissant) : deux vues du
+  // même historique ne doivent pas se contredire. C'est l'ordre choisi par l'admin
+  // avec les flèches ▲▼.
+  const editions = Object.entries(palmares).sort((a,b) => (b[1].order||0) - (a[1].order||0));
   const parcours = [];
   // On retient le nom ET le pseudo : chercher un pseudo pour ne voir qu'un nom
   // ne permet pas de savoir si on est tombé sur le bon joueur.
@@ -2440,7 +2475,7 @@ function renderPalmaresPlayerCard(recherche) {
   }
   // Titre : "Nom (pseudo)" si les deux existent, sinon le pseudo seul.
   const titreJoueur = nom
-    ? esc(nom) + ' <span style="font-weight:600;color:#8a7a4a;font-size:13px">(' + esc(pseudo || '') + ')</span>'
+    ? esc(nom) + ' <span style="font-weight:600;color:#7a6a3a;font-size:13px">(' + esc(pseudo || '') + ')</span>'
     : esc(pseudo || '');
 
   if (!parcours.length) {
@@ -2490,7 +2525,7 @@ function renderPalmaresPlayerCard(recherche) {
   box.innerHTML = `<div style="background:var(--gold-light);border-radius:10px;padding:12px">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
       <div style="flex:1;font-size:15px;font-weight:800">${titreJoueur}</div>
-      <button onclick="fermerFichePalmares()" style="border:none;background:none;color:#8a7a4a;font-size:16px;cursor:pointer;padding:0 4px">✕</button>
+      <button onclick="fermerFichePalmares()" style="border:none;background:none;color:#7a6a3a;font-size:16px;cursor:pointer;padding:0 4px">✕</button>
     </div>
     <div style="font-size:11px;color:#7a6a3a;margin-bottom:10px">
       ${parcours.length} ${t(parcours.length > 1 ? 'palmares_editions' : 'palmares_edition')}
@@ -2567,6 +2602,12 @@ function findKnownName(pseudo, excludeEditionId) {
   return joueur?.name || null;
 }
 
+// Rang le plus élevé du palmarès, ou -1 s'il est vide.
+function maxOrderPalmares() {
+  const vals = Object.values(state?.palmares || {}).map(e => typeof e?.order === 'number' ? e.order : 0);
+  return vals.length ? Math.max(...vals) : -1;
+}
+
 window.addPalmaresEdition = async function() {
   if (!isAdmin) return;
   const nameEl = document.getElementById('new-edition-name');
@@ -2574,7 +2615,11 @@ window.addPalmaresEdition = async function() {
   const name = nameEl?.value?.trim();
   if (!name) { showMsg('palmares-admin-msg', t('palmares_name_required'), false); return; }
   const year = yearEl?.value?.trim() || null;
-  const existing = Object.keys(state?.palmares || {}).length;
+  // Le plus récent en haut : on prend le MAXIMUM existant + 1, pas le nombre
+  // d'éditions. Après une suppression, les numéros ne sont plus contigus et
+  // compter les entrées donnerait un rang déjà pris — la nouvelle édition
+  // atterrirait au milieu de la liste.
+  const existing = maxOrderPalmares() + 1;
   const id = 'ed_' + Date.now();
   await set(ref(db, 'palmares/' + id), { name, year, order: existing, entries: {} });
   if (nameEl) nameEl.value = '';
@@ -2722,14 +2767,17 @@ let editionAdminOuverte = null;
 // échangées uniquement : aucune autre donnée n'est touchée.
 window.deplacerEdition = async function(id, dir) {
   if (!isAdmin) return;
+  // Trié comme l'affichage : « monter » doit faire monter à l'écran.
   const liste = Object.entries(state?.palmares || {})
-    .sort((a,b) => (a[1].order ?? 0) - (b[1].order ?? 0));
+    .sort((a,b) => (b[1].order ?? 0) - (a[1].order ?? 0));
   const i = liste.findIndex(([x]) => x === id);
   const j = i + dir;
   if (i < 0 || j < 0 || j >= liste.length) return;
   // Réattribuer des rangs propres (0,1,2...) évite les ex æquo si les `order`
   // d'origine étaient identiques ou absents.
-  liste.forEach(([, ed], k) => { ed.order = k; });
+  // Rangs réattribués à l'envers de l'affichage : le premier de la liste doit
+  // porter l'order le PLUS ÉLEVÉ, puisque l'affichage est décroissant.
+  liste.forEach(([, ed], k) => { ed.order = liste.length - 1 - k; });
   const tmp = liste[i][1].order;
   liste[i][1].order = liste[j][1].order;
   liste[j][1].order = tmp;
@@ -2752,7 +2800,11 @@ function renderPalmaresAdmin() {
   const el = document.getElementById('palmares-admin-content');
   if (!el) return;
   const palmares = state?.palmares || {};
-  const editions = Object.entries(palmares).sort((a,b) => (a[1].order||0)-(b[1].order||0));
+  const editions = Object.entries(palmares)
+    // MÊME ordre que le palmarès public : sans cela, l'admin ordonne dans un sens
+    // et les joueurs voient l'inverse. Les flèches ▲▼ agissent donc sur ce que
+    // l'admin a réellement sous les yeux.
+    .sort((a,b) => (b[1].order||0) - (a[1].order||0));
   if (!editions.length) {
     el.innerHTML = `<div style="color:var(--gray);font-size:12px">${t('palmares_empty')}</div>`;
     return;
@@ -3188,6 +3240,76 @@ function refreshPlayerLists() {
 window.startEditPlayer = function(id) {
   editingPlayerId = editingPlayerId === id ? null : id;
   refreshPlayerLists();
+};
+
+// ── VÉRIFICATION AVANT MODIFICATION (page publique) ──
+// Depuis l'admin, aucune vérification : le PIN a déjà été donné.
+let joueurAVerifier = null;
+window.demanderModifJoueur = function(id) {
+  if (isAdmin) { startEditPlayer(id); return; }
+  // Déjà ouvert sur ce joueur : un second clic referme, comme le crayon avant.
+  if (editingPlayerId === id) { startEditPlayer(id); return; }
+  const p = getPlayers().find(x => x.id === id);
+  if (!p) return;
+  joueurAVerifier = p;
+  document.getElementById('ev-title').textContent = t('ev_title');
+  document.getElementById('ev-text').innerHTML = t('ev_text')
+    .replace('{nom}', '<b>' + esc(p.name || p.nickname) + '</b>')
+    .replace('{pseudo}', '<b>' + esc(p.nickname) + '</b>');
+  document.getElementById('ev-ok').textContent = t('ev_ok');
+  document.getElementById('ev-cancel').textContent = t('ev_cancel');
+  const inp = document.getElementById('ev-input');
+  inp.value = '';
+  inp.placeholder = p.nickname;
+  const err = document.getElementById('ev-error');
+  if (err) err.textContent = '';
+  inp.style.borderColor = '#ddd';
+  document.getElementById('edit-verify-modal').style.display = 'flex';
+  setTimeout(() => inp.focus(), 80);
+};
+
+// Le bouton ne s'active que si la saisie correspond — casse et espaces ignorés :
+// le but est d'écarter le clic distrait, pas de piéger sur une majuscule.
+// La saisie efface l'erreur précédente et signale visuellement la correspondance.
+// Elle n'active/désactive plus rien : le bouton reste cliquable en permanence.
+function pseudoCorrespond() {
+  const inp = document.getElementById('ev-input');
+  return !!joueurAVerifier && inp.value.trim().toLowerCase() === joueurAVerifier.nickname.trim().toLowerCase();
+}
+
+window.verifierSaisiePseudo = function() {
+  const inp = document.getElementById('ev-input');
+  const err = document.getElementById('ev-error');
+  if (err) err.textContent = '';
+  inp.style.borderColor = inp.value.trim() ? (pseudoCorrespond() ? 'var(--green)' : '#ddd') : '#ddd';
+};
+
+window.validerModifJoueur = function() {
+  const inp = document.getElementById('ev-input');
+  const err = document.getElementById('ev-error');
+  // Chaque échec dit CE QUI ne va pas : champ vide ou pseudo qui ne correspond pas.
+  if (!inp.value.trim()) {
+    err.textContent = t('ev_err_empty');
+    inp.style.borderColor = 'var(--red)';
+    inp.focus();
+    return;
+  }
+  if (!pseudoCorrespond()) {
+    err.textContent = t('ev_err_wrong');
+    inp.style.borderColor = 'var(--red)';
+    inp.select();
+    return;
+  }
+  const id = joueurAVerifier?.id;
+  fermerModifJoueur();
+  if (id) startEditPlayer(id);
+};
+
+window.fermerModifJoueur = function() {
+  document.getElementById('edit-verify-modal').style.display = 'none';
+  const err = document.getElementById('ev-error');
+  if (err) err.textContent = '';
+  joueurAVerifier = null;
 };
 
 window.saveEditPlayer = async function(id) {
@@ -4221,7 +4343,7 @@ window.resetAll = async function() {
     palmares['ed_' + Date.now()] = {
       name: prevSettings?.name || 'Air Base Chess Tour',
       year: String(new Date().getFullYear()),
-      order: Object.keys(prevPalmares).length,
+      order: (Object.values(prevPalmares).length ? Math.max(...Object.values(prevPalmares).map(e => typeof e?.order === 'number' ? e.order : 0)) : -1) + 1,
       entries
     };
   }
@@ -4368,6 +4490,13 @@ function playerEditForm(p) {
   </div>`;
 }
 
+function majEditHint(isReg, nbJoueurs) {
+  const el = document.getElementById('edit-hint');
+  if (!el) return;
+  el.textContent = t('edit_hint');
+  el.style.display = (isReg && nbJoueurs > 0) ? 'block' : 'none';
+}
+
 function renderHome(){
   const s=state?.settings||{};
   const players=getPlayers();
@@ -4410,17 +4539,17 @@ function renderHome(){
   pl.innerHTML=players.sort((a,b)=>a.nickname.localeCompare(b.nickname)).map(p=>{
     const isEditing = editingPlayerId===p.id;
     return `<div style="padding:8px 0;border-bottom:1px solid #F5F5F5">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div onclick="demanderModifJoueur('${p.id}')" style="display:flex;justify-content:space-between;align-items:flex-start;${isReg?'cursor:pointer':''}">
         <div style="flex:1">
           <div style="font-weight:700;font-size:13px">${esc(p.nickname)}</div>
           <div style="font-size:12px;color:#555;margin-top:2px">${esc(p.name)}${p.sector?' · <span style="color:var(--gray)">'+esc(p.sector)+'</span>':''}</div>
           ${p.group?`<div style="font-size:11px;color:var(--gold);margin-top:2px;font-weight:600">${esc(p.group)}</div>`:''}
         </div>
-        ${isReg?`<button onclick="startEditPlayer('${p.id}')" style="border:none;background:none;color:var(--gold);cursor:pointer;font-size:15px;padding:2px 4px" title="Modifier">✏️</button>`:''}
       </div>
       ${isEditing ? playerEditForm(p) : ''}
     </div>`;
   }).join('');
+  majEditHint(isReg, players.length);
 }
 
 function renderGroups(){

@@ -28,8 +28,8 @@
   }
 
   // Date d'échéance d'un match.
-  //   Poule  -> poolStartDate + (round - 1) * poolInterval
-  //   Finale -> finalsStartDate + position * finalsInterval, où la position est
+  //   Poule  -> poolStartDate + round * poolInterval (ronde 1 = départ + 1 intervalle)
+  //   Finale -> finalsStartDate + (position + 1) * finalsInterval, où la position est
   //             calculée depuis la PREMIÈRE ronde réellement présente dans ce
   //             bracket (il peut démarrer aux Quarts, aux 8èmes, etc.).
   //
@@ -74,8 +74,6 @@
     return d;
   }
 
-  // Un match est "en retard" quand plus d'un intervalle complet s'est écoulé
-  // APRÈS sa date d'échéance (on laisse donc une marge d'un intervalle).
   // Un match est "en retard" dès le lendemain de son échéance : la date calculée EST la
   // date limite (le match doit être terminé et le score saisi avant la fin de ce jour-là).
   // ⚠️ Ne pas rajouter d'intervalle de grâce ici : historiquement l'échéance marquait le

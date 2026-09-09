@@ -624,7 +624,7 @@ async function subscribeToNotifications() {
     if (!('Notification' in window)) { showMsg('notif-msg', t('notif_unsupported'), false, true); return; }
     showMsg('notif-msg', t('notif_activating'));
     const permission = await Notification.requestPermission();
-    if (permission !== 'granted') { const isPWA = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone; showMsg('notif-msg', t(isPWA ? 'notif_denied_pwa' : 'notif_denied'), false, true); return; }
+    if (permission !== 'granted') { showMsg('notif-msg', t(cleNotifBloquee()), false, true); return; }
     const reg = await navigator.serviceWorker.ready;
     const sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
@@ -643,6 +643,11 @@ async function subscribeToNotifications() {
     });
     localStorage.setItem('abct-notif-subid', subId);
     localStorage.setItem('abct-notif', 'on');
+    localStorage.removeItem('abct-notif-volontaire');   // il revient : le choix précédent est caduc
+    // Trace durable d'une activation passée. Elle ne dit PAS que les notifications
+    // marchent aujourd'hui — seulement que ce joueur n'est plus un inconnu. Sert à
+    // décider si le bandeau d'invitation a encore un sens : voir peutProposerNotif.
+    localStorage.setItem('abct-notif-deja', '1');
     // Le bandeau d'invitation n'a plus lieu d'être : le joueur vient de s'abonner.
     // Fermé ICI et non dans le bouton du bandeau, car l'activation peut aussi
     // venir du bouton de la carte d'accueil — le bandeau restait alors affiché à
@@ -669,6 +674,11 @@ window.unsubscribeFromNotifications = async function unsubscribeFromNotification
     // l'abonnement (message faux, puis écrasé). Voulu : un seul message, le bon.
     localStorage.removeItem('abct-notif');
     localStorage.removeItem('abct-notif-subid');
+    // Marqueur de CHOIX : après cette fonction, l'état du navigateur est identique à
+    // celui d'un abonnement cassé (permission gardée, abonnement révoqué, mémo effacé).
+    // Sans ce marqueur, la vérification d'ouverture annoncerait « tes notifications ne
+    // fonctionnaient plus » à chaque lancement, à quelqu'un qui les a coupées exprès.
+    localStorage.setItem('abct-notif-volontaire', '1');
     if (subId) await set(ref(db, SUB_PATH + '/' + subId), null);
     updateNotifBtn();
     // Avertissement rouge PERSISTANT : le joueur doit mesurer ce qu'il perd.
@@ -691,8 +701,7 @@ function updateNotifBtn() {
     localStorage.removeItem('abct-notif-subid');
     if (expiredSubId) set(ref(db, SUB_PATH + '/' + expiredSubId), null).catch(()=>{});
     on = false;
-    const isPWA = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
-    showMsg('notif-msg', t(isPWA ? 'notif_denied_pwa' : 'notif_denied'), false, true);
+    showMsg('notif-msg', t(cleNotifBloquee()), false, true);
   }
   // Abonné mais les deux catégories décochées : il ne reçoit rien. Le bouton doit
   // le montrer, sinon le vert ment.
@@ -796,8 +805,21 @@ function peutProposerNotif() {
   // c'est le seul endroit où le joueur apprend qu'il doit installer l'app.
   if (estIOS() && !estInstallee()) return true;
 
+  // Ce joueur a déjà activé les notifications au moins une fois sur cet appareil.
+  // S'il ne les reçoit plus, la vérification d'ouverture le lui dit par un message,
+  // et le bouton d'activation se trouve juste au-dessus de ce message : le bandeau
+  // n'apporterait rien de plus. Il est réservé à qui n'a aucune trace d'activation
+  // passée — quelqu'un pour qui l'existence même de la fonction est une nouvelle.
+  // Si le joueur efface tout son stockage, ce marqueur part avec : il redevient un
+  // inconnu et le bandeau revient, ce qui est exact puisque le site ne sait plus rien.
+  if (localStorage.getItem('abct-notif-deja') === '1') return false;
+
   if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) return false;
-  if (Notification.permission !== 'default') return false;   // déjà accordé ou refusé
+  // 'granted' : le joueur a déjà autorisé. S'il est cassé, la vérification d'ouverture
+  //             affiche `notif_lost` sur la carte d'accueil, et le bouton d'activation
+  //             est juste au-dessus du message — un bandeau ferait doublon.
+  // 'denied'  : le navigateur interdit de redemander ; un bandeau ne mènerait à rien.
+  if (Notification.permission !== 'default') return false;
   return true;
 }
 
@@ -805,6 +827,15 @@ function peutProposerNotif() {
 function estInstallee() {
   return window.matchMedia('(display-mode: standalone)').matches
       || window.navigator.standalone === true;
+}
+
+// Le chemin pour rouvrir une autorisation bloquée dépend du SYSTÈME, pas seulement du
+// fait d'être installé. Un iPhone avec l'app n'a pas de « Applications → ton navigateur » :
+// une app web ajoutée à l'écran d'accueil a sa PROPRE entrée dans les Réglages. Les
+// joueurs iPhone recevaient donc des instructions Android qui ne mènent nulle part.
+function cleNotifBloquee() {
+  if (!estInstallee()) return 'notif_denied';           // navigateur : réglages du site
+  return estIOS() ? 'notif_denied_ios' : 'notif_denied_pwa';
 }
 
 
@@ -1209,13 +1240,13 @@ const T = {
     pending_msg:"Certains matchs sont encore en attente, pense à organiser tes parties rapidement !",
     notif_unsupported:"Notifications non supportées sur ce navigateur.",
     notif_denied:"Permission refusée. Ouvre les réglages du site (🔒 dans la barre d'adresse) → Autorisations → Notifications → Autoriser, puis recharge la page.",
-    notif_denied_pwa:"Permission refusée. Va dans Paramètres de ton téléphone → Applications → ton navigateur → Notifications, et autorise ce site. Puis réouvre l'app.",
+    notif_denied_pwa:"Permission refusée. Va dans Paramètres de ton téléphone → Applications → ton navigateur → Notifications, et autorise ce site. Puis réouvre l'app.",notif_denied_ios:"Permission refusée. Va dans Réglages de ton iPhone → Notifications → « Chess Tour », et autorise-les. Si l'app n'y figure pas, retire-la de l'écran d'accueil et réinstalle-la depuis le site.",
     notif_on:"🔔 Notifications activées",
     notif_off:"🔕 Activer les notifications",
     pref_officiel:"📢 Annonces officielles",
     pref_match:"⚔️ Résultats de matchs",
     notif_enabled:"✓ Notifications activées !",
-    notif_disabled_warn:"⚠️ Notifications désactivées. Tu ne recevras plus les annonces du tournoi ni les résultats — tu risques de manquer une échéance et d'être déclaré forfait. Réactive-les dès que possible.",notif_cut_server:"⚠️ Tes notifications ont été coupées côté serveur — réactive-les si tu le souhaites.",notif_lost:"⚠️ Tes notifications ne fonctionnaient plus (abonnement perdu par ton navigateur). Réactive-les pour ne pas manquer d'échéance.",
+    notif_disabled_warn:"⚠️ Notifications désactivées. Tu ne recevras plus les annonces du tournoi ni les résultats — tu risques de manquer une échéance et d'être déclaré forfait. Réactive-les dès que possible.",notif_cut_server:"⚠️ Tes notifications ont été coupées côté serveur — réactive-les si tu le souhaites.",notif_lost:"⚠️ Tes notifications ne fonctionnaient plus (abonnement perdu par ton navigateur). Réactive-les pour ne pas manquer d'échéance.",notif_off_reminder:"🔕 Tu ne reçois aucune notification. Active-les pour ne pas manquer d'échéance.",
     notif_test_body:"🔔 Ceci est un test de notification.",
     notif_activating:"⏳ Activation en cours…",notif_test_sending:"📤 Envoi du test en cours…",notif_test_no_entry:"⏳ Synchronisation en cours, réessaie dans quelques secondes.",notif_test_dead:"❌ Ton abonnement n'est plus valide (adresse expirée). Il a été retiré : réactive tes notifications.",notif_test_error:"❌ Le serveur n'a pas pu envoyer. Réessaie dans un instant.",notif_test_network:"❌ Serveur injoignable. Vérifie ta connexion.",notif_test_sent:"✓ Notification test envoyée !",
     notif_test_nosub:"❌ Pas d'abonnement actif. Désactive puis réactive les notifications.",
@@ -1378,14 +1409,14 @@ const T = {
     pending_msg:"Einige Partien sind noch ausstehend, spiel bitte bald!",
     notif_unsupported:"Benachrichtigungen nicht unterstützt.",
     notif_denied:"Berechtigung verweigert. Öffne die Website-Einstellungen (🔒 in der Adressleiste) → Berechtigungen → Benachrichtigungen → Zulassen, dann lade die Seite neu.",
-    notif_denied_pwa:"Berechtigung verweigert. Gehe zu Einstellungen → Apps → dein Browser → Benachrichtigungen, und erlaube diese Seite. Dann öffne die App erneut.",
+    notif_denied_pwa:"Berechtigung verweigert. Gehe zu Einstellungen → Apps → dein Browser → Benachrichtigungen, und erlaube diese Seite. Dann öffne die App erneut.",notif_denied_ios:"Berechtigung verweigert. Gehe zu Einstellungen deines iPhones → Mitteilungen → « Chess Tour » und erlaube sie. Falls die App dort fehlt, entferne sie vom Home-Bildschirm und installiere sie erneut über die Website.",
     notif_on:"🔔 Benachrichtigungen aktiviert",
     notif_disable_btn:"🔕 Benachrichtigungen deaktivieren",
     notif_off:"🔕 Benachrichtigungen aktivieren",
     pref_officiel:"📢 Offizielle Ankündigungen",
     pref_match:"⚔️ Spielergebnisse",
     notif_enabled:"✓ Benachrichtigungen aktiviert!",
-    notif_disabled_warn:"⚠️ Benachrichtigungen deaktiviert. Du erhältst keine Turnierankündigungen und Ergebnisse mehr — du riskierst, eine Frist zu verpassen und kampflos zu verlieren. Aktiviere sie so bald wie möglich wieder.",notif_cut_server:"⚠️ Deine Benachrichtigungen wurden serverseitig abgeschaltet — aktiviere sie bei Bedarf erneut.",notif_lost:"⚠️ Deine Benachrichtigungen funktionierten nicht mehr (Abo vom Browser verloren). Aktiviere sie erneut, um keine Frist zu verpassen.",
+    notif_disabled_warn:"⚠️ Benachrichtigungen deaktiviert. Du erhältst keine Turnierankündigungen und Ergebnisse mehr — du riskierst, eine Frist zu verpassen und kampflos zu verlieren. Aktiviere sie so bald wie möglich wieder.",notif_cut_server:"⚠️ Deine Benachrichtigungen wurden serverseitig abgeschaltet — aktiviere sie bei Bedarf erneut.",notif_lost:"⚠️ Deine Benachrichtigungen funktionierten nicht mehr (Abo vom Browser verloren). Aktiviere sie erneut, um keine Frist zu verpassen.",notif_off_reminder:"🔕 Du erhältst keine Benachrichtigungen. Aktiviere sie, um keine Frist zu verpassen.",
     notif_test_body:"🔔 Dies ist eine Testbenachrichtigung.",
     notif_activating:"⏳ Wird aktiviert…",notif_test_sending:"📤 Test wird gesendet…",notif_test_no_entry:"⏳ Synchronisierung läuft, versuche es in ein paar Sekunden erneut.",notif_test_dead:"❌ Dein Abo ist nicht mehr gültig (Adresse abgelaufen). Es wurde entfernt: aktiviere die Benachrichtigungen erneut.",notif_test_error:"❌ Der Server konnte nicht senden. Versuche es gleich noch einmal.",notif_test_network:"❌ Server nicht erreichbar. Prüfe deine Verbindung.",notif_test_sent:"✓ Testbenachrichtigung gesendet!",
     notif_test_nosub:"❌ Kein aktives Abo. Deaktiviere und reaktiviere die Benachrichtigungen.",
@@ -1478,14 +1509,14 @@ const T = {
     pending_msg:"Some matches are still pending, please organize your games quickly!",
     notif_unsupported:"Notifications not supported on this browser.",
     notif_denied:"Permission denied. Open site settings (🔒 in address bar) → Permissions → Notifications → Allow, then reload the page.",
-    notif_denied_pwa:"Permission denied. Go to your phone's Settings → Apps → your browser → Notifications, and allow this site. Then reopen the app.",
+    notif_denied_pwa:"Permission denied. Go to your phone's Settings → Apps → your browser → Notifications, and allow this site. Then reopen the app.",notif_denied_ios:"Permission denied. Go to your iPhone's Settings → Notifications → « Chess Tour » and allow them. If the app isn't listed, remove it from your Home Screen and reinstall it from the site.",
     notif_on:"🔔 Notifications enabled",
     notif_disable_btn:"🔕 Disable notifications",
     notif_off:"🔕 Enable notifications",
     pref_officiel:"📢 Official announcements",
     pref_match:"⚔️ Match results",
     notif_enabled:"✓ Notifications enabled!",
-    notif_disabled_warn:"⚠️ Notifications disabled. You will no longer receive tournament announcements or results — you risk missing a deadline and forfeiting. Re-enable them as soon as possible.",notif_cut_server:"⚠️ Your notifications were cut off server-side — re-enable them if you wish.",notif_lost:"⚠️ Your notifications had stopped working (subscription lost by your browser). Re-enable them so you don't miss a deadline.",
+    notif_disabled_warn:"⚠️ Notifications disabled. You will no longer receive tournament announcements or results — you risk missing a deadline and forfeiting. Re-enable them as soon as possible.",notif_cut_server:"⚠️ Your notifications were cut off server-side — re-enable them if you wish.",notif_lost:"⚠️ Your notifications had stopped working (subscription lost by your browser). Re-enable them so you don't miss a deadline.",notif_off_reminder:"🔕 You're not receiving any notifications. Turn them on so you don't miss a deadline.",
     notif_test_body:"🔔 This is a test notification.",
     notif_activating:"⏳ Enabling…",notif_test_sending:"📤 Sending test…",notif_test_no_entry:"⏳ Still syncing, try again in a few seconds.",notif_test_dead:"❌ Your subscription is no longer valid (address expired). It was removed: enable notifications again.",notif_test_error:"❌ The server could not send. Try again in a moment.",notif_test_network:"❌ Server unreachable. Check your connection.",notif_test_sent:"✓ Test notification sent!",
     notif_test_nosub:"❌ No active subscription. Disable then re-enable notifications.",
@@ -1610,14 +1641,14 @@ const T = {
     pending_msg:"Alcune partite sono ancora in attesa, organizza le tue partite rapidamente!",
     notif_unsupported:"Notifiche non supportate su questo browser.",
     notif_denied:"Autorizzazione negata. Apri le impostazioni del sito (🔒 nella barra degli indirizzi) → Autorizzazioni → Notifiche → Consenti, poi ricarica la pagina.",
-    notif_denied_pwa:"Autorizzazione negata. Vai nelle Impostazioni del telefono → App → il tuo browser → Notifiche, e consenti questo sito. Poi riapri l'app.",
+    notif_denied_pwa:"Autorizzazione negata. Vai nelle Impostazioni del telefono → App → il tuo browser → Notifiche, e consenti questo sito. Poi riapri l'app.",notif_denied_ios:"Autorizzazione negata. Vai in Impostazioni del tuo iPhone → Notifiche → « Chess Tour » e consentile. Se l'app non compare, rimuovila dalla schermata Home e reinstallala dal sito.",
     notif_on:"🔔 Notifiche attivate",
     notif_disable_btn:"🔕 Disattivare le notifiche",
     notif_off:"🔕 Attivare le notifiche",
     pref_officiel:"📢 Annunci ufficiali",
     pref_match:"⚔️ Risultati delle partite",
     notif_enabled:"✓ Notifiche attivate!",
-    notif_disabled_warn:"⚠️ Notifiche disattivate. Non riceverai più gli annunci del torneo né i risultati — rischi di perdere una scadenza e di perdere a tavolino. Riattivale appena possibile.",notif_cut_server:"⚠️ Le tue notifiche sono state disattivate lato server — riattivale se lo desideri.",notif_lost:"⚠️ Le tue notifiche non funzionavano più (abbonamento perso dal browser). Riattivale per non perdere una scadenza.",
+    notif_disabled_warn:"⚠️ Notifiche disattivate. Non riceverai più gli annunci del torneo né i risultati — rischi di perdere una scadenza e di perdere a tavolino. Riattivale appena possibile.",notif_cut_server:"⚠️ Le tue notifiche sono state disattivate lato server — riattivale se lo desideri.",notif_lost:"⚠️ Le tue notifiche non funzionavano più (abbonamento perso dal browser). Riattivale per non perdere una scadenza.",notif_off_reminder:"🔕 Non ricevi alcuna notifica. Attivale per non perdere una scadenza.",
     notif_test_body:"🔔 Questa è una notifica di prova.",
     notif_activating:"⏳ Attivazione in corso…",notif_test_sending:"📤 Invio del test…",notif_test_no_entry:"⏳ Sincronizzazione in corso, riprova tra qualche secondo.",notif_test_dead:"❌ Il tuo abbonamento non è più valido (indirizzo scaduto). È stato rimosso: riattiva le notifiche.",notif_test_error:"❌ Il server non è riuscito a inviare. Riprova tra poco.",notif_test_network:"❌ Server irraggiungibile. Controlla la connessione.",notif_test_sent:"✓ Notifica di prova inviata!",
     notif_test_nosub:"❌ Nessun abbonamento attivo. Disattiva e riattiva le notifiche.",
@@ -1940,7 +1971,7 @@ function showMsg(id, text, ok=true, persist=false) {
   if (el._msgTimer) { clearTimeout(el._msgTimer); el._msgTimer = null; }
   el.className='msg '+(ok?'ok':'err');
   if (persist) {
-    el.innerHTML = '<span style="flex:1">' + esc(text) + '</span><span class="msg-close" onclick="this.parentElement.textContent=\'\';this.parentElement.className=\'msg\';" style="cursor:pointer;margin-left:8px;font-size:16px;font-weight:700;opacity:0.7">✕</span>';
+    el.innerHTML = '<span style="flex:1">' + esc(text) + '</span><span class="msg-close" onclick="var z=this.parentElement;z.textContent=\'\';z.className=\'msg\';z.style.display=\'\';z.style.alignItems=\'\';" style="cursor:pointer;margin-left:8px;font-size:16px;font-weight:700;opacity:0.7">✕</span>';
     el.style.display = 'flex';
     el.style.alignItems = 'flex-start';
   } else {
@@ -5096,6 +5127,30 @@ setTimeout(async () => {
           }
           localStorage.setItem('abct-notif', 'on');
           localStorage.setItem('abct-notif-subid', subId);
+          localStorage.removeItem('abct-notif-volontaire');
+        } else {
+          // Permission accordée, mais AUCUN abonnement côté navigateur, et aucun drapeau
+          // local. C'est l'état laissé par un effacement des données de site sans
+          // effacement des paramètres : la permission survit, l'abonnement non.
+          // Aucun des deux autres contrôles ne le voyait — l'un exige un abonnement
+          // vivant, l'autre exige le drapeau local. Le joueur restait éteint en silence.
+          if (localStorage.getItem('abct-notif-volontaire') === '1') {
+            // Coupure assumée : cet état EST ce que le joueur a demandé. Rien à signaler,
+            // sinon on lui répète à chaque ouverture qu'un problème existe alors que non.
+            console.log('[ABCT] Notifications coupées volontairement — aucun signal');
+          } else {
+            // ⚠️ Cas AMBIGU, et il l'est définitivement. Après un effacement des données
+            // de site, la seule information survivante est l'autorisation du navigateur,
+            // identique que le joueur ait perdu son abonnement OU qu'il l'ait coupé
+            // exprès avant d'effacer (le marqueur `abct-notif-volontaire` part avec le
+            // reste). Rien côté Firebase ne permet de trancher non plus : sans
+            // abonnement, l'identifiant qui désignerait l'entrée n'existe plus.
+            // Le message reste donc un CONSTAT — « tu ne reçois rien » — et n'affirme
+            // pas une panne qui n'a peut-être pas eu lieu. Le texte fort `notif_lost`
+            // est réservé au cas certain, plus bas, où le mémo local disait « activées ».
+            showMsg('notif-msg', t('notif_off_reminder'), false, true);
+            console.log('[ABCT] Permission accordée mais aucun abonnement navigateur — constat neutre affiché');
+          }
         }
       }
     } catch(e) { console.log('Recovery notif (non bloquant) :', e.message); }
@@ -5106,6 +5161,9 @@ setTimeout(async () => {
   // données effacées, révocation système). Le joueur ne reçoit plus rien et ne peut
   // pas le savoir. On le détecte ici, à chaque ouverture, et on le lui dit.
   if (localStorage.getItem('abct-notif') === 'on' && 'serviceWorker' in navigator && 'PushManager' in window) {
+    // Rattrapage : les joueurs abonnés AVANT l'introduction de ce marqueur ne l'ont
+    // pas. Le drapeau vaut 'on', donc l'activation a bien eu lieu — on le pose ici.
+    localStorage.setItem('abct-notif-deja', '1');
     try {
       const reg = await navigator.serviceWorker.ready;
       const vivant = await reg.pushManager.getSubscription();
@@ -5117,7 +5175,14 @@ setTimeout(async () => {
         localStorage.removeItem('abct-notif');
         localStorage.removeItem('abct-notif-subid');
         updateNotifBtn();
-        showMsg('notif-msg', t('notif_lost'), false, true);
+        // La cause n'est pas toujours la même, le message ne doit donc pas l'être.
+        // Permission REFUSÉE par le joueur : lui dire « abonnement perdu par ton
+        // navigateur » est faux et ne l'aide pas — il lui faut le chemin pour rouvrir
+        // l'autorisation, qui dépend de son appareil. Dans les autres cas (autorisation
+        // encore accordée mais abonnement disparu, ou autorisation remise à zéro), le
+        // constat de perte est exact.
+        const cleMort = (Notification.permission === 'denied') ? cleNotifBloquee() : 'notif_lost';
+        showMsg('notif-msg', t(cleMort), false, true);
         console.log('[ABCT] Abonnement perdu côté navigateur — entrée nettoyée, joueur prévenu');
       }
     } catch(e) { console.log('Vérification abonnement (non bloquant) :', e.message); }

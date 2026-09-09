@@ -1958,7 +1958,7 @@ function showMsg(id, text, ok=true, persist=false) {
   if (el._msgTimer) { clearTimeout(el._msgTimer); el._msgTimer = null; }
   el.className='msg '+(ok?'ok':'err');
   if (persist) {
-    el.innerHTML = '<span style="flex:1">' + esc(text) + '</span><span class="msg-close" onclick="this.parentElement.textContent=\'\';this.parentElement.className=\'msg\';" style="cursor:pointer;margin-left:8px;font-size:16px;font-weight:700;opacity:0.7">✕</span>';
+    el.innerHTML = '<span style="flex:1">' + esc(text) + '</span><span class="msg-close" onclick="var z=this.parentElement;z.textContent=\'\';z.className=\'msg\';z.style.display=\'\';z.style.alignItems=\'\';" style="cursor:pointer;margin-left:8px;font-size:16px;font-weight:700;opacity:0.7">✕</span>';
     el.style.display = 'flex';
     el.style.alignItems = 'flex-start';
   } else {

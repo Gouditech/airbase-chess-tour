@@ -171,10 +171,13 @@ async function runLateCheck(siteUrl) {
   }
 
   let body = L.entete(total);
-  // Plafond de lignes listees. Au-dela, la notification devient illisible meme
-  // depliee : le compte en en-tete et le lien vers la page des matchs prennent le
-  // relais. Ajustable ici sans rien toucher d'autre.
-  const MAX_LIGNES = 12;
+  // Plafond de lignes listees. Constate sur Android le 10 septembre : le systeme
+  // COUPE l'affichage vers la neuvieme ligne, meme notification depliee. Avec 12,
+  // le "... et N de plus" tombait hors du cadre et devenait invisible — on perdait
+  // l'information la plus utile, le nombre restant. A 6, l'en-tete, les six matchs
+  // et le compte du reste tiennent tous a l'ecran. La liste complete est a un clic,
+  // via le lien vers la page des matchs. Ajustable ici sans rien toucher d'autre.
+  const MAX_LIGNES = 6;
   lateGames.slice(0, MAX_LIGNES).forEach(g => { body += `• ${g.playerWhite} vs ${g.playerBlack} (${g.group})\n`; });
   lateFinals.slice(0, Math.max(0, MAX_LIGNES - lateGames.length)).forEach(f => { body += `• ${f.player1} vs ${f.player2} (${f.round})\n`; });
   if (total > MAX_LIGNES) body += L.plus(total - MAX_LIGNES);

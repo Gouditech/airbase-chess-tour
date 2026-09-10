@@ -6,10 +6,10 @@ const webpush = require('web-push');
 // les destinataires par langue et on envoie a chacun le texte qui lui convient.
 // Les abonnements anterieurs, sans langue, recoivent le francais.
 const TEXTES = {
-  fr: { victoire: '🏆 Victoire : ', nul: '🤝 Match nul', test: '✅ Test réussi — tes notifications fonctionnent.' },
-  de: { victoire: '🏆 Sieg: ',      nul: '🤝 Remis', test: '✅ Test erfolgreich — deine Benachrichtigungen funktionieren.' },
-  en: { victoire: '🏆 Winner: ',    nul: '🤝 Draw', test: '✅ Test successful — your notifications are working.' },
-  it: { victoire: '🏆 Vittoria: ',  nul: '🤝 Patta', test: '✅ Test riuscito — le tue notifiche funzionano.' }
+  fr: { victoire: '🏆 Victoire : ', nul: '🤝 Match nul', test: '✅ Test réussi — tes notifications fonctionnent.', fermer: 'Fermer', ronde: 'Ronde', groupe: 'Gr.' },
+  de: { victoire: '🏆 Sieg: ',      nul: '🤝 Remis', test: '✅ Test erfolgreich — deine Benachrichtigungen funktionieren.', fermer: 'Schliessen', ronde: 'Runde', groupe: 'Gr.' },
+  en: { victoire: '🏆 Winner: ',    nul: '🤝 Draw', test: '✅ Test successful — your notifications are working.', fermer: 'Close', ronde: 'Round', groupe: 'Gr.' },
+  it: { victoire: '🏆 Vittoria: ',  nul: '🤝 Patta', test: '✅ Test riuscito — le tue notifiche funzionano.', fermer: 'Chiudi', ronde: 'Turno', groupe: 'Gir.' }
 };
 function txt(lang, cle) { return (TEXTES[lang] || TEXTES.fr)[cle]; }
 
@@ -44,7 +44,11 @@ function restreindreSiMaintenance(liste, maintenance, subAdmin) {
 // "notifications activees" alors qu'il ne recevait plus rien — sans jamais l'apprendre.
 // `body` peut etre un texte (annonce manuelle, identique pour tous) ou une
 // FONCTION de la langue (resultat de match, traduit par destinataire).
-async function sendToAll(subscriptions, title, body, subPath) {
+// `etiquette` : identifiant unique de CET envoi. Le service worker s'en sert comme
+// `tag`. Une etiquette differente a chaque envoi = les notifications s'empilent au
+// lieu de se remplacer. Tous les destinataires d'un meme envoi la partagent, ce qui
+// est sans effet puisque chacun n'a qu'un appareil concerne a la fois.
+async function sendToAll(subscriptions, title, body, subPath, etiquette, siteUrl) {
   const corpsPour = (sub) => typeof body === 'function'
     ? body(sub.lang || 'fr')   // abonnements anterieurs sans langue -> francais
     : body;
@@ -62,7 +66,12 @@ async function sendToAll(subscriptions, title, body, subPath) {
         title: title || 'Air Base Chess Tour',
         body:  corpsPour(sub) || '',
         icon:  '/icon-192.jpg',
-        url:   'https://airbasechesstour.netlify.app/'
+        url:   siteUrl || 'https://airbasechesstour.netlify.app/',
+        tag:   etiquette || ('abct-' + Date.now()),
+        // Bouton de fermeture, dans la langue du destinataire. Non dessine par
+        // Safari (iOS/macOS) : la notification y garde simplement son comportement
+        // par defaut, sans erreur.
+        actions: [{ action: 'fermer', title: txt(sub.lang || 'fr', 'fermer') }]
       });
       await webpush.sendNotification(
         { endpoint: sub.endpoint, keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth } },
@@ -124,6 +133,15 @@ exports.handler = async function (event) {
   const origin = String(h.origin || h.referer || h.Origin || h.Referer || '');
   const IS_DEV = origin.includes('dev--');
   const SUB_PATH = IS_DEV ? 'subscriptions-dev' : 'subscriptions';
+  // ── ADRESSE OUVERTE AU CLIC : TOUJOURS LA PRODUCTION, MEME DEPUIS DEV ──
+  // C'est DELIBERE, ne pas "aligner sur l'environnement". Ce qui doit etre isole
+  // entre dev et prod, c'est QUI RECOIT (SUB_PATH ci-dessus) : une notification
+  // envoyee depuis dev ne part qu'aux abonnes de dev, et cela ne change pas.
+  // Mais dev n'est qu'un banc d'essai. Ouvrir dev depuis une notification exposerait
+  // un joueur a s'y installer une SECONDE fois l'application, a s'y abonner, puis a
+  // ne plus rien recevoir sur le vrai site sans comprendre pourquoi. Le site reel
+  // est unique : toutes les notifications y menent.
+  const SITE_URL = 'https://airbasechesstour.netlify.app/';
 
   try {
     // Le serveur va chercher LUI-MEME la liste d'abonnes du bon environnement.
@@ -152,7 +170,9 @@ exports.handler = async function (event) {
             title: 'Air Base Chess Tour',
             body: txt(cible.lang || 'fr', 'test'),
             icon: '/icon-192.jpg',
-            url: 'https://airbasechesstour.netlify.app/'
+            url: SITE_URL,
+            tag: 'abct-test-' + Date.now(),
+            actions: [{ action: 'fermer', title: txt(cible.lang || 'fr', 'fermer') }]
           }),
           { TTL: 60, urgency: 'high' }
         );
@@ -208,13 +228,65 @@ exports.handler = async function (event) {
       if (p1 == null || p2 == null || sc1 == null || sc2 == null)
         return { statusCode: 400, headers, body: JSON.stringify({ error: 'Score incomplet' }) };
 
-      const tourName = await fbRead('settings/name').catch(() => null);
       // Le corps depend de la langue du destinataire : on fournit une fonction
       // plutot qu'un texte fige, appelee une fois par groupe de langue.
+      // ── UNE SEULE LIGNE, INFORMATION ESSENTIELLE EN TETE ──
+      // Le corps tenait sur DEUX lignes : "Victoire : X" puis "A 0 - 1 X". Repliee,
+      // une notification n'affiche que la premiere : on savait qui avait gagne, ni
+      // contre qui ni sur quel score, et il fallait la deplier pour une information
+      // qui tient sur une ligne. Le vainqueur passe donc devant, suivi du score puis
+      // du perdant ; en cas de nul, l'ordre d'origine est conserve puisqu'il n'y a
+      // pas de vainqueur a mettre en avant.
+      // ── LE TITRE PORTE LE NOM DU TOURNOI, PAS LE VAINQUEUR ──
+      // Essaye le 10 septembre : mettre le vainqueur dans le titre le rendait lisible
+      // replie, mais faisait DISPARAITRE l'identification de la source. En vue groupee,
+      // Android n'affiche que le nom du NAVIGATEUR (« Chrome ») en en-tete : ni le logo,
+      // ni le domaine. Quatre lignes anonymes, sans moyen de savoir d'ou elles venaient.
+      // Le nom du tournoi est donc revenu au titre. Le vainqueur repasse en premiere
+      // ligne du corps : c'est la partie qui reste visible a cote du titre en vue groupee.
+      const tourName = await fbRead('settings/name').catch(() => null);
+      const gagnant = sc1 > sc2 ? p1 : (sc2 > sc1 ? p2 : null);
+      // CORPS : la ligne de score, dans l'ordre BLANCS puis NOIRS. Cet ordre est la
+      // convention des echecs et la seule facon de savoir qui jouait quelle couleur :
+      // ne pas le reordonner pour mettre le vainqueur devant.
+      // CONTEXTE en fin de corps : « · Ronde 1 · Gr. 2 ». Le nom du groupe est stocke
+      // EN FRANCAIS dans la base (litteralement « Groupe 1 ») : c'est une donnee, pas
+      // une cle. On en extrait donc le NUMERO et on reconstruit le libelle dans la
+      // langue du destinataire. Si le nom ne contient aucun chiffre, on n'affiche rien
+      // plutot que du francais a un germanophone.
+      // Les FINALES n'ont pas de contexte : leur ronde est un nom francais (« Quarts »,
+      // « Demis ») et non un numero, donc intraduisible de la meme facon. Le titre suffit.
+      // Noms de tours des finales. Ils sont stockes EN FRANCAIS dans la base
+      // ('Quarts', 'Demis'...) : ce sont des donnees, pas des cles. Cette table les
+      // traduit, au singulier puisqu'une notification concerne UN match. Un nom
+      // inconnu (renommage futur) n'affiche rien plutot que du francais a un
+      // germanophone. Les libelles doivent rester alignes sur roundNames d'index.html.
+      const TOURS = {
+        '32èmes':     { fr: '32e de finale',          de: 'Runde der letzten 64', en: 'Round of 64',     it: 'Trentaduesimi' },
+        '16èmes':     { fr: '16e de finale',          de: 'Sechzehntelfinale',    en: 'Round of 32',     it: 'Sedicesimi' },
+        '8èmes':      { fr: '8e de finale',           de: 'Achtelfinale',         en: 'Round of 16',     it: 'Ottavi' },
+        'Quarts':     { fr: 'Quart de finale',        de: 'Viertelfinale',        en: 'Quarter-final',   it: 'Quarti di finale' },
+        'Demis':      { fr: 'Demi-finale',            de: 'Halbfinale',           en: 'Semi-final',      it: 'Semifinale' },
+        'Finale':     { fr: 'Finale',                 de: 'Finale',               en: 'Final',           it: 'Finale' },
+        '3ème place': { fr: 'Match pour la 3e place', de: 'Spiel um Platz 3',     en: '3rd place match', it: 'Finale 3° posto' }
+      };
+      const contexte = (lang) => {
+        if (isFinal) {
+          const tour = TOURS[game.round];
+          return tour ? ` · ${tour[lang] || tour.fr}` : '';
+        }
+        const r = (typeof game.round === 'number') ? ` · ${txt(lang, 'ronde')} ${game.round}` : '';
+        const numGr = String(game.group || '').replace(/\D/g, '');
+        const g = numGr ? ` · ${txt(lang, 'groupe')} ${numGr}` : '';
+        return r + g;
+      };
+      // PREMIERE ligne : l'issue et le vainqueur — la seule visible en vue groupee.
+      // SECONDE ligne : le score dans l'ordre BLANCS puis NOIRS (convention des echecs,
+      // ne pas reordonner), suivi du contexte. Visible des que la notification est
+      // seule ou depliee.
       const corpsSelonLangue = (lang) => {
-        const gagnant = sc1 > sc2 ? p1 : (sc2 > sc1 ? p2 : null);
-        const headline = gagnant ? txt(lang, 'victoire') + gagnant : txt(lang, 'nul');
-        return `${headline}\n${p1} ${sc1} — ${sc2} ${p2}`;
+        const entete = gagnant ? txt(lang, 'victoire') + gagnant : txt(lang, 'nul');
+        return `${entete}\n${p1} ${sc1} — ${sc2} ${p2}${contexte(lang)}`;
       };
 
       // Marquer avant l'envoi pour eviter un double-envoi en cas d'appels rapproches.
@@ -225,7 +297,7 @@ exports.handler = async function (event) {
       if (!eligible.length)
         return { statusCode: 200, headers, body: JSON.stringify({ skipped: 'aucun abonne pour la categorie Match' }) };
 
-      const results = await sendToAll(eligible, tourName || 'Air Base Chess Tour', corpsSelonLangue, SUB_PATH);
+      const results = await sendToAll(eligible, tourName || 'Air Base Chess Tour', corpsSelonLangue, SUB_PATH, 'abct-resultat-' + Date.now(), SITE_URL);
       return { statusCode: 200, headers, body: JSON.stringify(results) };
     }
 
@@ -247,7 +319,7 @@ exports.handler = async function (event) {
     if (!eligibleOfficiel.length)
       return { statusCode: 200, headers, body: JSON.stringify({ skipped: 'aucun abonne pour la categorie Officiel' }) };
 
-    const results = await sendToAll(eligibleOfficiel, title, body, SUB_PATH);
+    const results = await sendToAll(eligibleOfficiel, title, body, SUB_PATH, 'abct-annonce-' + Date.now(), SITE_URL);
     return { statusCode: 200, headers, body: JSON.stringify(results) };
   } catch (e) {
     return { statusCode: 500, headers, body: JSON.stringify({ error: e.message }) };

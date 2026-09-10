@@ -50,6 +50,31 @@ async function runLateCheck(siteUrl) {
   if (!adminSub?.endpoint || !adminSub?.keys?.p256dh || !adminSub?.keys?.auth)
     return { sent: false, code: 'admin_sub_invalid', reason: 'Abonnement admin introuvable ou invalide' };
 
+  // ── LANGUE DE L'APPAREIL ADMIN ──
+  // L'appareil admin ne sera pas toujours celui de la meme personne. Son abonnement
+  // porte la langue choisie sur le site, exactement comme celui d'un joueur : on s'en
+  // sert ici. Les noms de joueurs, de groupes et de tours viennent des donnees et ne
+  // se traduisent pas. Repli en francais pour un abonnement anterieur sans langue.
+  const TXT = {
+    fr: { preuve: '✅ Alerte retard active — aucun match en retard actuellement.',
+          entete: n => `⏰ ${n} match${n > 1 ? 's' : ''} en retard\n`,
+          plus:   n => `… et ${n} de plus`,
+          fermer: 'Fermer' },
+    de: { preuve: '✅ Verspätungsalarm aktiv — derzeit ist kein Spiel überfällig.',
+          entete: n => `⏰ ${n} überfällige${n > 1 ? ' Spiele' : 's Spiel'}\n`,
+          plus:   n => `… und ${n} weitere`,
+          fermer: 'Schliessen' },
+    en: { preuve: '✅ Late alert active — no match currently overdue.',
+          entete: n => `⏰ ${n} overdue match${n > 1 ? 'es' : ''}\n`,
+          plus:   n => `… and ${n} more`,
+          fermer: 'Close' },
+    it: { preuve: '✅ Avviso ritardi attivo — nessuna partita in ritardo al momento.',
+          entete: n => `⏰ ${n} partit${n > 1 ? 'e' : 'a'} in ritardo\n`,
+          plus:   n => `… e altre ${n}`,
+          fermer: 'Chiudi' }
+  };
+  const L = TXT[adminSub.lang] || TXT.fr;
+
   const [settings, gamesObj, finalsObj] = await Promise.all([
     fbRead('settings').catch(() => ({})),
     fbRead('games').catch(() => ({})),
@@ -75,7 +100,24 @@ async function runLateCheck(siteUrl) {
       title: (settings.name || 'Air Base Chess Tour') + ' — Admin',
       body,
       icon: '/icon-192.jpg',
-      url: isDev ? 'https://dev--airbasechesstour.netlify.app/' : 'https://airbasechesstour.netlify.app/'
+      // Fragment #matches : un clic ouvre directement la liste des matchs, avec les
+      // echeances et la mise en page du site. La notification donne le compte et un
+      // apercu ; le site donne le detail complet.
+      // TOUJOURS la production, meme quand l'alerte part de dev : `isDev` gouverne
+      // QUI RECOIT (subPath, cle admin, maintenance), jamais le site ouvert au clic.
+      // Ouvrir dev inciterait a y installer une seconde application et a s'y abonner
+      // en doublon, pour ne plus rien recevoir sur le vrai site.
+      url: 'https://airbasechesstour.netlify.app/#matches',
+      // Etiquette PAR JOUR, et non par envoi. L'alerte de retard n'est pas une suite
+      // d'evenements distincts mais un meme etat qui evolue : "voici les matchs en
+      // retard aujourd'hui". Deux declenchements le meme jour (cron de 6h07 + controle
+      // manuel) doivent donc donner UNE notification, pas deux identiques. Un nouveau
+      // jour produit une nouvelle etiquette, donc une nouvelle alerte qui sonne.
+      // Une etiquette unique par envoi empilerait autant de notifications que de jours
+      // de retard, sans jamais disparaitre (requireInteraction).
+      // Date UTC : le cron est ancre sur UTC, la journee reste donc coherente.
+      tag: 'abct-retard-' + new Date().toISOString().slice(0, 10),
+      actions: [{ action: 'fermer', title: L.fermer }]
     });
     try {
       await webpush.sendNotification(
@@ -120,7 +162,7 @@ async function runLateCheck(siteUrl) {
     const lastPing = await fbRead('settings/lastLateAlertPing').catch(() => 0);
     const daysSincePing = (Date.now() - (lastPing || 0)) / (1000 * 60 * 60 * 24);
     if (daysSincePing >= 7) {
-      const echec = await envoyer('✅ Alerte retard active — aucun match en retard actuellement.', 'low');
+      const echec = await envoyer(L.preuve, 'low');
       if (echec) return echec;
       await fbWrite('settings/lastLateAlertPing', Date.now());
       return { sent: true, total: 0, code: 'proof_sent', reason: 'Aucun retard — preuve de vie hebdomadaire envoyée' };
@@ -128,10 +170,17 @@ async function runLateCheck(siteUrl) {
     return { sent: false, total: 0, code: 'nothing_late', reason: 'Aucun match en retard actuellement (rien à envoyer)' };
   }
 
-  let body = `⏰ ${total} match${total > 1 ? 's' : ''} en retard\n`;
-  lateGames.slice(0, 8).forEach(g => { body += `• ${g.playerWhite} vs ${g.playerBlack} (${g.group})\n`; });
-  lateFinals.slice(0, 8).forEach(f => { body += `• ${f.player1} vs ${f.player2} (${f.round})\n`; });
-  if (total > 8) body += `… et ${total - 8} de plus`;
+  let body = L.entete(total);
+  // Plafond de lignes listees. Constate sur Android le 10 septembre : le systeme
+  // COUPE l'affichage vers la neuvieme ligne, meme notification depliee. Avec 12,
+  // le "... et N de plus" tombait hors du cadre et devenait invisible — on perdait
+  // l'information la plus utile, le nombre restant. A 6, l'en-tete, les six matchs
+  // et le compte du reste tiennent tous a l'ecran. La liste complete est a un clic,
+  // via le lien vers la page des matchs. Ajustable ici sans rien toucher d'autre.
+  const MAX_LIGNES = 6;
+  lateGames.slice(0, MAX_LIGNES).forEach(g => { body += `• ${g.playerWhite} vs ${g.playerBlack} (${g.group})\n`; });
+  lateFinals.slice(0, Math.max(0, MAX_LIGNES - lateGames.length)).forEach(f => { body += `• ${f.player1} vs ${f.player2} (${f.round})\n`; });
+  if (total > MAX_LIGNES) body += L.plus(total - MAX_LIGNES);
 
   const echec = await envoyer(body.trim(), 'high');
   if (echec) return echec;

@@ -2477,7 +2477,7 @@ function renderPalmares() {
             <span style="width:32px;text-align:center;font-weight:700;color:var(--gold);font-size:15px">${i+1}</span>
             <span style="flex:1;min-width:0;font-size:14px;font-weight:${surligne?'700':'500'}">${affichage}</span>
             <span style="font-size:12px;color:var(--gray);white-space:nowrap;text-align:right;line-height:1.35">
-              <strong style="color:var(--dark);font-size:14px">${a.pts??0}</strong> ${t('palmares_pts')}${a.m?' · <strong style="color:var(--dark)">'+(a.pts/a.m).toFixed(2)+'</strong>/'+t('palmares_m'):''}<br>
+              <strong style="color:var(--dark);font-size:14px">${a.pts??0}</strong> ${t('palmares_pts')}${a.m?' · <strong style="color:var(--dark);font-size:14px">'+(a.pts/a.m).toFixed(2)+'</strong>/'+t('palmares_m'):''}<br>
               <span style="font-size:11px">${a.editions} ${t(a.editions>1?'palmares_editions':'palmares_edition')}${a.victoires?' · <span style="font-size:13px">🏆</span>'+a.victoires:''}${a.podiums?' · 🎖'+a.podiums:''}</span>
             </span>
           </div>

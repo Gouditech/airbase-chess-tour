@@ -1164,7 +1164,10 @@ document.getElementById('home-logo').src = 'data:image/jpeg;base64,/9j/4AAQSkZJR
 // apple-icon set in HTML
 
 // PWA Manifest
-// Manifest served as static file manifest.json
+// ATTENTION : le manifeste utilise est celui construit ci-dessous et injecte via une
+// URL blob dans la balise de manifeste de l'entete. Le fichier manifest.json du depot
+// n'est PAS lu par le site. Modifier ce fichier-la n'a aucun effet sur l'installation ;
+// c'est cet objet qu'il faut changer.
 const manifest = {
   name:"Air Base Chess Tour",short_name:"Chess Tour",start_url:"/",display:"standalone",
   background_color:"#1B1B1B",theme_color:"#1B1B1B",orientation:"portrait",
@@ -4213,7 +4216,10 @@ function generateWhatsAppMsg() {
   const s = state?.settings || {};
   const games = getGames();
   const finals = getFinals();
-  const url = window.location.href.split('?')[0];
+  // On retire le fragment EN PLUS des parametres : depuis l'ouverture par onglet
+  // (#matches), l'adresse courante peut en porter un, et il n'a rien a faire dans un
+  // lien partage sur WhatsApp.
+  const url = window.location.href.split('?')[0].split('#')[0];
   const tournamentName = s.name || 'Air Base Chess Tour';
 
   const lateGames = games.filter(g => {
@@ -5263,6 +5269,24 @@ window.addEventListener('online',()=>document.getElementById('offline-bar').styl
 document.querySelectorAll('.lang-btn').forEach((b,i)=>{
   b.classList.toggle('active',['fr','en','de','it'][i]===lang);
 });
+
+// ── OUVERTURE SUR UN ONGLET PRÉCIS (#matches, #groups, …) ──
+// Sert aux notifications : l'alerte de retard pointe vers la liste des matchs
+// plutôt que vers l'accueil, pour qu'un clic mène directement à l'information.
+// Le nom est vérifié contre la liste des onglets publics : un fragment inconnu,
+// absent ou malformé ne fait rien et l'accueil reste affiché.
+// `admin` est volontairement EXCLU : on ne saute pas dans l'espace d'organisation
+// par une simple URL, même s'il reste protégé par le PIN pour toute action.
+// L'écouteur `hashchange` couvre le cas où le site est DÉJÀ ouvert : le service
+// worker le renavigue vers la même adresse avec un autre fragment, ce qui ne
+// recharge pas la page et ne déclencherait donc rien sans lui.
+const ONGLETS_URL = ['home', 'groups', 'matches', 'finals', 'info'];
+function ouvrirOngletDepuisURL() {
+  const cible = (location.hash || '').replace('#', '');
+  if (cible && ONGLETS_URL.includes(cible)) showPage(cible);
+}
+ouvrirOngletDepuisURL();
+window.addEventListener('hashchange', ouvrirOngletDepuisURL);
 </script>
 </body>
 </html>

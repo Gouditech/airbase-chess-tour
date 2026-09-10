@@ -77,7 +77,24 @@ self.addEventListener('push', event => {
     badge: '/icon-192.jpg',
     data: data.url || 'https://airbasechesstour.netlify.app/',
     vibrate: [200, 100, 200],
-    tag: 'abct-notification',
+    // Étiquette portée par le message. Une étiquette IDENTIQUE fait REMPLACER la
+    // notification précédente au lieu de s'y ajouter — c'était le cas jusqu'ici pour
+    // toutes les notifications du site, annonces, résultats et alertes confondus.
+    // `renotify` était censé réalerter lors d'un remplacement, mais il est classé en
+    // « disponibilité limitée » et ignoré silencieusement par certains moteurs : le
+    // remplacement redevenait alors muet et la notification précédente disparaissait
+    // sans que personne ne s'en aperçoive. Chaque envoi fournit désormais sa propre
+    // étiquette, donc chaque notification est neuve et alerte par comportement par
+    // défaut, sans dépendre de `renotify`.
+    // Le repli garde l'ancienne valeur pour les messages émis par une version
+    // antérieure des fonctions serveur, le temps que le déploiement se propage.
+    tag: data.tag || 'abct-notification',
+    // Boutons fournis par l'envoi (un « Fermer » traduit). Chromium en dessine deux au
+    // maximum ; Safari, sur iOS comme sur macOS, n'en dessine aucun et se contente du
+    // titre, du corps, de l'étiquette et des données — sans erreur, l'option est
+    // simplement ignorée. Le tableau vide par défaut garde le comportement d'origine
+    // pour un message émis par une version antérieure des fonctions serveur.
+    actions: Array.isArray(data.actions) ? data.actions : [],
     requireInteraction: true,
     renotify: true
   };
@@ -85,12 +102,36 @@ self.addEventListener('push', event => {
 });
 
 self.addEventListener('notificationclick', event => {
-  event.notification.close();
+  // Bouton « Fermer » : on ferme, et rien d'autre.
+  if (event.action === 'fermer') { event.notification.close(); return; }
+
+  // Clic sur le corps : on ouvre le site SANS fermer la notification.
+  // La spécification demande qu'une notification reste disponible jusqu'à ce que
+  // l'utilisateur l'active ou la ferme, et ne prescrit aucune fermeture automatique.
+  // Sur Android, les moteurs Chromium ne ferment PAS au clic : l'appel à close() qui
+  // se trouvait ici était donc la seule cause de la disparition. Le joueur ouvrait le
+  // site et perdait le texte avant d'avoir pu le lire — pénible depuis un écran
+  // verrouillé, où la notification est tronquée.
+  // Là où le moteur ferme de lui-même (Safari sur iOS, Firefox et Chromium sur
+  // ordinateur selon le système), le comportement reste inchangé : ne pas appeler
+  // close() ne peut donc rien dégrader, seulement améliorer là où c'était possible.
   const url = event.notification.data || 'https://airbasechesstour.netlify.app/';
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
       for (const client of clientList) {
-        if ('focus' in client) return client.focus();
+        if ('focus' in client) {
+          // Le site est deja ouvert. Le focaliser ne change pas l'onglet affiche :
+          // si l'adresse porte un fragment (#matches pour une alerte de retard), on
+          // renavigue d'abord, sinon le clic ramene sur la page ou l'utilisateur
+          // etait reste. `navigate` n'existe pas partout et peut echouer : dans ce
+          // cas on retombe simplement sur la focalisation, comportement d'origine.
+          if ('navigate' in client) {
+            return client.navigate(url)
+              .then(c => (c || client).focus())
+              .catch(() => client.focus());
+          }
+          return client.focus();
+        }
       }
       if (clients.openWindow) return clients.openWindow(url);
     })

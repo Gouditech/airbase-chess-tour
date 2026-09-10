@@ -1277,7 +1277,7 @@ const T = {
     groups_empty:"Les groupes ne sont pas encore définis.",
     rank_player:"Joueur",rank_pts:"Pts",rank_mj:"MJ",rank_v:"V",rank_vn:"VN",
     rank_legend:"Pts·Points MJ·Matchs joués V·Victoires VN·Victoires Noirs TB·Buchholz",
-    matches_all:"Tous",matches_pending:"À jouer",matches_done:"Terminés",matches_empty:"Aucun match généré.",
+    matches_all:"Tous",matches_pending:"À jouer",matches_done:"Terminés",matches_jump_done:"Voir les matchs joués",matches_jump_pending:"Remonter aux matchs à jouer",matches_empty:"Aucun match généré.",
     enter_score:"Entrer le score",whites:"⬜ Blancs",blacks:"⬛ Noirs",
     finals_empty:"Les phases finales ne sont pas encore lancées.",
     admin_title:"Accès administrateur",admin_pin:"Code PIN",admin_login_btn:"Connexion",
@@ -1369,7 +1369,7 @@ const T = {
     groups_empty:"Gruppen wurden noch nicht festgelegt.",
     rank_player:"Spieler",rank_pts:"Pkt",rank_mj:"GP",rank_v:"S",rank_vn:"SS",
     rank_legend:"Pkt·Punkte GP·Gespielte Partien S·Siege SS·Siege mit Schwarz TB·Buchholz",
-    matches_all:"Alle",matches_pending:"Ausstehend",matches_done:"Beendet",matches_empty:"Keine Partien erstellt.",
+    matches_all:"Alle",matches_pending:"Ausstehend",matches_done:"Beendet",matches_jump_done:"Gespielte Spiele ansehen",matches_jump_pending:"Zurück zu den offenen Spielen",matches_empty:"Keine Partien erstellt.",
     enter_score:"Ergebnis eintragen",whites:"⬜ Weiß",blacks:"⬛ Schwarz",
     finals_empty:"Die Finalrunden haben noch nicht begonnen.",
     admin_title:"Administrator-Zugang",admin_pin:"PIN-Code",admin_login_btn:"Anmelden",
@@ -1547,7 +1547,7 @@ const T = {
     groups_empty:"Groups have not been set up yet.",
     rank_player:"Player",rank_pts:"Pts",rank_mj:"MP",rank_v:"W",rank_vn:"BW",
     rank_legend:"Pts·Points MP·Matches played W·Wins BW·Wins with Black TB·Buchholz",
-    matches_all:"All",matches_pending:"To play",matches_done:"Finished",matches_empty:"No matches generated.",
+    matches_all:"All",matches_pending:"To play",matches_done:"Finished",matches_jump_done:"See played matches",matches_jump_pending:"Back to matches to play",matches_empty:"No matches generated.",
     enter_score:"Enter score",whites:"⬜ White",blacks:"⬛ Black",
     finals_empty:"The final stage has not started yet.",
     admin_title:"Administrator access",admin_pin:"PIN code",admin_login_btn:"Login",
@@ -1679,7 +1679,7 @@ const T = {
     groups_empty:"I gruppi non sono ancora stati definiti.",
     rank_player:"Giocatore",rank_pts:"Pti",rank_mj:"PG",rank_v:"V",rank_vn:"VN",
     rank_legend:"Pti·Punti PG·Partite giocate V·Vittorie VN·Vittorie con Nero TB·Buchholz",
-    matches_all:"Tutti",matches_pending:"Da giocare",matches_done:"Terminati",matches_empty:"Nessuna partita generata.",
+    matches_all:"Tutti",matches_pending:"Da giocare",matches_done:"Terminati",matches_jump_done:"Vedi le partite giocate",matches_jump_pending:"Torna alle partite da giocare",matches_empty:"Nessuna partita generata.",
     enter_score:"Inserire il risultato",whites:"⬜ Bianco",blacks:"⬛ Nero",
     finals_empty:"Le fasi finali non sono ancora iniziate.",
     admin_title:"Accesso amministratore",admin_pin:"Codice PIN",admin_login_btn:"Accedi",
@@ -4216,10 +4216,12 @@ function generateWhatsAppMsg() {
   const s = state?.settings || {};
   const games = getGames();
   const finals = getFinals();
-  // On retire le fragment EN PLUS des parametres : depuis l'ouverture par onglet
-  // (#matches), l'adresse courante peut en porter un, et il n'a rien a faire dans un
-  // lien partage sur WhatsApp.
-  const url = window.location.href.split('?')[0].split('#')[0];
+  // ── TOUJOURS LA PRODUCTION, MEME GENERE DEPUIS DEV ──
+  // C'est DELIBERE, ne pas remplacer par l'adresse courante. Ce message part aux
+  // JOUEURS. Genere depuis dev, il les envoyait sur le banc d'essai : ils s'y
+  // installaient l'application, s'y abonnaient, et ne recevaient plus rien sur le
+  // vrai site sans comprendre pourquoi. Meme regle que pour les notifications.
+  const url = 'https://airbasechesstour.netlify.app/';
   const tournamentName = s.name || 'Air Base Chess Tour';
 
   const lateGames = games.filter(g => {
@@ -4662,10 +4664,31 @@ function renderMatches(){
     }
     htmlPending += matchCardHTML(g);
   });
-  document.getElementById('matches-pending').innerHTML=htmlPending;
+  // Bouton d'acces rapide aux matchs joues. Affiche seulement s'il y a des matchs des
+  // DEUX cotes : inutile en debut de tournoi (aucun joue) comme a la fin (aucun a jouer).
+  const sautVersJoues = (pending.length && done.length)
+    ? `<div style="text-align:center;margin:2px 0 12px">
+         <button class="pill inactive" onclick="allerSectionMatchs('matches-done-title')">${esc(t('matches_jump_done'))} (${done.length}) &#8595;</button>
+       </div>`
+    : '';
+  document.getElementById('matches-pending').innerHTML=sautVersJoues+htmlPending;
   document.getElementById('matches-done-title').textContent=done.length?t('matches_done')+' ('+done.length+')':'';
-  document.getElementById('matches-done').innerHTML=done.map(g=>matchCardHTML(g)).join('');
+  const retourVersAJouer = (pending.length && done.length)
+    ? `<div style="text-align:center;margin:2px 0 12px">
+         <button class="pill inactive" onclick="allerSectionMatchs('matches-pending-title')">&#8593; ${esc(t('matches_jump_pending'))}</button>
+       </div>`
+    : '';
+  document.getElementById('matches-done').innerHTML=retourVersAJouer+done.map(g=>matchCardHTML(g)).join('');
 }
+
+// Raccourci de navigation dans la page des matchs. Avec une trentaine de matchs en
+// attente, la section des matchs joues se trouve tres bas : ces deux boutons evitent
+// un long defilement dans les deux sens. Meme mecanisme que les autres deplacements
+// du site (defilement doux, bloc centre).
+window.allerSectionMatchs = function(cible) {
+  const el = document.getElementById(cible);
+  if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
 
 function matchCardHTML(g){
   const isEditing=editingMatchId===g.id;

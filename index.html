@@ -1216,7 +1216,7 @@ const T = {
     palmares_empty_edition:"Aucun classement pour cette édition.",
     palmares_name_required:"Le nom de l'édition est requis.",
     palmares_edition_added:"✓ Édition ajoutée !",
-    palmares_confirm_delete_edition:"Supprimer cette édition et tout son classement ?",palmares_confirm_delete_entry:"Supprimer {n} de ce classement ?",palmares_entry_deleted:"✓ {n} supprimé",palmares_entry_added:"✓ {n} ajouté",palmares_entry_saved:"✓ {n} enregistré",palmares_validate:"Valider la saisie",
+    palmares_confirm_delete_edition:"Supprimer cette édition et tout son classement ?",palmares_confirm_delete_entry:"Supprimer {n} de ce classement ?",palmares_entry_deleted:"✓ {n} supprimé",palmares_entry_added:"✓ {n} ajouté",palmares_entry_saved:"✓ {n} enregistré",palmares_sync_pseudo:"Le pseudo « {ancien} » apparaît aussi dans {n} autre(s) entrée(s) du palmarès.\n\nLes statistiques cumulées regroupent par pseudo : si tu ne corriges qu'ici, ce joueur comptera pour deux.\n\nRemplacer par « {nouveau} » partout ?",palmares_sync_done:"✅ Pseudo corrigé dans {n} autre(s) entrée(s).",palmares_validate:"Valider la saisie",
     palmares_bulk_added:"✓ {n} joueurs ajoutés !",
     palmares_year_placeholder:"Année",
     palmares_delete_edition:"Supprimer l'édition",
@@ -1351,7 +1351,7 @@ const T = {
     palmares_empty_edition:"Keine Rangliste für diese Ausgabe.",
     palmares_name_required:"Der Name der Ausgabe ist erforderlich.",
     palmares_edition_added:"✓ Ausgabe hinzugefügt!",
-    palmares_confirm_delete_edition:"Diese Ausgabe und ihre gesamte Rangliste löschen?",palmares_confirm_delete_entry:"{n} aus dieser Rangliste löschen?",palmares_entry_deleted:"✓ {n} gelöscht",palmares_entry_added:"✓ {n} hinzugefügt",palmares_entry_saved:"✓ {n} gespeichert",palmares_validate:"Eingabe bestätigen",
+    palmares_confirm_delete_edition:"Diese Ausgabe und ihre gesamte Rangliste löschen?",palmares_confirm_delete_entry:"{n} aus dieser Rangliste löschen?",palmares_entry_deleted:"✓ {n} gelöscht",palmares_entry_added:"✓ {n} hinzugefügt",palmares_entry_saved:"✓ {n} gespeichert",palmares_sync_pseudo:"Das Pseudonym « {ancien} » erscheint auch in {n} weiteren Einträgen der Bestenliste.\n\nDie Gesamtstatistik gruppiert nach Pseudonym: wird nur hier korrigiert, zählt dieser Spieler doppelt.\n\nÜberall durch « {nouveau} » ersetzen?",palmares_sync_done:"✅ Pseudonym in {n} weiteren Einträgen korrigiert.",palmares_validate:"Eingabe bestätigen",
     palmares_bulk_added:"✓ {n} Spieler hinzugefügt!",
     palmares_year_placeholder:"Jahr",
     palmares_delete_edition:"Ausgabe löschen",
@@ -1487,7 +1487,7 @@ const T = {
     palmares_empty_edition:"No ranking for this edition.",
     palmares_name_required:"The edition name is required.",
     palmares_edition_added:"✓ Edition added!",
-    palmares_confirm_delete_edition:"Delete this edition and its whole ranking?",palmares_confirm_delete_entry:"Remove {n} from this ranking?",palmares_entry_deleted:"✓ {n} removed",palmares_entry_added:"✓ {n} added",palmares_entry_saved:"✓ {n} saved",palmares_validate:"Confirm entry",
+    palmares_confirm_delete_edition:"Delete this edition and its whole ranking?",palmares_confirm_delete_entry:"Remove {n} from this ranking?",palmares_entry_deleted:"✓ {n} removed",palmares_entry_added:"✓ {n} added",palmares_entry_saved:"✓ {n} saved",palmares_sync_pseudo:"The nickname « {ancien} » also appears in {n} other hall of fame entries.\n\nOverall stats group by nickname: fixing it only here would count this player twice.\n\nReplace with « {nouveau} » everywhere?",palmares_sync_done:"✅ Nickname fixed in {n} other entries.",palmares_validate:"Confirm entry",
     palmares_bulk_added:"✓ {n} players added!",
     palmares_year_placeholder:"Year",
     palmares_delete_edition:"Delete edition",
@@ -1619,7 +1619,7 @@ const T = {
     palmares_empty_edition:"Nessuna classifica per questa edizione.",
     palmares_name_required:"Il nome dell'edizione è obbligatorio.",
     palmares_edition_added:"✓ Edizione aggiunta!",
-    palmares_confirm_delete_edition:"Eliminare questa edizione e tutta la sua classifica?",palmares_confirm_delete_entry:"Eliminare {n} da questa classifica?",palmares_entry_deleted:"✓ {n} eliminato",palmares_entry_added:"✓ {n} aggiunto",palmares_entry_saved:"✓ {n} salvato",palmares_validate:"Confermare l'inserimento",
+    palmares_confirm_delete_edition:"Eliminare questa edizione e tutta la sua classifica?",palmares_confirm_delete_entry:"Eliminare {n} da questa classifica?",palmares_entry_deleted:"✓ {n} eliminato",palmares_entry_added:"✓ {n} aggiunto",palmares_entry_saved:"✓ {n} salvato",palmares_sync_pseudo:"Il nickname « {ancien} » compare anche in {n} altra/e voce/i dell'albo d'oro.\n\nLe statistiche complessive raggruppano per nickname: correggendo solo qui, questo giocatore conterà doppio.\n\nSostituire con « {nouveau} » ovunque?",palmares_sync_done:"✅ Nickname corretto in {n} altra/e voce/i.",palmares_validate:"Confermare l'inserimento",
     palmares_bulk_added:"✓ {n} giocatori aggiunti!",
     palmares_year_placeholder:"Anno",
     palmares_delete_edition:"Eliminare l'edizione",
@@ -2747,6 +2747,8 @@ window.validerPalmaresEntry = async function(editionId, entryId) {
 
 window.updatePalmaresEntry = async function(editionId, entryId) {
   if (!isAdmin) return;
+  // Pseudo AVANT modification : c'est lui qui relie l'entree aux autres editions.
+  const ancienPseudo = (state?.palmares?.[editionId]?.entries?.[entryId]?.pseudo || '').trim();
   const pseudo = document.getElementById('pe-pseudo-' + entryId)?.value?.trim();
   if (!pseudo) return; // un pseudo vide n'a pas de sens : on ignore plutôt que d'effacer
   const name = document.getElementById('pe-name-' + entryId)?.value?.trim() || null;
@@ -2767,6 +2769,43 @@ window.updatePalmaresEntry = async function(editionId, entryId) {
     vB, nB, dB, vN, nN, dN,
     m, v: vB + vN, pts: vB + vN + 0.5 * (nB + nN)
   });
+
+  // ── LE PSEUDO EST STRUCTURANT, LE NOM NE L'EST PAS ──
+  // Les statistiques cumulees regroupent PAR PSEUDO : deux pseudos differents creent
+  // deux joueurs la ou il n'y en a qu'un. Corriger une faute de frappe dans UNE seule
+  // edition laisse donc l'historique coupe en deux, sans que rien ne le signale.
+  // Le NOM, lui, n'est pas propage : quelqu'un peut legitimement en changer entre deux
+  // editions, et l'affichage retient de toute facon le plus recent.
+  // On propose, on n'impose pas : il s'agit de reecrire une archive.
+  if (ancienPseudo && ancienPseudo.toLowerCase() !== pseudo.toLowerCase()) {
+    let ailleurs = 0;
+    Object.entries(state?.palmares || {}).forEach(([idEd, ed]) => {
+      if (idEd === editionId) return;
+      Object.values(ed.entries || {}).forEach(e => {
+        if (e?.pseudo && e.pseudo.trim().toLowerCase() === ancienPseudo.toLowerCase()) ailleurs++;
+      });
+    });
+    if (ailleurs) {
+      const question = t('palmares_sync_pseudo')
+        .replace(/\{ancien\}/g, ancienPseudo)
+        .replace(/\{nouveau\}/g, pseudo)
+        .replace(/\{n\}/g, ailleurs);
+      if (confirm(question)) {
+        let n = 0;
+        for (const [idEd, ed] of Object.entries(state?.palmares || {})) {
+          if (idEd === editionId) continue;
+          for (const [idEn, e] of Object.entries(ed.entries || {})) {
+            if (!e?.pseudo || e.pseudo.trim().toLowerCase() !== ancienPseudo.toLowerCase()) continue;
+            try {
+              await set(ref(db, 'palmares/' + idEd + '/entries/' + idEn + '/pseudo'), pseudo);
+              n++;
+            } catch (err) { console.log('[ABCT] Pseudo non propage sur ' + idEd + '/' + idEn + ' : ' + err.message); }
+          }
+        }
+        showToast(t('palmares_sync_done').replace(/\{n\}/g, n));
+      }
+    }
+  }
   // Sans retour visible, on ne sait pas si la saisie a bien été prise en compte.
   showToast(t('palmares_entry_saved').replace('{n}', pseudo));
 };

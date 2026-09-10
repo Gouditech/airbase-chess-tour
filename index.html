@@ -355,6 +355,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
         <p id="seeding-desc" style="font-size:12px;color:var(--gray);margin-bottom:12px"></p>
         <div id="seed-list"></div>
         <div id="seed-info" style="font-size:12px;color:var(--gray);margin:10px 0"></div>
+        <button class="btn btn-gray" style="margin-top:8px;font-size:13px" onclick="proposerSeedsPalmares()" id="seed-propose-btn">🏅 Proposer selon le palmarès</button>
         <div style="display:flex;gap:8px;margin-top:8px">
           <button class="btn btn-gray" style="flex:1" onclick="saveSeedOrder()" id="save-seed-btn">💾 Sauvegarder</button>
           <button class="btn btn-gold" style="flex:1" onclick="assignGroups()" id="assign-btn">⚽ Générer les groupes</button>
@@ -1261,12 +1262,12 @@ const T = {
     pin_mismatch:"Les nouveaux PIN ne correspondent pas.",
     pin_short:"PIN trop court (min. 4 caractères).",
     pin_changed:"PIN modifié avec succès !",
-    nick_taken:"Ce pseudo est déjà pris.",
+    nick_taken:"Ce pseudo est déjà pris.",edit_sync_pseudo:"⚠️ Ce joueur figure dans {n} édition(s) du palmarès sous le pseudo précédent.\n\nChanger son pseudo sans mettre le palmarès à jour coupera DÉFINITIVEMENT le lien avec son historique.\n\nMettre le palmarès à jour aussi ?",edit_sync_nom:"Ce joueur figure dans {n} édition(s) du palmarès sous le nom « {ancien} ».\n\nMettre le palmarès à jour avec le nouveau nom ?",edit_sync_done:"✅ Palmarès mis à jour ({n} entrées).",
     groups_reset:"Groupes réinitialisés. Les joueurs sont conservés.",
     finals_reset:"Phases finales réinitialisées.",
     pin_section:"Modifier le PIN",
     saved_ok:"Enregistré !",
-    seed_saved:"✓ Ordre sauvegardé",
+    seed_saved:"✓ Ordre sauvegardé",seed_propose_btn:"🏅 Proposer selon le palmarès",seed_propose_none:"Aucune édition au palmarès — impossible de proposer un ordre.",seed_propose_done:"Ordre proposé d'après « {edition} » : {n} classé(s), {r} à la suite. Vérifie puis sauvegarde.",
     groups_created:" groupes créés, ",
     matches_generated:" matchs générés.",
     seeding_done:[" groupes créés, "," matchs générés."],
@@ -1433,11 +1434,11 @@ const T = {
     pin_mismatch:"Die neuen PINs stimmen nicht überein.",
     pin_short:"PIN zu kurz (min. 4 Zeichen).",
     pin_changed:"PIN erfolgreich geändert!",
-    nick_taken:"Dieser Spitzname ist bereits vergeben.",
+    nick_taken:"Dieser Spitzname ist bereits vergeben.",edit_sync_pseudo:"⚠️ Dieser Spieler erscheint in {n} Ausgabe(n) der Bestenliste unter dem bisherigen Pseudonym.\n\nDas Pseudonym zu ändern, ohne die Bestenliste anzupassen, trennt die Verbindung zu seiner Historie ENDGÜLTIG.\n\nBestenliste ebenfalls aktualisieren?",edit_sync_nom:"Dieser Spieler erscheint in {n} Ausgabe(n) der Bestenliste unter dem Namen « {ancien} ».\n\nBestenliste mit dem neuen Namen aktualisieren?",edit_sync_done:"✅ Bestenliste aktualisiert ({n} Einträge).",
     groups_reset:"Gruppen zurückgesetzt. Spieler bleiben erhalten.",
     finals_reset:"Finalrunden zurückgesetzt.",
     saved_ok:"Gespeichert!",
-    seed_saved:"✓ Reihenfolge gespeichert",
+    seed_saved:"✓ Reihenfolge gespeichert",seed_propose_btn:"🏅 Nach Bestenliste vorschlagen",seed_propose_none:"Keine Ausgabe in der Bestenliste — Reihenfolge nicht möglich.",seed_propose_done:"Reihenfolge nach « {edition} » vorgeschlagen: {n} platziert, {r} danach. Prüfen und speichern.",
     groups_created:" Gruppen erstellt, ",
     matches_generated:" Partien generiert.",
     seeding_done:[" Gruppen erstellt, "," Partien generiert."],
@@ -1531,12 +1532,12 @@ const T = {
     pin_mismatch:"The new PINs don't match.",
     pin_short:"PIN too short (min. 4 characters).",
     pin_changed:"PIN changed successfully!",
-    nick_taken:"This nickname is already taken.",
+    nick_taken:"This nickname is already taken.",edit_sync_pseudo:"⚠️ This player appears in {n} edition(s) of the hall of fame under the previous nickname.\n\nChanging the nickname without updating the hall of fame will PERMANENTLY break the link to their history.\n\nUpdate the hall of fame too?",edit_sync_nom:"This player appears in {n} edition(s) of the hall of fame under the name « {ancien} ».\n\nUpdate the hall of fame with the new name?",edit_sync_done:"✅ Hall of fame updated ({n} entries).",
     groups_reset:"Groups reset. Players are kept.",
     finals_reset:"Final stage reset.",
     pin_section:"Change PIN",
     saved_ok:"Saved!",
-    seed_saved:"✓ Order saved",
+    seed_saved:"✓ Order saved",seed_propose_btn:"🏅 Suggest from hall of fame",seed_propose_none:"No edition in the hall of fame — cannot suggest an order.",seed_propose_done:"Order suggested from « {edition} »: {n} ranked, {r} after. Review then save.",
     groups_created:" Gruppen erstellt, ",
     matches_generated:" Partien generiert.",
     seeding_done:[" Gruppen erstellt, "," Partien generiert."],
@@ -1663,12 +1664,12 @@ const T = {
     pin_mismatch:"I nuovi PIN non corrispondono.",
     pin_short:"PIN troppo corto (min. 4 caratteri).",
     pin_changed:"PIN modificato con successo!",
-    nick_taken:"Questo soprannome è già utilizzato.",
+    nick_taken:"Questo soprannome è già utilizzato.",edit_sync_pseudo:"⚠️ Questo giocatore compare in {n} edizione/i dell'albo d'oro con il nickname precedente.\n\nCambiare il nickname senza aggiornare l'albo d'oro interromperà DEFINITIVAMENTE il legame con il suo storico.\n\nAggiornare anche l'albo d'oro?",edit_sync_nom:"Questo giocatore compare in {n} edizione/i dell'albo d'oro con il nome « {ancien} ».\n\nAggiornare l'albo d'oro con il nuovo nome?",edit_sync_done:"✅ Albo d'oro aggiornato ({n} voci).",
     groups_reset:"Gruppi azzerati. I giocatori sono conservati.",
     finals_reset:"Fasi finali azzerate.",
     pin_section:"Modificare il PIN",
     saved_ok:"Salvato!",
-    seed_saved:"✓ Ordine salvato",
+    seed_saved:"✓ Ordine salvato",seed_propose_btn:"🏅 Proponi dall'albo d'oro",seed_propose_none:"Nessuna edizione nell'albo d'oro — impossibile proporre un ordine.",seed_propose_done:"Ordine proposto da « {edition} »: {n} classificati, {r} a seguire. Verifica e salva.",
     groups_created:" gruppi creati, ",
     matches_generated:" partite generate.",
     seeding_done:[" gruppi creati, "," partite generate."],
@@ -1833,6 +1834,7 @@ function applyTranslations() {
   setT('set-label-final', 'set_final');
   setT('whatsapp-title', 'whatsapp_title');
   setT('save-seed-btn', 'save_seed');
+  setT('seed-propose-btn', 'seed_propose_btn');
   setT('offline-text', 'offline');
   setT('info-palmares-title', 'info_palmares_title');
   setT('palmares-admin-title', 'palmares_admin_title');
@@ -1981,6 +1983,19 @@ function showMsg(id, text, ok=true, persist=false) {
     el.textContent = text;
     el.style.display = '';
     el._msgTimer = setTimeout(()=>{ el.textContent=''; el.className='msg'; el._msgTimer=null; }, 3500);
+  }
+  // ── RAMENER LE MESSAGE A L'ECRAN ──
+  // Une zone de message peut se trouver hors du champ visible : sous un formulaire de
+  // plusieurs champs avec le clavier ouvert, ou sous une longue liste d'editions. Le
+  // joueur ne voit rien et croit que son geste n'a rien produit. C'etait le cas du
+  // formulaire d'inscription et du palmares admin.
+  // On ne fait defiler QUE si la zone est reellement hors ecran : dans la plupart des
+  // cas elle est deja sous les yeux et rien ne bouge. `offsetParent` ecarte les zones
+  // d'une page masquee, dont le rectangle vaut zero et passerait pour hors ecran.
+  if (el.offsetParent !== null && el.scrollIntoView) {
+    const r = el.getBoundingClientRect();
+    const h = window.innerHeight || document.documentElement.clientHeight;
+    if (r.bottom < 40 || r.top > h - 40) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 }
 function esc(s) { if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -3146,6 +3161,32 @@ function trouverDansPalmares(pseudo) {
 // Met le nom à jour dans TOUTES les éditions, pour ce pseudo uniquement.
 // Écrit entrée par entrée sur le seul champ `name` : aucun risque d'écraser un
 // rang ou une statistique, et une écriture qui échoue n'affecte pas les autres.
+// Réécrit le PSEUDO et le NOM dans toutes les entrées du palmarès portant l'ancien
+// pseudo. Utilisée par l'édition d'un joueur (admin), qui pouvait jusqu'ici renommer
+// quelqu'un — ou pire, corriger son pseudo — sans que le palmarès suive. Un pseudo
+// modifié sans propagation coupe DEFINITIVEMENT le lien avec l'historique : c'est lui,
+// et non le nom, qui relie un joueur à ses éditions passées.
+// Les deux champs sont écrits séparément et seulement s'ils changent : une entrée dont
+// le nom est déjà bon ne voit pas son nom réécrit, et l'échec d'une écriture n'empêche
+// pas les autres.
+async function harmoniserPalmares(ancienPseudo, nouveauPseudo, nouveauNom) {
+  const q = ancienPseudo.trim().toLowerCase();
+  let n = 0;
+  for (const [idEd, ed] of Object.entries(state?.palmares || {})) {
+    for (const [idEn, e] of Object.entries(ed.entries || {})) {
+      if (!e?.pseudo || e.pseudo.trim().toLowerCase() !== q) continue;
+      try {
+        if (e.pseudo !== nouveauPseudo)
+          await set(ref(db, 'palmares/' + idEd + '/entries/' + idEn + '/pseudo'), nouveauPseudo);
+        if (e.name !== nouveauNom)
+          await set(ref(db, 'palmares/' + idEd + '/entries/' + idEn + '/name'), nouveauNom);
+        n++;
+      } catch (err) { console.log('[ABCT] Palmarès non mis à jour sur ' + idEd + '/' + idEn + ' : ' + err.message); }
+    }
+  }
+  return n;
+}
+
 async function harmoniserNomPalmares(pseudo, nouveauNom) {
   const q = pseudo.trim().toLowerCase();
   let n = 0;
@@ -3163,26 +3204,15 @@ async function harmoniserNomPalmares(pseudo, nouveauNom) {
 }
 
 window.registerPlayer = async function() {
-  // La zone de message se trouve SOUS le bouton, lui-meme sous trois champs de saisie.
-  // Sur mobile, clavier ouvert, elle tombe hors ecran : le joueur ne voit rien et croit
-  // que son geste n'a rien produit. Le succes faisait deja defiler la page jusqu'a elle ;
-  // les erreurs, qu'on remarque encore MOINS puisqu'on s'attend a ce que ca marche, ne le
-  // faisaient pas. Ce raccourci applique le meme traitement aux deux, et evite que les
-  // deux comportements divergent a nouveau.
-  const messageInscription = (texte, ok, persist) => {
-    showMsg('reg-msg', texte, ok, persist);
-    const zone = document.getElementById('reg-msg');
-    if (zone && zone.scrollIntoView) zone.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  };
   // Le formulaire n'est affiché que pendant la phase d'inscription, mais la fonction
   // elle-même ne le vérifiait pas : garde de sécurité en profondeur.
-  if (state?.settings?.status !== 'registration') { messageInscription(t('reg_closed'), false); return; }
+  if (state?.settings?.status !== 'registration') { showMsg('reg-msg', t('reg_closed'), false); return; }
   const nick=document.getElementById('reg-nick').value.trim();
   const name=document.getElementById('reg-name').value.trim();
   const sector=document.getElementById('reg-sector').value.trim();
-  if (!nick||!name) { messageInscription(t('reg_err_fields'), false); return; }
+  if (!nick||!name) { showMsg('reg-msg', t('reg_err_fields'), false); return; }
   const players=state?.players||{};
-  if (Object.values(players).some(p=>p.nickname.toLowerCase()===nick.toLowerCase())) { messageInscription(t('reg_err_exists'), false); return; }
+  if (Object.values(players).some(p=>p.nickname.toLowerCase()===nick.toLowerCase())) { showMsg('reg-msg', t('reg_err_exists'), false); return; }
   // ── RECONNAISSANCE D'UN ANCIEN PARTICIPANT ──
   // Le pseudo Chess.com est stable, le nom saisi ne l'est pas : « Dupont R. » une
   // année, « Roger D. » la suivante. Les statistiques fusionnent quand même (elles
@@ -3209,7 +3239,7 @@ window.registerPlayer = async function() {
   document.getElementById('reg-nick').value='';
   document.getElementById('reg-name').value='';
   document.getElementById('reg-sector').value='';
-  messageInscription(t('reg_ok')+nick+' 🎉');
+  showMsg('reg-msg', t('reg_ok')+nick+' 🎉');
 };
 
 window.removePlayer = async function(id) {
@@ -3382,15 +3412,85 @@ window.saveEditPlayer = async function(id) {
     alert(t('nick_taken'));
     return;
   }
+  // Identité AVANT modification : c'est elle qui relie le joueur au palmarès.
+  const avant = players.find(p => p.id === id) || {};
+  const ancienPseudo = (avant.nickname || '').trim();
+
   editingPlayerId = null;
   await set(ref(db,'players/'+id+'/nickname'), nick);
   await set(ref(db,'players/'+id+'/name'), name);
   await set(ref(db,'players/'+id+'/sector'), sector||'');
+
+  // ── PROPAGATION AU PALMARÈS ──
+  // Ce chemin ne touchait PAS le palmarès, contrairement à la fenêtre de reconnaissance
+  // à l'inscription. Un nom corrigé ici restait donc différent dans l'historique, et un
+  // pseudo corrigé coupait le lien sans prévenir.
+  // On demande plutôt que de propager en silence : l'admin modifie souvent la fiche de
+  // QUELQU'UN D'AUTRE, et réécrire un historique sans le dire va contre la ligne du site.
+  const histo = trouverDansPalmares(ancienPseudo);
+  const pseudoChange = ancienPseudo.toLowerCase() !== nick.toLowerCase();
+  const nomDiffere = !!(histo && histo.name && histo.name.trim() !== name.trim());
+  if (histo && (pseudoChange || nomDiffere)) {
+    const question = t(pseudoChange ? 'edit_sync_pseudo' : 'edit_sync_nom')
+      .replace(/\{n\}/g, histo.editions)
+      .replace(/\{ancien\}/g, histo.name || ancienPseudo);
+    if (confirm(question)) {
+      const n = await harmoniserPalmares(ancienPseudo, nick, name);
+      showMsg('actions-msg', t('edit_sync_done').replace(/\{n\}/g, n), true);
+    }
+  }
 };
 
 window.cancelEditPlayer = function() {
   editingPlayerId = null;
   refreshPlayerLists();
+};
+
+// ── PROPOSITION DE TETES DE SERIE D'APRES LE PALMARES ──
+// Les seeds valaient jusqu'ici l'ordre d'ARRIVEE des inscriptions, ce qui n'a aucun
+// rapport avec le niveau. Ce bouton propose un ordre fonde sur le classement final de
+// la DERNIERE edition du palmares — celle du haut dans l'admin, c'est-a-dire `order`
+// le plus eleve, la meme convention que partout ailleurs.
+//
+// Regle retenue avec l'utilisateur :
+//   1. les joueurs classes dans cette derniere edition, dans l'ordre de leur rang ;
+//   2. tous les autres a la suite, dans leur ordre courant — nouveaux venus ET anciens
+//      qui n'ont pas joue la derniere edition.
+// Un classement fonde sur les statistiques generales serait plus juste sur la duree,
+// mais le vainqueur de l'an passe ne comprendrait pas de ne pas etre tete de serie.
+//
+// Le rattachement se fait par PSEUDO, comme partout : le nom change, pas le pseudo.
+// RIEN N'EST ENREGISTRE : seul l'ordre affiche change. L'admin verifie, ajuste avec
+// les fleches, puis sauvegarde s'il est d'accord.
+window.proposerSeedsPalmares = function() {
+  if (!isAdmin) return;
+  const editions = Object.entries(state?.palmares || {})
+    .sort((a, b) => (b[1].order ?? 0) - (a[1].order ?? 0));
+  if (!editions.length) { showMsg('seeding-msg', t('seed_propose_none'), false); return; }
+
+  const [, derniere] = editions[0];
+  // rang par pseudo, en minuscules : le palmares peut porter une casse differente
+  const rangs = {};
+  Object.values(derniere.entries || {}).forEach(e => {
+    if (!e?.pseudo) return;
+    const r = (typeof e.rank === 'number') ? e.rank : 999;
+    const cle = e.pseudo.trim().toLowerCase();
+    if (!(cle in rangs) || r < rangs[cle]) rangs[cle] = r;
+  });
+
+  const classes = [], autres = [];
+  seedOrder.forEach(p => {
+    const cle = (p.nickname || '').trim().toLowerCase();
+    (cle in rangs ? classes : autres).push(p);
+  });
+  classes.sort((a, b) => rangs[a.nickname.trim().toLowerCase()] - rangs[b.nickname.trim().toLowerCase()]);
+  seedOrder = classes.concat(autres);
+  renderSeedList();
+
+  showMsg('seeding-msg', t('seed_propose_done')
+    .replace(/\{edition\}/g, (derniere.name || '') + ' ' + (derniere.year || ''))
+    .replace(/\{n\}/g, classes.length)
+    .replace(/\{r\}/g, autres.length), true);
 };
 
 window.saveSeedOrder = async function() {

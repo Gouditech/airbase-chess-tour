@@ -3163,15 +3163,26 @@ async function harmoniserNomPalmares(pseudo, nouveauNom) {
 }
 
 window.registerPlayer = async function() {
+  // La zone de message se trouve SOUS le bouton, lui-meme sous trois champs de saisie.
+  // Sur mobile, clavier ouvert, elle tombe hors ecran : le joueur ne voit rien et croit
+  // que son geste n'a rien produit. Le succes faisait deja defiler la page jusqu'a elle ;
+  // les erreurs, qu'on remarque encore MOINS puisqu'on s'attend a ce que ca marche, ne le
+  // faisaient pas. Ce raccourci applique le meme traitement aux deux, et evite que les
+  // deux comportements divergent a nouveau.
+  const messageInscription = (texte, ok, persist) => {
+    showMsg('reg-msg', texte, ok, persist);
+    const zone = document.getElementById('reg-msg');
+    if (zone && zone.scrollIntoView) zone.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
   // Le formulaire n'est affiché que pendant la phase d'inscription, mais la fonction
   // elle-même ne le vérifiait pas : garde de sécurité en profondeur.
-  if (state?.settings?.status !== 'registration') { showMsg('reg-msg', t('reg_closed'), false); return; }
+  if (state?.settings?.status !== 'registration') { messageInscription(t('reg_closed'), false); return; }
   const nick=document.getElementById('reg-nick').value.trim();
   const name=document.getElementById('reg-name').value.trim();
   const sector=document.getElementById('reg-sector').value.trim();
-  if (!nick||!name) { showMsg('reg-msg', t('reg_err_fields'), false); return; }
+  if (!nick||!name) { messageInscription(t('reg_err_fields'), false); return; }
   const players=state?.players||{};
-  if (Object.values(players).some(p=>p.nickname.toLowerCase()===nick.toLowerCase())) { showMsg('reg-msg', t('reg_err_exists'), false); return; }
+  if (Object.values(players).some(p=>p.nickname.toLowerCase()===nick.toLowerCase())) { messageInscription(t('reg_err_exists'), false); return; }
   // ── RECONNAISSANCE D'UN ANCIEN PARTICIPANT ──
   // Le pseudo Chess.com est stable, le nom saisi ne l'est pas : « Dupont R. » une
   // année, « Roger D. » la suivante. Les statistiques fusionnent quand même (elles
@@ -3198,11 +3209,7 @@ window.registerPlayer = async function() {
   document.getElementById('reg-nick').value='';
   document.getElementById('reg-name').value='';
   document.getElementById('reg-sector').value='';
-  showMsg('reg-msg', t('reg_ok')+nick+' 🎉');
-  // Le message se trouve sous le bouton, en bas d'un formulaire de quatre champs :
-  // après inscription il est hors écran, et le joueur croit que rien ne s'est passé.
-  const zone = document.getElementById('reg-msg');
-  if (zone && zone.scrollIntoView) zone.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  messageInscription(t('reg_ok')+nick+' 🎉');
 };
 
 window.removePlayer = async function(id) {

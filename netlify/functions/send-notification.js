@@ -6,10 +6,10 @@ const webpush = require('web-push');
 // les destinataires par langue et on envoie a chacun le texte qui lui convient.
 // Les abonnements anterieurs, sans langue, recoivent le francais.
 const TEXTES = {
-  fr: { victoire: '🏆 Victoire : ', nul: '🤝 Match nul', test: '✅ Test réussi — tes notifications fonctionnent.' },
-  de: { victoire: '🏆 Sieg: ',      nul: '🤝 Remis', test: '✅ Test erfolgreich — deine Benachrichtigungen funktionieren.' },
-  en: { victoire: '🏆 Winner: ',    nul: '🤝 Draw', test: '✅ Test successful — your notifications are working.' },
-  it: { victoire: '🏆 Vittoria: ',  nul: '🤝 Patta', test: '✅ Test riuscito — le tue notifiche funzionano.' }
+  fr: { victoire: '🏆 Victoire : ', nul: '🤝 Match nul', test: '✅ Test réussi — tes notifications fonctionnent.', fermer: 'Fermer' },
+  de: { victoire: '🏆 Sieg: ',      nul: '🤝 Remis', test: '✅ Test erfolgreich — deine Benachrichtigungen funktionieren.', fermer: 'Schliessen' },
+  en: { victoire: '🏆 Winner: ',    nul: '🤝 Draw', test: '✅ Test successful — your notifications are working.', fermer: 'Close' },
+  it: { victoire: '🏆 Vittoria: ',  nul: '🤝 Patta', test: '✅ Test riuscito — le tue notifiche funzionano.', fermer: 'Chiudi' }
 };
 function txt(lang, cle) { return (TEXTES[lang] || TEXTES.fr)[cle]; }
 
@@ -44,7 +44,11 @@ function restreindreSiMaintenance(liste, maintenance, subAdmin) {
 // "notifications activees" alors qu'il ne recevait plus rien — sans jamais l'apprendre.
 // `body` peut etre un texte (annonce manuelle, identique pour tous) ou une
 // FONCTION de la langue (resultat de match, traduit par destinataire).
-async function sendToAll(subscriptions, title, body, subPath) {
+// `etiquette` : identifiant unique de CET envoi. Le service worker s'en sert comme
+// `tag`. Une etiquette differente a chaque envoi = les notifications s'empilent au
+// lieu de se remplacer. Tous les destinataires d'un meme envoi la partagent, ce qui
+// est sans effet puisque chacun n'a qu'un appareil concerne a la fois.
+async function sendToAll(subscriptions, title, body, subPath, etiquette, siteUrl) {
   const corpsPour = (sub) => typeof body === 'function'
     ? body(sub.lang || 'fr')   // abonnements anterieurs sans langue -> francais
     : body;
@@ -62,7 +66,12 @@ async function sendToAll(subscriptions, title, body, subPath) {
         title: title || 'Air Base Chess Tour',
         body:  corpsPour(sub) || '',
         icon:  '/icon-192.jpg',
-        url:   'https://airbasechesstour.netlify.app/'
+        url:   siteUrl || 'https://airbasechesstour.netlify.app/',
+        tag:   etiquette || ('abct-' + Date.now()),
+        // Bouton de fermeture, dans la langue du destinataire. Non dessine par
+        // Safari (iOS/macOS) : la notification y garde simplement son comportement
+        // par defaut, sans erreur.
+        actions: [{ action: 'fermer', title: txt(sub.lang || 'fr', 'fermer') }]
       });
       await webpush.sendNotification(
         { endpoint: sub.endpoint, keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth } },
@@ -124,6 +133,15 @@ exports.handler = async function (event) {
   const origin = String(h.origin || h.referer || h.Origin || h.Referer || '');
   const IS_DEV = origin.includes('dev--');
   const SUB_PATH = IS_DEV ? 'subscriptions-dev' : 'subscriptions';
+  // ── ADRESSE OUVERTE AU CLIC : TOUJOURS LA PRODUCTION, MEME DEPUIS DEV ──
+  // C'est DELIBERE, ne pas "aligner sur l'environnement". Ce qui doit etre isole
+  // entre dev et prod, c'est QUI RECOIT (SUB_PATH ci-dessus) : une notification
+  // envoyee depuis dev ne part qu'aux abonnes de dev, et cela ne change pas.
+  // Mais dev n'est qu'un banc d'essai. Ouvrir dev depuis une notification exposerait
+  // un joueur a s'y installer une SECONDE fois l'application, a s'y abonner, puis a
+  // ne plus rien recevoir sur le vrai site sans comprendre pourquoi. Le site reel
+  // est unique : toutes les notifications y menent.
+  const SITE_URL = 'https://airbasechesstour.netlify.app/';
 
   try {
     // Le serveur va chercher LUI-MEME la liste d'abonnes du bon environnement.
@@ -152,7 +170,9 @@ exports.handler = async function (event) {
             title: 'Air Base Chess Tour',
             body: txt(cible.lang || 'fr', 'test'),
             icon: '/icon-192.jpg',
-            url: 'https://airbasechesstour.netlify.app/'
+            url: SITE_URL,
+            tag: 'abct-test-' + Date.now(),
+            actions: [{ action: 'fermer', title: txt(cible.lang || 'fr', 'fermer') }]
           }),
           { TTL: 60, urgency: 'high' }
         );
@@ -225,7 +245,7 @@ exports.handler = async function (event) {
       if (!eligible.length)
         return { statusCode: 200, headers, body: JSON.stringify({ skipped: 'aucun abonne pour la categorie Match' }) };
 
-      const results = await sendToAll(eligible, tourName || 'Air Base Chess Tour', corpsSelonLangue, SUB_PATH);
+      const results = await sendToAll(eligible, tourName || 'Air Base Chess Tour', corpsSelonLangue, SUB_PATH, 'abct-resultat-' + Date.now(), SITE_URL);
       return { statusCode: 200, headers, body: JSON.stringify(results) };
     }
 
@@ -247,7 +267,7 @@ exports.handler = async function (event) {
     if (!eligibleOfficiel.length)
       return { statusCode: 200, headers, body: JSON.stringify({ skipped: 'aucun abonne pour la categorie Officiel' }) };
 
-    const results = await sendToAll(eligibleOfficiel, title, body, SUB_PATH);
+    const results = await sendToAll(eligibleOfficiel, title, body, SUB_PATH, 'abct-annonce-' + Date.now(), SITE_URL);
     return { statusCode: 200, headers, body: JSON.stringify(results) };
   } catch (e) {
     return { statusCode: 500, headers, body: JSON.stringify({ error: e.message }) };

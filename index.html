@@ -50,9 +50,9 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
 .badge-done{background:#F3E5F5;color:#6A1B9A;border-color:#D3A8E0}
 .rank-table{width:100%;border-collapse:collapse;font-size:12px}
 .rank-table th{padding:5px 6px;font-weight:700;border-bottom:2px solid var(--gold-light);text-align:center}
-.rank-table th:first-child{text-align:left}
+.rank-table th:first-child,.rank-table th:nth-child(2){text-align:left}
 .rank-table td{padding:7px 6px;border-bottom:1px solid #F5F5F5;text-align:center}
-.rank-table td:first-child{text-align:left}
+.rank-table td:first-child,.rank-table td:nth-child(2){text-align:left}
 .rank-table tr.qualified td{background:rgba(197,165,90,0.07)}
 /* Drapeaux dessinés en CSS plutôt qu'en emoji : Windows n'a pas de police
    contenant les drapeaux, ils y apparaissaient vides ou en lettres. */
@@ -4820,8 +4820,13 @@ function renderGroups(){
 function renderMatches(){
   const games=getGames();
   const groups=[...new Set(games.map(g=>g.group))].filter(Boolean).sort((a,b)=>(parseInt(a.replace(/\D/g,''))||0)-(parseInt(b.replace(/\D/g,''))||0));
-  document.getElementById('match-filters').innerHTML=[{id:'all',label:t('matches_all')},...groups.map(g=>({id:g,label:g}))].map(f=>`
-    <button class="pill ${currentMatchFilter===f.id?'active':'inactive'}" onclick="setMatchFilter('${f.id}')">${f.label}</button>`).join('');
+  // Sans groupe, il n'y a rien a filtrer : le bouton  Tous  resterait seul, sans
+  // aucun sens. Les filtres apparaissent donc d'un bloc au moment ou les matchs sont
+  // crees, et disparaissent si les groupes sont reinitialises.
+  document.getElementById('match-filters').innerHTML = groups.length
+    ? [{id:'all',label:t('matches_all')},...groups.map(g=>({id:g,label:g}))].map(f=>`
+    <button class="pill ${currentMatchFilter===f.id?'active':'inactive'}" onclick="setMatchFilter('${f.id}')">${f.label}</button>`).join('')
+    : '';
   const filtered=currentMatchFilter==='all'?games:games.filter(g=>g.group===currentMatchFilter);
   const pending=filtered.filter(g=>g.scoreWhite===null||g.scoreWhite===undefined).sort((a,b)=>{
     const da=matchDueDate(a,false), db=matchDueDate(b,false);

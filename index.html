@@ -33,7 +33,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
 .msg{font-size:13px;text-align:center;padding:8px;border-radius:8px;margin-top:8px}
 .msg.ok{background:#E8F5E9;color:var(--green)}.msg.err{background:#FDECEA;color:var(--red)}
 #tabbar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #eee;display:flex;z-index:200;padding-bottom:env(safe-area-inset-bottom)}
-.tab-btn{flex:1;border:none;background:none;padding:8px 0 6px;display:flex;flex-direction:column;align-items:center;gap:2px;color:#BBB;font-size:10px;font-weight:500;cursor:pointer;transition:color .15s}
+.tab-btn{flex:1;border:none;background:none;padding:8px 0 6px;display:flex;flex-direction:column;align-items:center;gap:2px;color:#BBB;font-size:11px;font-weight:500;cursor:pointer;transition:color .15s}
 .tab-btn.active{color:var(--gold);font-weight:700}
 .tab-icon{font-size:20px;line-height:1}
 #header{background:var(--dark);padding:12px 16px 10px;display:flex;align-items:center;gap:12px;padding-top:calc(12px + env(safe-area-inset-top))}
@@ -71,11 +71,11 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
     linear-gradient(to bottom,transparent 43%,#C8102E 43% 57%,transparent 57%),
     linear-gradient(to right,transparent 41%,#C8102E 41% 59%,transparent 59%)}
 .match-card{background:#fff;border-radius:12px;box-shadow:0 1px 5px rgba(0,0,0,0.07);padding:12px;margin-bottom:10px}
-.match-grp{font-size:10px;font-weight:700;color:var(--gold);margin-bottom:6px;text-transform:uppercase}
+.match-grp{font-size:11px;font-weight:700;color:var(--gold);margin-bottom:6px;text-transform:uppercase}
 .match-players{display:flex;align-items:center;gap:8px}
 .match-player{flex:1;text-align:center}
 .match-player-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.match-player-color{font-size:10px;color:#aaa;margin-top:2px}
+.match-player-color{font-size:11px;color:#aaa;margin-top:2px}
 .match-score{font-size:22px;font-weight:800;color:var(--dark);min-width:48px;text-align:center;cursor:pointer}
 .match-vs{font-size:13px;color:#ccc;font-weight:700;min-width:24px;text-align:center}
 .score-row{display:flex;gap:8px;margin-top:10px;align-items:center}
@@ -2378,7 +2378,7 @@ function renderLiveRanking() {
   const separateur = `<tr><td colspan="10" style="padding:0">
     <div style="display:flex;align-items:center;gap:8px;padding:7px 4px;background:#fafafa">
       <div style="flex:1;height:2px;background:var(--gold);opacity:0.45"></div>
-      <div style="font-size:10.5px;font-weight:800;color:var(--gold);white-space:nowrap;letter-spacing:0.4px">${t(finalesLancees ? 'sep_qualifies' : 'sep_virtuels').replace('{n}', nbQualifies)}</div>
+      <div style="font-size:11px;font-weight:800;color:var(--gold);white-space:nowrap;letter-spacing:0.4px">${t(finalesLancees ? 'sep_qualifies' : 'sep_virtuels').replace('{n}', nbQualifies)}</div>
       <div style="flex:1;height:2px;background:var(--gold);opacity:0.45"></div>
     </div></td></tr>`;
 
@@ -2568,7 +2568,7 @@ function renderPalmaresPlayerCard(recherche) {
     const s = p.st || {};
     const aStats = (s.m || s.pts || s.vB !== undefined);
     const detail = (ouverte && aStats) ? `
-      <div style="padding:8px 0 10px 34px;font-size:12px;color:var(--gray);line-height:1.6">
+      <div style="padding:8px 0 10px 34px;font-size:13px;color:var(--gray);line-height:1.7">
         <strong style="color:var(--dark);font-size:13px">${s.pts ?? 0}</strong> ${t('palmares_pts')} · ${s.m ?? 0} ${t('palmares_m')} · ${s.v ?? 0}${t('palmares_v')}
         ${(s.vB !== undefined || s.dB !== undefined) ? `<br>
           <span style="font-size:13px">⬜</span> <strong style="color:var(--dark)">${s.vB||0}</strong>${t('palmares_v')} ${s.nB||0}${t('palmares_n')} ${s.dB||0}${t('palmares_d')}
@@ -2588,7 +2588,7 @@ function renderPalmaresPlayerCard(recherche) {
   // Bilan par couleur, repris du classement cumulé (qui agrège éditions + tournoi en cours).
   const cumul = statsCumulees().find(a =>
     a.pseudo.toLowerCase() === q || a.pseudo.toLowerCase().includes(q) || (a.name && a.name.toLowerCase().includes(q)));
-  const bilan = (cumul && cumul.aCouleurs) ? `<div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(0,0,0,0.08);font-size:11px;color:#7a6a3a">
+  const bilan = (cumul && cumul.aCouleurs) ? `<div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(0,0,0,0.08);font-size:13px;color:var(--gray);line-height:1.7">
       <div>⬜ ${t('palmares_white')} : <b>${cumul.vB}</b>${t('palmares_v')} · ${cumul.nB}${t('palmares_n')} · ${cumul.dB}${t('palmares_d')}</div>
       <div>⬛ ${t('palmares_black')} : <b>${cumul.vN}</b>${t('palmares_v')} · ${cumul.nN}${t('palmares_n')} · ${cumul.dN}${t('palmares_d')}</div>
       <div style="margin-top:3px">${t('palmares_total')} : <b>${cumul.v}</b>${t('palmares_v')} · ${cumul.nB+cumul.nN}${t('palmares_n')} · ${cumul.dB+cumul.dN}${t('palmares_d')} ${t('palmares_on')} ${cumul.m} ${t('palmares_m')}</div>
@@ -2599,7 +2599,7 @@ function renderPalmaresPlayerCard(recherche) {
       <div style="flex:1;font-size:15px;font-weight:800">${titreJoueur}</div>
       <button onclick="fermerFichePalmares()" style="border:none;background:none;color:#7a6a3a;font-size:16px;cursor:pointer;padding:0 4px">✕</button>
     </div>
-    <div style="font-size:11px;color:#7a6a3a;margin-bottom:10px">
+    <div style="font-size:12px;color:#7a6a3a;margin-bottom:10px">
       ${parcours.length} ${t(parcours.length > 1 ? 'palmares_editions' : 'palmares_edition')}
       ${victoires ? ' · 🏆 ' + victoires : ''}
       ${podiums ? ' · ' + podiums + ' ' + t(podiums > 1 ? 'palmares_podiums' : 'palmares_podium') : ''}
@@ -2941,7 +2941,7 @@ function renderPalmaresAdmin() {
       </div>`;
     }
     const champStat = (eid, k, v) =>
-      `<input id="pe-${k}-${eid}" type="number" min="0" inputmode="numeric" value="${v ?? 0}" onchange="updatePalmaresEntry('${id}','${eid}')" style="width:30px;padding:3px 2px;border:1px solid #e5e5e5;border-radius:4px;font-size:10px;text-align:center">`;
+      `<input id="pe-${k}-${eid}" type="number" min="0" inputmode="numeric" value="${v ?? 0}" onchange="updatePalmaresEntry('${id}','${eid}')" style="width:30px;padding:3px 2px;border:1px solid #e5e5e5;border-radius:4px;font-size:11px;text-align:center">`;
     const entryRows = entries.map(([eid, e], i) => `
       <div style="padding:4px 0;border-bottom:1px solid #f0f0f0">
         <div style="display:flex;align-items:center;gap:4px">
@@ -2952,7 +2952,7 @@ function renderPalmaresAdmin() {
           <button class="seed-btn" style="font-size:14px" onclick="movePalmaresEntry('${id}','${eid}','down')" ${i>=entries.length-1?'disabled':''}>▼</button>
           <button class="seed-btn" style="color:var(--red)" onclick="deletePalmaresEntry('${id}','${eid}')">✕</button>
         </div>
-        <div style="display:flex;align-items:center;gap:3px;padding:3px 0 0 24px;font-size:10px;color:var(--gray)">
+        <div style="display:flex;align-items:center;gap:3px;padding:3px 0 0 24px;font-size:11px;color:var(--gray)">
           <span>⬜</span>${champStat(eid,'vB',e.vB)}${champStat(eid,'nB',e.nB)}${champStat(eid,'dB',e.dB)}
           <span style="margin-left:6px">⬛</span>${champStat(eid,'vN',e.vN)}${champStat(eid,'nN',e.nN)}${champStat(eid,'dN',e.dN)}
           <button class="seed-btn" style="color:var(--green);font-size:15px;margin-left:4px" onclick="validerPalmaresEntry('${id}','${eid}')" title="${t('palmares_validate')}">✓</button>
@@ -2968,7 +2968,7 @@ function renderPalmaresAdmin() {
         <input id="ped-year-${id}" value="${esc(ed.year||'')}" onchange="updatePalmaresEditionMeta('${id}')" placeholder="${t('palmares_year_placeholder')}" style="flex:1;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px">
         <button class="seed-btn" style="color:var(--red)" onclick="deletePalmaresEdition('${id}')" title="${t('palmares_delete_edition')}">🗑️</button>
       </div>
-      ${entries.length ? `<div style="display:flex;align-items:center;gap:3px;padding:0 0 3px 24px;font-size:9px;color:#aaa">
+      ${entries.length ? `<div style="display:flex;align-items:center;gap:3px;padding:0 0 3px 24px;font-size:11px;color:#aaa">
         <span>⬜</span><span style="width:30px;text-align:center">${t('palmares_v')}</span><span style="width:30px;text-align:center">${t('palmares_n')}</span><span style="width:30px;text-align:center">${t('palmares_d')}</span>
         <span style="margin-left:6px">⬛</span><span style="width:30px;text-align:center">${t('palmares_v')}</span><span style="width:30px;text-align:center">${t('palmares_n')}</span><span style="width:30px;text-align:center">${t('palmares_d')}</span>
       </div>` : ''}
@@ -2979,7 +2979,7 @@ function renderPalmaresAdmin() {
         <button class="btn btn-gray btn-sm" style="width:auto" onclick="addPalmaresEntry('${id}')">+</button>
       </div>
       <div style="margin-top:8px">
-        <div style="font-size:10px;color:var(--gray);line-height:1.6;background:#f8f8f8;border-radius:6px;padding:8px;margin-bottom:6px">
+        <div style="font-size:11px;color:var(--gray);line-height:1.6;background:#f8f8f8;border-radius:6px;padding:8px;margin-bottom:6px">
           ${t('palmares_format_help')}
         </div>
         <textarea id="bulk-entries-${id}" placeholder="${t('palmares_bulk_placeholder')}" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:11px;min-height:60px"></textarea>
@@ -4890,10 +4890,10 @@ function matchCardHTML(g){
       <div class="match-player"><div class="match-player-name">${esc(g.playerWhite)}</div><div class="match-player-color" style="display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px;margin-top:4px;background:#F5F5F0;color:#555;border:1px solid #ddd">${t('whites')}</div></div>
       ${played&&!isEditing?`<div style="text-align:center;cursor:pointer" onclick="openScoreEdit('${g.id}')">
         <div class="match-score">${g.scoreWhite} — ${g.scoreBlack}</div>
-        <div style="font-size:10px;color:#ccc;margin-top:-2px">${t("modify")}</div>
+        <div style="font-size:11px;color:#ccc;margin-top:-2px">${t("modify")}</div>
       </div>`:(dueStr?`<div style="text-align:center">
         <div style="font-size:16px;font-weight:800;color:${late?'#E67E22':'var(--dark)'};white-space:nowrap">${dueStr}</div>
-        <div style="font-size:9px;color:#aaa;margin-top:-2px;white-space:nowrap">${t('due_by')}</div>
+        <div style="font-size:11px;color:#aaa;margin-top:-2px;white-space:nowrap">${t('due_by')}</div>
       </div>`:`<div class="match-vs">vs</div>`)}
       <div class="match-player"><div class="match-player-name">${esc(g.playerBlack)}</div><div class="match-player-color" style="display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px;margin-top:4px;background:#2c2c2c;color:#fff">${t('blacks')}</div></div>
     </div>
@@ -4954,7 +4954,7 @@ function finalCardHTML(f){
     </div>
     ${f.winner?`<div style="text-align:center;margin-top:8px;font-size:12px;color:var(--green);font-weight:700">${t('winner')}: ${esc(f.winner)}</div>`:''}
     ${canPlay&&!played&&!isEditing?`<button class="btn btn-gold" style="margin-top:10px;font-size:13px;padding:9px" onclick="openFinalEdit('${f.id}')">${t('enter_score')}</button>`:''}
-    ${played&&!isEditing&&(f.colorP1==='white'||f.colorP1==='black')?`<div style="font-size:10px;color:var(--gray);text-align:center;margin-top:4px">${f.colorP1==='white'?'⬜':'⬛'} ${esc(f.player1||'')} &nbsp;·&nbsp; ${f.colorP1==='white'?'⬛':'⬜'} ${esc(f.player2||'')}</div>`:''}
+    ${played&&!isEditing&&(f.colorP1==='white'||f.colorP1==='black')?`<div style="font-size:11px;color:var(--gray);text-align:center;margin-top:4px">${f.colorP1==='white'?'⬜':'⬛'} ${esc(f.player1||'')} &nbsp;·&nbsp; ${f.colorP1==='white'?'⬛':'⬜'} ${esc(f.player2||'')}</div>`:''}
     ${isEditing?`<div style="display:flex;align-items:center;gap:6px;justify-content:center;margin-top:8px;font-size:11px;color:var(--gray)">
       <span>${esc(f.player1||'')}</span>
       <select class="score-select" id="fc-${f.id}" style="width:auto;padding:6px 8px;font-size:12px">
@@ -5152,7 +5152,7 @@ function renderAdmin(){
           <td>${nrm(s.points).toFixed(2)}</td><td>${s.matches}</td>
           <td>${nrm(s.totalWins).toFixed(2)}</td><td>${nrm(s.blackWins).toFixed(2)}</td>
           <td>${nrm(s.tieBreak).toFixed(2)}</td>
-          <td style="font-size:10px;color:var(--gray)">${h2hStr}</td>
+          <td style="font-size:11px;color:var(--gray)">${h2hStr}</td>
           <td style="color:var(--gray)">${seedMapF[f.player] !== null && seedMapF[f.player] !== undefined ? seedMapF[f.player] : '—'}</td>
         </tr>`;
       }).join('')}</tbody>

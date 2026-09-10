@@ -2941,7 +2941,7 @@ function renderPalmaresAdmin() {
       </div>`;
     }
     const champStat = (eid, k, v) =>
-      `<input id="pe-${k}-${eid}" type="number" min="0" inputmode="numeric" value="${v ?? 0}" onchange="updatePalmaresEntry('${id}','${eid}')" style="width:30px;padding:3px 2px;border:1px solid #e5e5e5;border-radius:4px;font-size:11px;text-align:center">`;
+      `<input id="pe-${k}-${eid}" type="number" min="0" inputmode="numeric" value="${v ?? 0}" onchange="updatePalmaresEntry('${id}','${eid}')" style="width:30px;padding:3px 2px;border:1px solid #e5e5e5;border-radius:4px;font-size:10px;text-align:center">`;
     const entryRows = entries.map(([eid, e], i) => `
       <div style="padding:4px 0;border-bottom:1px solid #f0f0f0">
         <div style="display:flex;align-items:center;gap:4px">
@@ -2952,7 +2952,7 @@ function renderPalmaresAdmin() {
           <button class="seed-btn" style="font-size:14px" onclick="movePalmaresEntry('${id}','${eid}','down')" ${i>=entries.length-1?'disabled':''}>▼</button>
           <button class="seed-btn" style="color:var(--red)" onclick="deletePalmaresEntry('${id}','${eid}')">✕</button>
         </div>
-        <div style="display:flex;align-items:center;gap:3px;padding:3px 0 0 24px;font-size:11px;color:var(--gray)">
+        <div style="display:flex;align-items:center;gap:3px;padding:3px 0 0 24px;font-size:10px;color:var(--gray)">
           <span>⬜</span>${champStat(eid,'vB',e.vB)}${champStat(eid,'nB',e.nB)}${champStat(eid,'dB',e.dB)}
           <span style="margin-left:6px">⬛</span>${champStat(eid,'vN',e.vN)}${champStat(eid,'nN',e.nN)}${champStat(eid,'dN',e.dN)}
           <button class="seed-btn" style="color:var(--green);font-size:15px;margin-left:4px" onclick="validerPalmaresEntry('${id}','${eid}')" title="${t('palmares_validate')}">✓</button>
@@ -2968,7 +2968,7 @@ function renderPalmaresAdmin() {
         <input id="ped-year-${id}" value="${esc(ed.year||'')}" onchange="updatePalmaresEditionMeta('${id}')" placeholder="${t('palmares_year_placeholder')}" style="flex:1;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px">
         <button class="seed-btn" style="color:var(--red)" onclick="deletePalmaresEdition('${id}')" title="${t('palmares_delete_edition')}">🗑️</button>
       </div>
-      ${entries.length ? `<div style="display:flex;align-items:center;gap:3px;padding:0 0 3px 24px;font-size:11px;color:#aaa">
+      ${entries.length ? `<div style="display:flex;align-items:center;gap:3px;padding:0 0 3px 24px;font-size:9px;color:#aaa">
         <span>⬜</span><span style="width:30px;text-align:center">${t('palmares_v')}</span><span style="width:30px;text-align:center">${t('palmares_n')}</span><span style="width:30px;text-align:center">${t('palmares_d')}</span>
         <span style="margin-left:6px">⬛</span><span style="width:30px;text-align:center">${t('palmares_v')}</span><span style="width:30px;text-align:center">${t('palmares_n')}</span><span style="width:30px;text-align:center">${t('palmares_d')}</span>
       </div>` : ''}

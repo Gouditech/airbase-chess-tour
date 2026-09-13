@@ -2255,7 +2255,10 @@ window.setTriStats = function(mode) {
 function statsCumulees() {
   const acc = {};
   const cle = p => p.trim().toLowerCase();
-  function ajouter(pseudo, nom, rang, total, st) {
+  // `acte` : le classement de cette edition est-il DEFINITIF ? Un tournoi en cours a
+  // bien des points et des victoires deja gagnes, mais son rang n'est que provisoire :
+  // il ne doit produire ni titre, ni podium, ni meilleur rang tant que rien n'est joue.
+  function ajouter(pseudo, nom, rang, total, st, acte = true) {
     const k = cle(pseudo);
     if (!acc[k]) acc[k] = { pseudo, name: nom || null, editions: 0, victoires: 0, podiums: 0,
                             meilleur: 999, pts: 0, m: 0, v: 0, vN: 0,
@@ -2264,9 +2267,11 @@ function statsCumulees() {
     const a = acc[k];
     if (!a.name && nom) a.name = nom;
     a.editions++;
-    if (rang === 1) a.victoires++;
-    if (rang <= 3) a.podiums++;
-    if (rang < a.meilleur) a.meilleur = rang;
+    if (acte) {
+      if (rang === 1) a.victoires++;
+      if (rang <= 3) a.podiums++;
+      if (rang < a.meilleur) a.meilleur = rang;
+    }
     if (st) {
       a.pts += st.pts||0; a.m += st.m||0; a.v += st.v||0; a.vN += st.vN||0;
       ['vB','nB','dB','nN','dN'].forEach(k => { a[k] = (a[k]||0) + (st[k]||0); });
@@ -2290,7 +2295,7 @@ function statsCumulees() {
   enCours.forEach(j => ajouter(j.pseudo, j.name, j.rank, enCours.length, {
     pts:j.pts, m:j.m, v:j.v,
     vB:j.vB, nB:j.nB, dB:j.dB, vN:j.vN, nN:j.nN, dN:j.dN
-  }));
+  }, false));   // rang provisoire : aucun titre tant que le tournoi n'est pas termine
 
   return Object.values(acc).sort(triStats(triStatsMode));
 }
@@ -4986,19 +4991,19 @@ function raccourci(nom, max) {
 const estExemption = (f) => !!(f && f.winner && f.player1 && !f.player2);
 
 function caseExemption(f) {
-  return `<div style="border:1px solid #e0e0e0;border-radius:6px;background:#fafafa;padding:6px 8px;
+  return `<div style="width:100%;border:1px solid #e0e0e0;border-radius:6px;background:#fafafa;padding:6px 8px;
     display:flex;justify-content:space-between;align-items:center;font-size:11.5px">
     <span style="font-weight:700;color:var(--dark);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
     ${f.rank1 ? '<span style="color:#aaa">' + f.rank1 + '</span> ' : ''}${esc(raccourci(f.player1, 12))}</span>
     <span style="color:#bbb;font-size:10.5px;white-space:nowrap;margin-left:6px">${esc(t('bracket_bye'))}</span></div>`;
 }
 
-function caseTableau(f, sources) {
+function caseTableau(f, src1, src2) {
   const joue = f && f.score1 !== null && f.score1 !== undefined && f.score2 !== null && f.score2 !== undefined;
-  const ligne = (joueur, rang, score, gagnant) => {
+  const ligne = (joueur, rang, score, gagnant, src) => {
     const vide = !joueur;
     const texte = vide
-      ? `<i style="color:#bbb">${esc(sources || t('bracket_pending'))}</i>`
+      ? `<i style="color:#bbb">${esc(src || t('bracket_pending'))}</i>`
       : `${rang ? '<span style="color:#aaa">' + rang + '</span> ' : ''}${esc(raccourci(joueur, 11))}`;
     return `<div style="display:flex;justify-content:space-between;gap:4px;padding:4px 6px;font-size:11.5px;
       ${gagnant ? 'font-weight:700;color:var(--dark)' : 'color:' + (vide ? '#bbb' : 'var(--gray)')}">
@@ -5007,50 +5012,75 @@ function caseTableau(f, sources) {
   };
   const g1 = joue && f.score1 > f.score2, g2 = joue && f.score2 > f.score1;
   const bordure = joue ? 'solid' : 'dashed';
-  return `<div style="border:1px ${bordure} #e0e0e0;border-radius:6px;overflow:hidden;background:#fff">
-    ${ligne(f && f.player1, f && f.rank1, f && f.score1, g1)}
+  return `<div style="width:100%;border:1px ${bordure} #e0e0e0;border-radius:6px;overflow:hidden;background:#fff">
+    ${ligne(f && f.player1, f && f.rank1, f && f.score1, g1, src1)}
     <div style="border-top:1px ${bordure} #e5e5e5"></div>
-    ${ligne(f && f.player2, f && f.rank2, f && f.score2, g2)}</div>`;
+    ${ligne(f && f.player2, f && f.rank2, f && f.score2, g2, src2)}</div>`;
 }
 
 function bracketHTML(finals) {
   if (!finals.length) return '';
-  // On ne garde que les tours du tableau principal : la petite finale n'y a pas
-  // sa place, elle ne mene nulle part et casserait l'alignement des traits.
+  // La petite finale est exclue : elle ne mene nulle part et casserait l'alignement.
   const tours = ORDRE_TOURS.filter(r => finals.some(f => f.round === r));
   if (tours.length < 2) return '';
 
-  const colonnes = tours.map((round, idx) => {
-    const ms = finals.filter(f => f.round === round).sort((a, b) => a.matchNum - b.matchNum);
+  const parTour = tours.map(r => finals.filter(f => f.round === r).sort((a, b) => a.matchNum - b.matchNum));
+
+  // ── ALIGNEMENT VERTICAL ──
+  // Chaque match est enveloppe dans un conteneur `flex:1`. Toutes les colonnes ayant
+  // la meme hauteur totale, un conteneur de la colonne N+1 couvre exactement DEUX
+  // conteneurs de la colonne N : le match se retrouve centre entre ses deux
+  // alimentateurs, sans aucun calcul de pixels. C'est ce qui manquait a la premiere
+  // version, ou chaque colonne se repartissait independamment.
+  const enveloppe = (contenu) =>
+    `<div style="flex:1;display:flex;align-items:center;min-height:46px">${contenu}</div>`;
+
+  const colonnes = parTour.map((ms, idx) => {
     const cases = ms.map(f => {
-      // Une case vide annonce d'ou viendra le joueur : « vainq. Q2 ».
-      // Une exemption est resolue une fois pour toutes des la creation du tableau :
-      // pas d'indice source a calculer pour elle, et surtout pas de rendu en case a
-      // deux lignes qui la ferait ressembler a un match joue.
-      if (estExemption(f)) return `<div style="margin:auto 0">${caseExemption(f)}</div>`;
-      let src = '';
-      if (idx > 0 && (!f.player1 || !f.player2)) {
+      if (estExemption(f)) return enveloppe(caseExemption(f));
+      // Chaque emplacement vide annonce SON PROPRE alimentateur : le premier match
+      // nourrit la ligne du haut, le second celle du bas. La premiere version donnait
+      // la meme mention aux deux lignes (« vainq. Q1 / Q2 » repete), ce qui n'apprenait
+      // rien : on ne savait pas lequel des deux arrivait ou.
+      let s1 = '', s2 = '';
+      if (idx > 0) {
         const prec = tours[idx - 1];
-        const alim = finals.filter(x => x.round === prec && !x.winner && (x.nextId === f.id || Math.floor(x.matchNum / 2) === f.matchNum));
-        if (alim.length) src = t('bracket_winner_of') + ' ' + alim.map(x => codeMatch(prec, x.matchNum)).join(' / ');
+        const alim = finals
+          .filter(x => x.round === prec && (x.nextId === f.id || Math.floor(x.matchNum / 2) === f.matchNum))
+          .sort((a, b) => a.matchNum - b.matchNum);
+        const nom = x => t('bracket_winner_of') + ' ' + codeMatch(prec, x.matchNum);
+        // On n'annonce que les matchs ENCORE indecis : un alimentateur deja resolu a
+        // depose son vainqueur dans la case, il n'y a plus rien a attendre de lui.
+        if (alim[0] && !alim[0].winner) s1 = nom(alim[0]);
+        if (alim[1] && !alim[1].winner) s2 = nom(alim[1]);
       }
-      return `<div style="margin:auto 0">${caseTableau(f, src)}</div>`;
+      return enveloppe(caseTableau(f, s1, s2));
     }).join('');
-    return `<div style="width:134px;flex:none;display:flex;flex-direction:column;justify-content:space-around;gap:8px">
-      <div style="font-size:10px;color:#999;text-transform:uppercase;letter-spacing:.06em;text-align:center">${esc(round)}</div>
-      ${cases}</div>`;
+    return `<div style="width:134px;flex:none;display:flex;flex-direction:column">
+      <div style="font-size:10px;color:#999;text-transform:uppercase;letter-spacing:.06em;text-align:center;padding-bottom:6px">${esc(tours[idx])}</div>
+      <div style="flex:1;display:flex;flex-direction:column">${cases}</div></div>`;
   });
 
-  // Traits de liaison entre deux colonnes : un par match du tour suivant.
-  const traits = tours.slice(0, -1).map((round, idx) => {
-    const n = finals.filter(f => f.round === tours[idx + 1]).length || 1;
-    const barres = Array.from({ length: n }, () =>
-      `<div style="flex:1;border-right:1px solid #e0e0e0;border-top:1px solid #e0e0e0;border-bottom:1px solid #e0e0e0;margin:26px 0"></div>`).join('');
-    return `<div style="width:18px;flex:none;display:flex;flex-direction:column;margin-top:18px">${barres}</div>`;
+  // ── TRAITS ──
+  // Un crochet « ] » par match de la colonne suivante. Il occupe la moitie de la
+  // hauteur de son conteneur, donc exactement l'ecart entre les centres des deux
+  // alimentateurs : il tombe juste sans reglage manuel.
+  // Uniquement quand le rapport est bien de deux pour un — dans un tableau a deux
+  // vitesses il ne l'est pas, et un trait faux vaut moins que pas de trait du tout.
+  const traits = tours.slice(0, -1).map((_, idx) => {
+    const n = parTour[idx + 1].length;
+    if (!n || parTour[idx].length !== n * 2) return '<div style="width:10px;flex:none"></div>';
+    const crochets = Array.from({ length: n }, () =>
+      `<div style="flex:1;display:flex;align-items:center;min-height:46px">
+         <div style="width:100%;height:50%;border-right:1px solid #ddd;border-top:1px solid #ddd;border-bottom:1px solid #ddd"></div>
+       </div>`).join('');
+    return `<div style="width:16px;flex:none;display:flex;flex-direction:column">
+      <div style="padding-bottom:6px;font-size:10px;visibility:hidden">.</div>
+      <div style="flex:1;display:flex;flex-direction:column">${crochets}</div></div>`;
   });
 
   const corps = colonnes.map((col, i) => col + (traits[i] || '')).join('');
-  const largeur = tours.length * 134 + (tours.length - 1) * 18;
+  const largeur = tours.length * 134 + (tours.length - 1) * 16;
   return `<div class="card">
     <h2 style="margin-bottom:4px">${t('bracket_title')}</h2>
     <div style="font-size:11.5px;color:var(--gray);margin-bottom:12px">${t('bracket_legend')}</div>

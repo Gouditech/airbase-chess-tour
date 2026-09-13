@@ -2236,11 +2236,11 @@ function classementEnCours() {
   });
 
   const noms = {}, seedParPseudo = {};
-  // Tous les INSCRITS entrent au classement, meme sans match joue : ils y figurent a
-  // zero plutot que d'etre absents. C'est ce qu'attend un releve de palmares, et cela
-  // evite qu'un joueur disparaisse quand on corrige ou efface son seul resultat.
-  // `statsCumulees` filtre ensuite sur m > 0 : les cumuls restent inchanges.
-  getPlayers().forEach(p => { if (p.nickname) init(p.nickname); });
+  // NE PAS pre-remplir avec tous les inscrits : seuls les joueurs ayant DISPUTE au
+  // moins un match entrent ici. Le palmares est un releve de performances, pas une
+  // liste de presence — et surtout, buildCurrentRanking archive cette liste TELLE
+  // QUELLE : un joueur a zero match serait fige dans le palmares a zero, et compterait
+  // une edition de plus dans ses cumuls. Essaye le 13 septembre, annule aussitot.
   getPlayers().forEach(p => {
     noms[p.nickname] = p.name || null;
     // ⚠️ `typeof` et non `||` : la tête de série n°1 vaut 0 en interne, et
@@ -2523,11 +2523,7 @@ function renderPalmares() {
 
   if (palmaresSection === 'current') {
     const termine = state?.settings?.status === 'finished';
-    // Contrairement au classement en direct, qui met en avant les qualifies, le
-    // palmares est un releve complet : TOUS les inscrits y figurent, y compris ceux
-    // qui n'ont pas encore joue. Sans quoi un joueur disparaitrait du classement au
-    // moment ou l'on corrige son unique score.
-    const enCours = classementEnCours();
+    const enCours = classementEnCours().filter(j => j.m > 0);
     const finalesLancees = ['finals','finished'].includes(state?.settings?.status);
     const entete = termine ? '' : `<div style="font-size:11.5px;color:var(--gray);text-align:center;padding:4px 0 8px">${t('palmares_provisional')}</div>`;
     const legende = `<div style="font-size:11.5px;color:var(--gray);margin-top:12px;padding-top:10px;border-top:1px solid #eee;line-height:1.6">${t(finalesLancees ? 'legende_general_finales' : 'legende_general_poules')}</div>`;
@@ -5055,7 +5051,7 @@ function caseExemption(f) {
     display:flex;justify-content:space-between;align-items:center;font-size:11.5px">
     <span style="font-weight:700;color:var(--dark);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
     ${f.rank1 ? '<span style="color:#aaa">' + f.rank1 + '</span> ' : ''}${esc(raccourci(f.player1, 12))}</span>
-    <span style="color:#bbb;font-size:10.5px;white-space:nowrap;margin-left:6px">${esc(t('bracket_bye'))}</span></div>`;
+    <span style="color:#bbb;font-size:11px;white-space:nowrap;margin-left:6px">${esc(t('bracket_bye'))}</span></div>`;
 }
 
 function caseTableau(f) {
@@ -5105,7 +5101,7 @@ function bracketHTML(finals) {
       return enveloppe(caseTableau(f));
     }).join('');
     return `<div style="width:134px;flex:none;display:flex;flex-direction:column">
-      <div style="font-size:10px;color:#999;text-transform:uppercase;letter-spacing:.06em;text-align:center;padding-bottom:6px">${esc(nomTour(tours[idx]))}</div>
+      <div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:.06em;text-align:center;padding-bottom:6px">${esc(nomTour(tours[idx]))}</div>
       <div style="flex:1;display:flex;flex-direction:column">${cases}</div></div>`;
   });
 
@@ -5128,7 +5124,7 @@ function bracketHTML(finals) {
          <div style="width:50%;border-top:1px solid #ddd"></div>
        </div>`).join('');
     return `<div style="width:22px;flex:none;display:flex;flex-direction:column">
-      <div style="padding-bottom:6px;font-size:10px;visibility:hidden">.</div>
+      <div style="padding-bottom:6px;font-size:11px;visibility:hidden">.</div>
       <div style="flex:1;display:flex;flex-direction:column">${crochets}</div></div>`;
   });
 

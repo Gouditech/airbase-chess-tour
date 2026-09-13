@@ -4970,6 +4970,26 @@ function matchCardHTML(g){
 // et sur la table TOURS de send-notification.js.
 const ORDRE_TOURS = ['32èmes','16èmes','8èmes','Quarts','Demis','Finale'];
 
+// Les noms de tours sont stockes EN FRANCAIS dans la base ('Quarts', 'Demis'...) :
+// ce sont des DONNEES ecrites par launchFinals, pas des cles de traduction. Cette
+// table les traduit pour l'affichage, au PLURIEL puisqu'elle titre un groupe de matchs.
+// A garder alignee sur roundNames de launchFinals — et sur la table TOURS de
+// send-notification.js, qui fait la meme chose au singulier pour les notifications.
+const NOMS_TOURS = {
+  '32èmes':     { fr: '32es de finale', de: 'Runde der letzten 64', en: 'Round of 64',    it: 'Trentaduesimi' },
+  '16èmes':     { fr: '16es de finale', de: 'Sechzehntelfinale',    en: 'Round of 32',    it: 'Sedicesimi' },
+  '8èmes':      { fr: '8es de finale',  de: 'Achtelfinale',         en: 'Round of 16',    it: 'Ottavi' },
+  'Quarts':     { fr: 'Quarts',         de: 'Viertelfinale',        en: 'Quarter-finals', it: 'Quarti' },
+  'Demis':      { fr: 'Demies',         de: 'Halbfinale',           en: 'Semi-finals',    it: 'Semifinali' },
+  'Finale':     { fr: 'Finale',         de: 'Finale',               en: 'Final',          it: 'Finale' },
+  '3ème place': { fr: '3e place',       de: 'Spiel um Platz 3',     en: '3rd place',      it: '3° posto' }
+};
+// Un nom inconnu (renommage futur) s'affiche tel quel plutot que de disparaitre.
+function nomTour(round) {
+  const e = NOMS_TOURS[round];
+  return e ? (e[lang] || e.fr) : String(round || '');
+}
+
 function raccourci(nom, max) {
   const s = String(nom || '');
   return s.length > max ? s.slice(0, max - 1) + '…' : s;
@@ -5039,7 +5059,7 @@ function bracketHTML(finals) {
       return enveloppe(caseTableau(f));
     }).join('');
     return `<div style="width:134px;flex:none;display:flex;flex-direction:column">
-      <div style="font-size:10px;color:#999;text-transform:uppercase;letter-spacing:.06em;text-align:center;padding-bottom:6px">${esc(tours[idx])}</div>
+      <div style="font-size:10px;color:#999;text-transform:uppercase;letter-spacing:.06em;text-align:center;padding-bottom:6px">${esc(nomTour(tours[idx]))}</div>
       <div style="flex:1;display:flex;flex-direction:column">${cases}</div></div>`;
   });
 
@@ -5143,7 +5163,7 @@ function renderFinals(){
       .filter(f=>!(f.winner && f.player1 && !f.player2))
       .sort((a,b)=>a.matchNum-b.matchNum);
     if(!rg.length) return;
-    html+=`<div class="section-title">${round}</div>`;
+    html+=`<div class="section-title">${esc(nomTour(round))}</div>`;
     html+=rg.map(f=>finalCardHTML(f)).join('');
   });
   // Le tableau d'abord, la SAISIE ensuite — c'est l'action la plus frequente et elle

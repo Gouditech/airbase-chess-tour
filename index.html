@@ -5314,7 +5314,7 @@ function bracketHTML(finals) {
   // alimentateurs, sans aucun calcul de pixels. C'est ce qui manquait a la premiere
   // version, ou chaque colonne se repartissait independamment.
   const enveloppe = (contenu) =>
-    `<div style="flex:1;display:flex;align-items:center;min-height:46px">${contenu}</div>`;
+    `<div style="flex:1;display:flex;align-items:center;min-height:62px">${contenu}</div>`;
 
   const colonnes = parTour.map((ms, idx) => {
     const cases = ms.map(f => {
@@ -5344,7 +5344,7 @@ function bracketHTML(finals) {
     // simple ligne horizontale, centree, qui rejoint la carte suivante. On obtient
     // l'arborescence complete — trait de sortie, jonction, trait d'entree.
     const crochets = Array.from({ length: n }, () =>
-      `<div style="flex:1;display:flex;align-items:center;min-height:46px">
+      `<div style="flex:1;display:flex;align-items:center;min-height:62px">
          <div style="width:50%;height:50%;border-right:1px solid #ddd;border-top:1px solid #ddd;border-bottom:1px solid #ddd"></div>
          <div style="width:50%;border-top:1px solid #ddd"></div>
        </div>`).join('');

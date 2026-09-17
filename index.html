@@ -2393,10 +2393,12 @@ window.togglePalmaresSection = function(cle) {
 // Joueur choisi en cliquant une ligne. Séparé du champ de recherche pour ne pas y
 // laisser un nom qui resterait affiché ensuite. Purement local à cet appareil.
 let joueurSelectionne = null;
-// Édition dépliée dans la fiche joueur (une seule à la fois). Déclarée ici, avec
-// joueurSelectionne : `let` n'est pas hissé, une déclaration plus bas ferait
-// planter voirJoueurPalmares qui l'utilise.
-let editionOuverte = null;
+// Éditions dépliées dans la fiche joueur. Un ENSEMBLE, et non une valeur unique :
+// avec une seule variable, ouvrir une édition en écartait forcément une autre, et on
+// ne pouvait donc jamais en comparer deux. Ici chaque ligne lit son propre état, donc
+// on en déplie autant qu'on veut. Déclarée ici, avec joueurSelectionne : `let` n'est
+// pas hissé, une déclaration plus bas ferait planter voirJoueurPalmares qui l'utilise.
+let editionsOuvertes = new Set();
 
 window.onPalmaresSearch = function() {
   joueurSelectionne = null; // taper une recherche annule la sélection par clic
@@ -2405,7 +2407,7 @@ window.onPalmaresSearch = function() {
 
 window.voirJoueurPalmares = function(pseudo) {
   joueurSelectionne = pseudo;
-  editionOuverte = null;   // repartir replié quand on change de joueur
+  editionsOuvertes.clear();   // repartir replié quand on change de joueur
   renderPalmares();
   const fiche = document.getElementById('palmares-player-card');
   if (fiche && fiche.scrollIntoView) fiche.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -2413,7 +2415,7 @@ window.voirJoueurPalmares = function(pseudo) {
 
 window.fermerFichePalmares = function() {
   joueurSelectionne = null;
-  editionOuverte = null;   // sinon la fiche du joueur suivant s'ouvrirait dépliée
+  editionsOuvertes.clear();   // sinon la fiche du joueur suivant s'ouvrirait dépliée
   const champ = document.getElementById('palmares-search');
   if (champ) champ.value = '';
   renderPalmares();
@@ -2633,7 +2635,9 @@ function renderPalmares() {
 
 // Fiche d'un joueur : son parcours à travers toutes les éditions, avec récapitulatif.
 window.ouvrirEditionJoueur = function(id) {
-  editionOuverte = (editionOuverte === id) ? null : id;
+  // Bascule DANS l'ensemble : on n'en retire que celle sur laquelle on vient de
+  // cliquer, les autres restent dépliées.
+  if (editionsOuvertes.has(id)) editionsOuvertes.delete(id); else editionsOuvertes.add(id);
   // MÊME source que renderPalmares : la fiche peut avoir été ouverte en cliquant
   // un joueur (joueurSelectionne) ET NON par la recherche. Ne lire que le champ
   // de recherche renvoyait une chaîne vide, et la fiche se refermait aussitôt.
@@ -2695,7 +2699,7 @@ function renderPalmaresPlayerCard(recherche) {
   // quitter la fiche. Un second clic replie et revient au total.
   const lignes = parcours.map(p => {
     const medaille = p.rang === 1 ? '🏆' : p.rang === 2 ? '🥈' : p.rang === 3 ? '🥉' : '';
-    const ouverte = editionOuverte === p.id;
+    const ouverte = editionsOuvertes.has(p.id);
     const s = p.st || {};
     const aStats = (s.m || s.pts || s.vB !== undefined);
     const detail = (ouverte && aStats) ? `

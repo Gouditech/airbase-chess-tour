@@ -566,9 +566,13 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
 <!-- Raccourci flottant vers l'espace d'organisation. Visible UNIQUEMENT quand
      l'admin est connecte, il suit le defilement : passer d'une page a l'autre pendant
      les tests ne demande plus d'aller rechercher l'onglet. L'icone devient une cle
-     quand l'appareil est celui enregistre comme appareil admin. -->
+     quand l'appareil est celui enregistre comme appareil admin.
+     En BAS a droite, dans la zone du pouce : 49px de barre d'onglets (mesure) + 12px
+     d'ecart. env(safe-area-inset-bottom) tient compte de la barre de geste des iPhone.
+     Le bandeau "Reste informe" se place a 66px et passe donc par-dessus quand il
+     s'affiche ; il ne concerne que les joueurs pas encore abonnes et se ferme d'un clic. -->
 <button id="admin-fab" onclick="showPage('admin')" aria-label="Admin"
-  style="display:none;position:fixed;top:calc(env(safe-area-inset-top, 0px) + 10px);right:12px;z-index:900;
+  style="display:none;position:fixed;bottom:calc(env(safe-area-inset-bottom, 0px) + 61px);right:12px;z-index:900;
   width:42px;height:42px;border-radius:50%;border:none;cursor:pointer;
   background:rgba(0,0,0,0.55);color:#fff;font-size:19px;line-height:1;
   box-shadow:0 2px 10px rgba(0,0,0,0.3);backdrop-filter:blur(4px)"></button>
@@ -5578,6 +5582,12 @@ function surDonneesChangees() {
   applyTranslations();
   renderPage(currentPage);
   renderAdminDeviceStatus();
+  // L'icone du bouton flottant depend du pointeur d'appareil admin, qui vit dans
+  // Firebase (settings/adminSubId) : elle doit donc etre recalculee a CHAQUE arrivee
+  // de donnees, pas seulement au changement de page. Sans cet appel, enregistrer
+  // l'appareil mettait bien a jour le panneau admin, mais la roue crantee ne devenait
+  // une cle qu'apres un changement d'onglet ou un rechargement du site.
+  majBoutonAdmin();
 }
 
 function ecouterSection(chemin) {

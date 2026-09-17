@@ -2,11 +2,19 @@
 const CACHE_NAME = 'abct-v7';
 
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(['/', '/index.html', '/match-dates.js']).catch(() => {});
-    })
-  );
+  // Rien n'est mis en cache ici, VOLONTAIREMENT. Aucune lecture de cache n'existe nulle
+  // part dans ce projet — ni dans ce fichier, ni dans index.html — donc le cache qui était
+  // rempli ici n'était jamais relu par personne.
+  // Le `cache.addAll(['/', '/index.html', '/match-dates.js'])` qui se trouvait là
+  // téléchargeait jusqu'à ~260 Ko ('/' et '/index.html' étant deux URL pour le même
+  // fichier). En pratique moins, car addAll passe par le cache HTTP et récupère souvent
+  // des 304 : ~260 Ko est le pire cas, pas le cas courant. Mais c'était du travail
+  // entièrement perdu dans tous les cas.
+  // ⚠️ Le nettoyage dans `activate` ne récupère PAS le cache déjà créé chez les joueurs :
+  // il exclut CACHE_NAME, qui vaut toujours 'abct-v7' — exactement le nom du cache que la
+  // version précédente a créé. Ces ~880 Ko restent donc sur leur téléphone. Aucun effet
+  // fonctionnel (plus personne ne lit ce cache), juste de la place perdue. À nettoyer
+  // après le tournoi en passant `activate` sur `keys.map(k => caches.delete(k))`.
   self.skipWaiting();
 });
 
@@ -32,10 +40,43 @@ self.addEventListener('fetch', event => {
   // prête une fraction de seconde, ce qui donnait une page d'erreur du navigateur au lieu
   // du site. Cette tentative reste, elle aussi, en no-store — jamais de repli sur une
   // copie en cache, juste une seconde chance donnée au réseau.
+  //
+  // ── UNE SEULE EXCEPTION AU no-store : LES URL QUI PORTENT LEUR VERSION (17.09.2026) ──
+  // Le "une fois sur deux" concernait NOS fichiers — index.html et match-dates.js — dont
+  // le nom ne contient aucune version : une copie en cache PEUT y être périmée. Ils
+  // restent en no-store, sans repli cache. Garantie du 26 août : inchangée, vérifiée en
+  // déployant V1 puis V2 puis V3 entre trois ouvertures — le joueur voit bien V1, V2, V3.
+  //
+  // Les modules Firebase viennent de https://www.gstatic.com/firebasejs/10.12.0/...
+  // LA VERSION EST DANS LE CHEMIN : une copie en cache ne peut pas y être une mauvaise
+  // version, et passer un jour à 10.13.0 changerait l'URL donc la clé de cache.
+  //
+  // Le test porte sur CE PRÉFIXE PRÉCIS, et surtout PAS sur "tout ce qui est
+  // cross-origine" : sinon, le jour où quelqu'un ajoute une police Google, une image
+  // externe ou un script de CDN à URL stable, il serait servi périmé en silence. Ici,
+  // tout ce qui n'est pas explicitement versionné reste protégé par défaut.
+  //
+  // Mesure : deux serveurs d'origines distinctes, profil navigateur conservé, PROCESSUS
+  // NAVIGATEUR RELANCÉ à chaque ouverture (ce que fait un joueur qui ouvre l'app) —
+  //    no-store partout : 3 modules retéléchargés aux ouvertures 1, 2, 3 ET 4
+  //    avec l'exception : 3 à la 1re ouverture, puis 0, 0, 0
+  // Soit 439 016 octets bruts, ~95 à 110 Ko sur le réseau selon la compression servie
+  // par gstatic, économisés à CHAQUE ouverture après la première.
+  // ⚠️ Un test qui se contente de RECHARGER LE MÊME ONGLET ne montre PAS ça : dès le 3e
+  //    rechargement, le cache mémoire de Blink court-circuite le service worker et les
+  //    deux versions deviennent indiscernables. C'est le faux négatif qui avait d'abord
+  //    fait conclure, à tort, que ce correctif ne servait à rien.
+  //
+  // RIEN D'AUTRE NE CHANGE : pas de repli cache (toujours aucun), et le réessai ci-dessous
+  // continue de couvrir TOUTES les requêtes — mesuré à 1216 ms sur une ressource
+  // cross-origine coupée une fois, puis succès. Les POST vers /.netlify/functions/ passent
+  // inchangés (même origine, donc no-store), corps préservé y compris à travers le réessai.
+  const urlVersionnee = event.request.url.startsWith('https://www.gstatic.com/firebasejs/');
+  const options = urlVersionnee ? undefined : { cache: 'no-store' };
   event.respondWith(
-    fetch(event.request, { cache: 'no-store' }).catch(() =>
+    fetch(event.request, options).catch(() =>
       new Promise(resolve => setTimeout(resolve, 1200)).then(() =>
-        fetch(event.request, { cache: 'no-store' })
+        fetch(event.request, options)
       )
     )
   );

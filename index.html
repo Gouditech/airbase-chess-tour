@@ -708,11 +708,21 @@ async function subscribeToNotifications() {
     showMsg('notif-msg', t('notif_activating'));
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') { showMsg('notif-msg', t(cleNotifBloquee()), false, true); return; }
-    const reg = await navigator.serviceWorker.ready;
-    const sub = await reg.pushManager.subscribe({
+    // ── AUCUNE ATTENTE SANS ISSUE ──
+    // `serviceWorker.ready` ne se resout JAMAIS tant qu'aucun service worker n'est
+    // actif, et `subscribe` peut rester en suspens quand le service de notification
+    // du navigateur est injoignable. Sans ces delais, « Activation en cours… »
+    // s'effacait au bout de 3,5 s et il ne se passait plus rien : le joueur n'avait
+    // aucun moyen de savoir que quelque chose avait echoue.
+    const avecDelai = (promesse, secondes) => Promise.race([
+      promesse,
+      new Promise((_, rejeter) => setTimeout(() => rejeter(new Error('__delai__')), secondes * 1000))
+    ]);
+    const reg = await avecDelai(navigator.serviceWorker.ready, 15);
+    const sub = await avecDelai(reg.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(VAPID_KEY)
-    });
+    }), 20);
     const subObj = sub.toJSON();
     const subId = btoa(subObj.endpoint).slice(-20);
     const cbO = document.getElementById('pref-officiel');
@@ -742,7 +752,26 @@ async function subscribeToNotifications() {
     showMsg('notif-msg', t('notif_enabled'));
   } catch(e) {
     console.error('Subscription error:', e);
-    showMsg('notif-msg', 'Erreur: ' + e.message, false);
+    // Le message d'echec DOIT etre persistant : il demande une action au joueur, et
+    // un message qui s'efface tout seul au bout de 3,5 s le laissait croire qu'il ne
+    // s'etait rien passe. C'etait le defaut : « Erreur: Registration failed -
+    // permission denied » apparaissait puis disparaissait, en francais brut.
+    const brut = String((e && e.message) || e || '');
+    const nom = String((e && e.name) || '');
+    // Page pas encore PILOTEE par le service worker : ca arrive a la toute premiere
+    // visite, ou quand le service worker vient d'etre mis a jour. L'abonnement echoue
+    // alors sans cause visible, et un simple rechargement suffit. On ne BLOQUE pas
+    // sur ce test — l'abonnement peut tres bien reussir sans controleur — on s'en sert
+    // uniquement pour donner le bon conseil quand ca a echoue.
+    const pasPilotee = !('serviceWorker' in navigator) || !navigator.serviceWorker.controller;
+    const cle = brut === '__delai__' ? 'notif_timeout'
+      : /denied|permission|NotAllowed|blocked/i.test(brut + ' ' + nom) ? cleNotifBloquee()
+      : pasPilotee ? 'notif_reload'
+      : 'notif_fail';
+    // Le detail technique est conserve pour les cas non identifies : c'est la seule
+    // prise qu'un joueur a pour decrire son probleme a l'organisateur.
+    const detail = (cle === 'notif_fail' && brut) ? ' (' + brut + ')' : '';
+    showMsg('notif-msg', t(cle) + detail, false, true);
   }
 }
 
@@ -768,7 +797,10 @@ window.unsubscribeFromNotifications = async function unsubscribeFromNotification
     // Il reste jusqu'à ce qu'il le ferme (✕) ou recharge la page.
     showMsg('notif-msg', t('notif_disabled_warn'), false, true);
   } catch(e) {
-    showMsg('notif-msg', 'Erreur: ' + e.message, false);
+    console.error('Unsubscribe error:', e);
+    // Meme defaut que dans subscribeToNotifications, jumeau reste non corrige jusqu'ici :
+    // un echec qui s'efface en 3,5 s laisse croire que la desactivation a fonctionne.
+    showMsg('notif-msg', t('notif_fail') + (e && e.message ? ' (' + e.message + ')' : ''), false, true);
   }
 }
 
@@ -866,6 +898,29 @@ window.fermerPrefsPanel = function() {
 //   - il n'a jamais refusé au niveau du navigateur (sinon rien ne servirait)
 //   - il a fermé le bandeau moins de 3 fois (au-delà, insister l'agacerait)
 const INVITE_MAX = 3;
+
+// ══ LE COMPTEUR REPART A ZERO QUAND LE TOURNOI CHANGE D'ETAPE ══
+// Les trois fermetures etaient DEFINITIVES : un joueur qui avait ecarte le bandeau
+// trois fois — souvent par reflexe, pendant les inscriptions, quand il n'y avait
+// encore rien a notifier — ne le revoyait JAMAIS, meme au lancement des poules ou
+// des finales. Il ne lui restait qu'un petit bouton gris sur la carte d'accueil.
+// Le lancement d'une etape est precisement le moment ou les notifications se mettent
+// a servir : on redonne donc trois occasions, une fois par etape, et pas davantage.
+// L'invitation reste bornee — elle ne peut pas revenir en boucle.
+// Les garde-fous de peutProposerNotif s'appliquent toujours par-dessus : deja abonne,
+// deja active par le passe, ou permission refusee au niveau du navigateur = pas de
+// bandeau, quelle que soit l'etape.
+const ETAPES_RELANCE = ['playing', 'finals'];
+function verifierChangementEtape() {
+  const etape = state?.settings?.status;
+  if (!etape || !ETAPES_RELANCE.includes(etape)) return;
+  try {
+    if (localStorage.getItem('abct-invite-etape') === etape) return;
+    localStorage.setItem('abct-invite-etape', etape);
+    localStorage.removeItem('abct-invite-refus');
+    localStorage.removeItem('abct-invite-refus-app');
+  } catch (e) {}
+}
 function estIOS() {
   return /iPad|iPhone|iPod/.test(navigator.userAgent)
       || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -1334,7 +1389,7 @@ const T = {
     notif_enabled:"✓ Notifications activées !",
     notif_disabled_warn:"⚠️ Notifications désactivées. Tu ne recevras plus les annonces du tournoi ni les résultats — tu risques de manquer une échéance et d'être déclaré forfait. Réactive-les dès que possible.",notif_cut_server:"⚠️ Tes notifications ont été coupées côté serveur — réactive-les si tu le souhaites.",notif_lost:"⚠️ Tes notifications ne fonctionnaient plus (abonnement perdu par ton navigateur). Réactive-les pour ne pas manquer d'échéance.",notif_off_reminder:"🔕 Tu ne reçois aucune notification. Active-les pour ne pas manquer d'échéance.",
     
-    notif_activating:"⏳ Activation en cours…",notif_test_sending:"📤 Envoi du test en cours…",notif_test_no_entry:"⏳ Synchronisation en cours, réessaie dans quelques secondes.",notif_test_dead:"❌ Ton abonnement n'est plus valide (adresse expirée). Il a été retiré : réactive tes notifications.",notif_test_error:"❌ Le serveur n'a pas pu envoyer. Réessaie dans un instant.",notif_test_network:"❌ Serveur injoignable. Vérifie ta connexion.",notif_test_sent:"✓ Notification test envoyée !",
+    notif_activating:"⏳ Activation en cours…",notif_send_fail:"Envoi impossible. L'annonce n'est PAS partie. Réessaie dans un instant.",notif_reload:"Le site vient d'être mis à jour : recharge la page, puis réessaie d'activer. C'est normal à la première visite.",notif_fail:"Activation impossible. Vérifie que les notifications ne sont pas bloquées par ton navigateur ou par ton système, puis réessaie.",notif_timeout:"Le navigateur ne répond pas. Recharge la page et réessaie ; si ça recommence, redémarre le navigateur.",notif_test_sending:"📤 Envoi du test en cours…",notif_test_no_entry:"⏳ Synchronisation en cours, réessaie dans quelques secondes.",notif_test_dead:"❌ Ton abonnement n'est plus valide (adresse expirée). Il a été retiré : réactive tes notifications.",notif_test_error:"❌ Le serveur n'a pas pu envoyer. Réessaie dans un instant.",notif_test_network:"❌ Serveur injoignable. Vérifie ta connexion.",notif_test_sent:"✓ Notification test envoyée !",
     notif_test_nosub:"❌ Pas d'abonnement actif. Désactive puis réactive les notifications.",
     notif_enter_msg:"Entrez un message.",
     notif_sent:"✓ Notification enregistrée !",
@@ -1504,7 +1559,7 @@ const T = {
     notif_enabled:"✓ Benachrichtigungen aktiviert!",
     notif_disabled_warn:"⚠️ Benachrichtigungen deaktiviert. Du erhältst keine Turnierankündigungen und Ergebnisse mehr — du riskierst, eine Frist zu verpassen und kampflos zu verlieren. Aktiviere sie so bald wie möglich wieder.",notif_cut_server:"⚠️ Deine Benachrichtigungen wurden serverseitig abgeschaltet — aktiviere sie bei Bedarf erneut.",notif_lost:"⚠️ Deine Benachrichtigungen funktionierten nicht mehr (Abo vom Browser verloren). Aktiviere sie erneut, um keine Frist zu verpassen.",notif_off_reminder:"🔕 Du erhältst keine Benachrichtigungen. Aktiviere sie, um keine Frist zu verpassen.",
     
-    notif_activating:"⏳ Wird aktiviert…",notif_test_sending:"📤 Test wird gesendet…",notif_test_no_entry:"⏳ Synchronisierung läuft, versuche es in ein paar Sekunden erneut.",notif_test_dead:"❌ Dein Abo ist nicht mehr gültig (Adresse abgelaufen). Es wurde entfernt: aktiviere die Benachrichtigungen erneut.",notif_test_error:"❌ Der Server konnte nicht senden. Versuche es gleich noch einmal.",notif_test_network:"❌ Server nicht erreichbar. Prüfe deine Verbindung.",notif_test_sent:"✓ Testbenachrichtigung gesendet!",
+    notif_activating:"⏳ Wird aktiviert…",notif_send_fail:"Senden nicht möglich. Die Ankündigung wurde NICHT verschickt. Versuche es gleich noch einmal.",notif_reload:"Die Seite wurde gerade aktualisiert: lade sie neu und versuche die Aktivierung erneut. Beim ersten Besuch ist das normal.",notif_fail:"Aktivierung nicht möglich. Prüfe, ob Benachrichtigungen von deinem Browser oder deinem System blockiert werden, und versuche es erneut.",notif_timeout:"Der Browser antwortet nicht. Lade die Seite neu und versuche es erneut; wenn es wieder passiert, starte den Browser neu.",notif_test_sending:"📤 Test wird gesendet…",notif_test_no_entry:"⏳ Synchronisierung läuft, versuche es in ein paar Sekunden erneut.",notif_test_dead:"❌ Dein Abo ist nicht mehr gültig (Adresse abgelaufen). Es wurde entfernt: aktiviere die Benachrichtigungen erneut.",notif_test_error:"❌ Der Server konnte nicht senden. Versuche es gleich noch einmal.",notif_test_network:"❌ Server nicht erreichbar. Prüfe deine Verbindung.",notif_test_sent:"✓ Testbenachrichtigung gesendet!",
     notif_test_nosub:"❌ Kein aktives Abo. Deaktiviere und reaktiviere die Benachrichtigungen.",
     notif_enter_msg:"Bitte eine Nachricht eingeben.",
     notif_sent:"✓ Benachrichtigung gespeichert!",
@@ -1604,7 +1659,7 @@ const T = {
     notif_enabled:"✓ Notifications enabled!",
     notif_disabled_warn:"⚠️ Notifications disabled. You will no longer receive tournament announcements or results — you risk missing a deadline and forfeiting. Re-enable them as soon as possible.",notif_cut_server:"⚠️ Your notifications were cut off server-side — re-enable them if you wish.",notif_lost:"⚠️ Your notifications had stopped working (subscription lost by your browser). Re-enable them so you don't miss a deadline.",notif_off_reminder:"🔕 You're not receiving any notifications. Turn them on so you don't miss a deadline.",
     
-    notif_activating:"⏳ Enabling…",notif_test_sending:"📤 Sending test…",notif_test_no_entry:"⏳ Still syncing, try again in a few seconds.",notif_test_dead:"❌ Your subscription is no longer valid (address expired). It was removed: enable notifications again.",notif_test_error:"❌ The server could not send. Try again in a moment.",notif_test_network:"❌ Server unreachable. Check your connection.",notif_test_sent:"✓ Test notification sent!",
+    notif_activating:"⏳ Enabling…",notif_send_fail:"Could not send. The announcement did NOT go out. Try again in a moment.",notif_reload:"The site has just been updated: reload the page, then try enabling again. This is normal on a first visit.",notif_fail:"Could not activate. Check that notifications are not blocked by your browser or by your system, then try again.",notif_timeout:"The browser is not responding. Reload the page and try again; if it happens again, restart the browser.",notif_test_sending:"📤 Sending test…",notif_test_no_entry:"⏳ Still syncing, try again in a few seconds.",notif_test_dead:"❌ Your subscription is no longer valid (address expired). It was removed: enable notifications again.",notif_test_error:"❌ The server could not send. Try again in a moment.",notif_test_network:"❌ Server unreachable. Check your connection.",notif_test_sent:"✓ Test notification sent!",
     notif_test_nosub:"❌ No active subscription. Disable then re-enable notifications.",
     notif_enter_msg:"Please enter a message.",
     notif_sent:"✓ Notification saved!",
@@ -1736,7 +1791,7 @@ const T = {
     notif_enabled:"✓ Notifiche attivate!",
     notif_disabled_warn:"⚠️ Notifiche disattivate. Non riceverai più gli annunci del torneo né i risultati — rischi di perdere una scadenza e di perdere a tavolino. Riattivale appena possibile.",notif_cut_server:"⚠️ Le tue notifiche sono state disattivate lato server — riattivale se lo desideri.",notif_lost:"⚠️ Le tue notifiche non funzionavano più (abbonamento perso dal browser). Riattivale per non perdere una scadenza.",notif_off_reminder:"🔕 Non ricevi alcuna notifica. Attivale per non perdere una scadenza.",
     
-    notif_activating:"⏳ Attivazione in corso…",notif_test_sending:"📤 Invio del test…",notif_test_no_entry:"⏳ Sincronizzazione in corso, riprova tra qualche secondo.",notif_test_dead:"❌ Il tuo abbonamento non è più valido (indirizzo scaduto). È stato rimosso: riattiva le notifiche.",notif_test_error:"❌ Il server non è riuscito a inviare. Riprova tra poco.",notif_test_network:"❌ Server irraggiungibile. Controlla la connessione.",notif_test_sent:"✓ Notifica di prova inviata!",
+    notif_activating:"⏳ Attivazione in corso…",notif_send_fail:"Invio impossibile. L'annuncio NON è partito. Riprova tra un istante.",notif_reload:"Il sito è appena stato aggiornato: ricarica la pagina, poi riprova ad attivare. È normale alla prima visita.",notif_fail:"Attivazione impossibile. Verifica che le notifiche non siano bloccate dal browser o dal sistema, poi riprova.",notif_timeout:"Il browser non risponde. Ricarica la pagina e riprova; se succede di nuovo, riavvia il browser.",notif_test_sending:"📤 Invio del test…",notif_test_no_entry:"⏳ Sincronizzazione in corso, riprova tra qualche secondo.",notif_test_dead:"❌ Il tuo abbonamento non è più valido (indirizzo scaduto). È stato rimosso: riattiva le notifiche.",notif_test_error:"❌ Il server non è riuscito a inviare. Riprova tra poco.",notif_test_network:"❌ Server irraggiungibile. Controlla la connessione.",notif_test_sent:"✓ Notifica di prova inviata!",
     notif_test_nosub:"❌ Nessun abbonamento attivo. Disattiva e riattiva le notifiche.",
     notif_enter_msg:"Inserire un messaggio.",
     notif_sent:"✓ Notifica salvata!",
@@ -4316,7 +4371,7 @@ window.launchFinals = async function() {
   if (!isAdmin) return;
   const standings = computeStandings();
   const fin = discoverFinalists(standings, state.settings.finalistsCount || 8);
-  if (fin.length < 2) { showMsg('actions-msg', t('not_enough_finalists'), false); return; }
+  if (fin.length < 2) { showMsg('actions-msg', t('not_enough_finalists'), false, true); return; }
 
   const check = validateBracket(fin);
   if (!check.ok) {
@@ -4809,10 +4864,10 @@ window.sendPushToAll = async function() {
       showMsg('notif-admin-msg-result', `${t('notif_sent')} ${data.success}/${count}.${nettoyes}${errMsg}`);
       msgEl.value = '';
     } else {
-      showMsg('notif-admin-msg-result', 'Erreur: ' + (data.error || 'Unknown'), false);
+      showMsg('notif-admin-msg-result', t('notif_send_fail') + (data.error ? ' (' + data.error + ')' : ''), false, true);
     }
   } catch(e) {
-    showMsg('notif-admin-msg-result', 'Erreur: ' + e.message, false);
+    showMsg('notif-admin-msg-result', t('notif_send_fail') + (e && e.message ? ' (' + e.message + ')' : ''), false, true);
   }
 };
 
@@ -5786,6 +5841,10 @@ function surDonneesChangees() {
   // l'appareil mettait bien a jour le panneau admin, mais la roue crantee ne devenait
   // une cle qu'apres un changement d'onglet ou un rechargement du site.
   majBoutonAdmin();
+  // Le statut du tournoi vit dans Firebase : c'est ici, a l'arrivee des donnees, qu'on
+  // apprend qu'une etape vient d'etre lancee. Ne fait rien tant que l'etape ne change
+  // pas — un seul ecrit dans le stockage local par changement d'etape.
+  verifierChangementEtape();
 }
 
 function ecouterSection(chemin) {

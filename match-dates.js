@@ -54,8 +54,18 @@
       var firstIdx = Math.min.apply(null, presentRounds.map(function (r) {
         return FINALS_ROUND_SEQUENCE.indexOf(r);
       }));
-      var thisIdx = FINALS_ROUND_SEQUENCE.indexOf(game.round);
-      if (thisIdx < 0) return null;          // ex. '3ème place' : pas de date propre
+      // La petite finale n'est pas un TOUR du tableau — elle ne figure donc pas dans la
+      // séquence et ne doit pas peser sur le calcul de la première ronde présente — mais
+      // elle se joue en même temps que la finale et mérite la même échéance. Sans ça,
+      // c'était le SEUL match du tournoi sans date limite : ni affichée sur la carte, ni
+      // prise en compte par l'alerte de retard. Ses deux joueurs n'avaient aucune
+      // indication de quand jouer.
+      // Elle est optionnelle (réglage admin « match pour la 3e place ») : quand elle
+      // n'existe pas, rien de tout ceci ne s'exécute. Et quand elle existe, la finale
+      // existe forcément — elle n'est créée que si des demi-finales sont présentes.
+      var rondePourDate = (game.round === '3ème place') ? 'Finale' : game.round;
+      var thisIdx = FINALS_ROUND_SEQUENCE.indexOf(rondePourDate);
+      if (thisIdx < 0) return null;
       var position = thisIdx - firstIdx;
       if (position < 0) return null;
 
@@ -79,12 +89,33 @@
   // ⚠️ Ne pas rajouter d'intervalle de grâce ici : historiquement l'échéance marquait le
   // DÉBUT de la fenêtre de jeu, ce qui justifiait d'attendre un intervalle de plus. Depuis
   // que l'échéance est la vraie date limite, ce délai supplémentaire doublait l'attente.
+  // ── LE SITE ET LE SERVEUR DOIVENT BASCULER AU MÊME INSTANT ──
+  // `setHours(23,59,59,999)` ferme la journée dans le fuseau de la MACHINE. Le téléphone
+  // du joueur est en Suisse, la fonction Netlify tourne en UTC : le site marquait donc un
+  // match en retard jusqu'à deux heures avant le serveur, et « Vérifier les retards
+  // maintenant » pouvait répondre « aucun retard » pendant que l'écran en affichait un.
+  // L'échéance est une date CIVILE suisse. On compare donc des dates civiles, pas des
+  // instants : la journée d'aujourd'hui EN SUISSE contre la journée de l'échéance. Le
+  // passage à l'heure d'hiver (25 octobre 2026, en plein tournoi) est géré par le fuseau
+  // lui-même, sans arithmétique à faire.
+  function enJourneeCivile(d) {
+    var mm = d.getMonth() + 1, jj = d.getDate();
+    return d.getFullYear() + '-' + (mm < 10 ? '0' : '') + mm + '-' + (jj < 10 ? '0' : '') + jj;
+  }
+  function aujourdhuiEnSuisse() {
+    try {
+      // 'en-CA' rend AAAA-MM-JJ, directement comparable comme texte.
+      return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Zurich' }).format(new Date());
+    } catch (e) {
+      return enJourneeCivile(new Date());   // repli : fuseau de la machine
+    }
+  }
   function isMatchLate(game, isFinal, settings, allFinals) {
     var due = matchDueDate(game, isFinal, settings, allFinals);
     if (!due) return false;
-    var dueEnd = new Date(due);
-    dueEnd.setHours(23, 59, 59, 999); // toute la journée de l'échéance reste jouable
-    return Date.now() > dueEnd.getTime();
+    // `due` est construite à minuit LOCAL à partir de ses composantes : ses composantes
+    // SONT la date civile voulue, quel que soit le fuseau de la machine.
+    return aujourdhuiEnSuisse() > enJourneeCivile(due);
   }
 
   var api = {

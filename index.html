@@ -175,7 +175,48 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
   <p id="loading-text">Chargement...</p>
 </div>
 
-<div id="offline-bar" id="offline-text">⚠️ Hors ligne</div>
+<!-- ══ FILET DE DÉMARRAGE ══
+     Tout le site tient dans UN SEUL script de type module, qui commence par importer
+     Firebase depuis gstatic.com. Si l'un de ces imports échoue — réseau pas encore prêt
+     quand on ouvre l'application installée, portail captif, hoquet DNS — RIEN ne s'exécute :
+     ni le masquage de cet écran, ni les boutons, ni le changement de langue. Le joueur
+     reste devant « Chargement... » indéfiniment, sans message et sans recours.
+     Ce script-ci est délibérément HORS du module et de type classique : il s'exécute
+     immédiatement, quoi qu'il arrive au reste. Il ne fait rien d'autre que compter jusqu'à
+     dix secondes et, si le site n'a toujours pas démarré, remplacer le texte d'attente par
+     une explication et un bouton de rechargement.
+     `window.ABCT_DEMARRE` est posé par le premier rendu réussi : tant qu'il est absent,
+     c'est que le module n'est jamais arrivé au bout. -->
+<script>
+(function () {
+  var TEXTES = {
+    fr: ['Le site n’a pas pu se charger.', 'Vérifie ta connexion, puis recharge la page.', '↻ Recharger'],
+    de: ['Die Seite konnte nicht geladen werden.', 'Prüfe deine Verbindung und lade die Seite neu.', '↻ Neu laden'],
+    en: ['The site could not load.', 'Check your connection, then reload the page.', '↻ Reload'],
+    it: ['Il sito non è riuscito a caricarsi.', 'Controlla la connessione, poi ricarica la pagina.', '↻ Ricarica']
+  };
+  setTimeout(function () {
+    if (window.ABCT_DEMARRE) return;
+    var zone = document.getElementById('loading');
+    if (!zone || zone.style.display === 'none') return;
+    var lg = 'fr';
+    try { var v = localStorage.getItem('abct-lang'); if (TEXTES[v]) lg = v; } catch (e) {}
+    var txt = document.getElementById('loading-text');
+    if (txt) txt.textContent = TEXTES[lg][0];
+    var p = document.createElement('p');
+    p.style.cssText = 'font-size:13px;opacity:0.75;margin-top:6px;max-width:260px;text-align:center';
+    p.textContent = TEXTES[lg][1];
+    var b = document.createElement('button');
+    b.textContent = TEXTES[lg][2];
+    b.style.cssText = 'margin-top:14px;padding:10px 22px;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;background:#C9A961;color:#1a1a1a';
+    b.onclick = function () { location.reload(); };
+    zone.appendChild(p);
+    zone.appendChild(b);
+  }, 10000);
+})();
+</script>
+
+<div id="offline-bar">⚠️ Hors ligne</div>
 
 <div id="header">
   <img id="header-logo" src="" alt="Chess Tour">
@@ -401,7 +442,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
         <button class="btn btn-gray" style="margin-top:8px;font-size:13px" onclick="proposerSeedsPalmares()" id="seed-propose-btn">🏅 Proposer selon le palmarès</button>
         <div style="display:flex;gap:8px;margin-top:8px">
           <button class="btn btn-gray" style="flex:1" onclick="saveSeedOrder()" id="save-seed-btn">💾 Sauvegarder</button>
-          <button class="btn btn-gold" style="flex:1" onclick="assignGroups()" id="assign-btn">⚽ Générer les groupes</button>
+          <button class="btn btn-gold" style="flex:1" onclick="confirmAction('assignGroups')" id="assign-btn">⚽ Générer les groupes</button>
         </div>
         <div id="seeding-msg"></div>
       </div>
@@ -428,9 +469,9 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
         <div class="gap">
           <button class="btn btn-gray" onclick="toggleMaintenance()" id="maint-btn" style="background:#444;color:#fff">🔧 Mode maintenance</button>
           <button class="btn btn-gray" onclick="setStatus('registration')" id="open-reg-btn">📋 Ouvrir les inscriptions</button>
-          <button class="btn btn-gray" onclick="assignGroups()" id="assign-btn-action">♟ Assigner groupes & générer matchs</button>
+          <button class="btn btn-gray" onclick="confirmAction('assignGroups')" id="assign-btn-action">♟ Assigner groupes & générer matchs</button>
           <button class="btn btn-gray" onclick="setStatus('playing')" id="start-pools-btn">⚔️ Lancer la phase de poules</button>
-          <button class="btn btn-gray" onclick="launchFinals()" id="launch-finals-btn">🏆 Lancer les phases finales</button>
+          <button class="btn btn-gray" onclick="confirmAction('launchFinals')" id="launch-finals-btn">🏆 Lancer les phases finales</button>
           <button class="btn btn-gray" onclick="setStatus('finished')" id="finish-btn">🏁 Terminer le tournoi</button>
           <div style="border-top:1px solid #eee;margin:4px 0"></div>
           <button class="btn btn-gray" onclick="confirmAction('resetScores','','',true)" id="reset-scores-btn">↺ Réinitialiser les scores de poule</button>
@@ -625,7 +666,11 @@ if ('serviceWorker' in navigator) {
     console.log('SW error:', err);
   });
 }
-import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+// `update` écrit PLUSIEURS champs d'un nœud en une seule opération atomique. Indispensable
+// pour placer les deux joueurs d'un match : deux `set` successifs laissent, entre eux, un
+// état visible où le même joueur occupe les deux cases — et cet état devient DURABLE si la
+// connexion tombe entre les deux.
+import { getDatabase, ref, onValue, set, get, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -691,7 +736,28 @@ function urlBase64ToUint8Array(base64String) {
   return outputArray;
 }
 
+// ══ BORNER UNE ATTENTE, SANS LAISSER DE MINUTEUR DERRIÈRE SOI ══
+// Au niveau du module : l'activation ET la désactivation s'en servent, sur CHACUNE de
+// leurs attentes. Elle était auparavant définie dans `subscribeToNotifications`, si bien
+// que la désactivation n'avait aucune borne d'aucune sorte — hors connexion, son écriture
+// serveur ne se résolvait jamais et le joueur restait devant un bouton vert alors qu'il
+// n'était plus abonné.
+// `finally` annule le minuteur perdant : sans lui, chaque tentative laissait trois
+// minuteurs armés jusqu'à leur terme.
+function avecDelai(promesse, secondes) {
+  let minuteur = null;
+  const limite = new Promise((_, rejeter) => {
+    minuteur = setTimeout(() => rejeter(new Error('__delai__')), secondes * 1000);
+  });
+  return Promise.race([promesse, limite])
+    .finally(() => { if (minuteur !== null) { clearTimeout(minuteur); minuteur = null; } });
+}
+
 async function subscribeToNotifications() {
+  // Texte exact posé pendant l'attente : le `catch` ne doit effacer QUE celui-là, et
+  // jamais un message plus récent écrit entre-temps par autre chose (l'avertissement
+  // « tu as décoché les deux catégories », le retour d'un envoi de test…).
+  let texteAttente = null;
   try {
     // FILET iPhone : si le joueur a fermé le bandeau puis clique ce bouton, il ne
     // doit pas se heurter à un échec muet. On lui réaffiche la marche à suivre —
@@ -705,19 +771,96 @@ async function subscribeToNotifications() {
       showMsg('notif-msg', t('notif_install_hint'), false, true); return;
     }
     if (!('Notification' in window)) { showMsg('notif-msg', t('notif_unsupported'), false, true); return; }
-    showMsg('notif-msg', t('notif_activating'));
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') { showMsg('notif-msg', t(cleNotifBloquee()), false, true); return; }
     // ── AUCUNE ATTENTE SANS ISSUE ──
-    // `serviceWorker.ready` ne se resout JAMAIS tant qu'aucun service worker n'est
-    // actif, et `subscribe` peut rester en suspens quand le service de notification
-    // du navigateur est injoignable. Sans ces delais, « Activation en cours… »
-    // s'effacait au bout de 3,5 s et il ne se passait plus rien : le joueur n'avait
-    // aucun moyen de savoir que quelque chose avait echoue.
-    const avecDelai = (promesse, secondes) => Promise.race([
-      promesse,
-      new Promise((_, rejeter) => setTimeout(() => rejeter(new Error('__delai__')), secondes * 1000))
-    ]);
+    // Chacune des attentes ci-dessous peut rester en suspens INDÉFINIMENT :
+    //   · `requestPermission` quand le navigateur n'affiche pas la demande — cas d'un
+    //     Edge piloté par une stratégie d'entreprise, ou qui bloque le site de lui-même ;
+    //   · `serviceWorker.ready` tant qu'aucun service worker n'est actif ;
+    //   · `subscribe` quand le service de notification du navigateur est injoignable.
+    // Sans ces délais, « Activation en cours… » s'effaçait au bout de 3,5 s et il ne
+    // se passait plus JAMAIS rien.
+    // (`avecDelai` vit désormais au niveau du module, juste au-dessus de cette fonction.)
+    // ── LA PERMISSION SE LIT, ELLE NE S'ATTEND PAS ──
+    // Un délai qui ABANDONNE — ce qu'était la version précédente, à 60 s — fabriquait un
+    // échec faux : le joueur qui prenait le temps de lire la demande du navigateur voyait
+    // « le navigateur ne répond pas » alors qu'il venait d'autoriser. Ici il est abonné,
+    // simplement plus tard.
+    // ⚠️ À NE PAS CONFONDRE avec ce qui suit, qui n'est PAS réparé ici et vaut aussi pour
+    // la production : dès que la permission quitte 'default', `peutProposerNotif` (qui
+    // teste `!== 'default'`) cesse de proposer le bandeau. Si l'abonnement échoue APRÈS
+    // que la permission a été accordée, ce joueur n'aura plus de bandeau — seulement le
+    // message `notif_off_reminder` posé par la vérification d'ouverture. Ce correctif-ci
+    // supprime le faux message d'échec, il ne rouvre pas le bandeau.
+    // On ne se fie donc pas qu'à la promesse : `Notification.permission` bascule dès que
+    // la demande est tranchée, Y COMPRIS quand le navigateur tranche tout seul sans
+    // honorer la promesse. On la relit toutes les demi-secondes :
+    //   · le joueur répond            → on enchaîne aussitôt, quel que soit le temps mis ;
+    //   · le navigateur bloque seul   → 'denied' vu en ≤ 500 ms, message exact tout de suite ;
+    //   · rien n'est jamais tranché   → au bout de 3 min on rend 'default', et la ligne
+    //     `permission !== 'granted'` ci-dessous affiche le message qui dit exactement ça.
+    // AUCUN de ces chemins ne pose le drapeau local : il ne l'est qu'au bout de la
+    // chaîne, après l'écriture serveur. Une activation qui n'a pas abouti ne peut donc
+    // jamais s'afficher comme active.
+    // `demandeEnCours` garde une prise sur la promesse du navigateur APRÈS le butoir :
+    // celui-ci rend la main, il n'annule rien du tout, et la demande peut très bien être
+    // toujours affichée. Sert au repêchage plus bas.
+    let demandeEnCours = null;
+    const attendrePermission = (secondes) => new Promise(resoudre => {
+      let sonde = null, limite = null;
+      const fini = (v) => { clearInterval(sonde); clearTimeout(limite); resoudre(v); };
+      sonde = setInterval(() => {
+        if (Notification.permission !== 'default') fini(Notification.permission);
+      }, 500);
+      limite = setTimeout(() => fini(Notification.permission), secondes * 1000);
+      // Les très anciens Safari n'ont que la forme à rappel et ne rendent pas de
+      // promesse : `.then` sur `undefined` lève TOUT DE SUITE. On rend alors la valeur
+      // courante plutôt que de laisser la fonction pendue — le joueur reçoit
+      // `notif_no_answer`, le moins faux des messages disponibles (la production, elle,
+      // lui sert « va débloquer le site dans les réglages », ce qui est pire).
+      // `typeof v === 'string'` : la promesse est censée rendre l'une des trois valeurs
+      // connues, on ne s'en remet pas au navigateur sur parole.
+      try {
+        demandeEnCours = Notification.requestPermission();
+        demandeEnCours
+          .then(v => fini(typeof v === 'string' ? v : Notification.permission))
+          // Un rejet ne doit pas faire attendre le butoir entier : on rend la main
+          // tout de suite avec la valeur courante.
+          .catch(() => fini(Notification.permission));
+      } catch (e) { fini(Notification.permission); }
+    });
+    // Message PERSISTANT pendant l'attente : toutes les sorties de cette fonction le
+    // remplacent, donc il ne peut pas rester bloqué à l'écran. Avant, il s'effaçait
+    // tout seul et laissait un écran muet pendant que le navigateur réfléchissait.
+    showMsg('notif-msg', t('notif_activating'), true, true);
+    // Mémoriser le texte réellement affiché (la version persistante y ajoute la croix) :
+    // c'est la seule façon, plus bas, de n'effacer que CE message-là.
+    texteAttente = (document.getElementById('notif-msg') || {}).textContent || null;
+    // 10 minutes, et non 3 : le butoir ne sert QU'AU cas où la demande n'a jamais été
+    // tranchée, c'est-à-dire où elle est probablement encore à l'écran. Le blocage par
+    // le navigateur, lui, est vu par la sonde en une demi-seconde et n'attend pas le
+    // butoir. Une échéance courte ne protégeait donc de rien et coupait l'herbe sous le
+    // pied du joueur qui prenait son temps.
+    const permission = await attendrePermission(600);
+    // 'denied' = refus explicite, il faut aller dans les reglages du site.
+    // 'default' = la demande n'a pas ete affichee, ou n'a pas recu de reponse : ce
+    // n'est PAS la meme chose, et le conseil n'est pas le meme.
+    if (permission === 'denied') { showMsg('notif-msg', t(cleNotifBloquee()), false, true); return; }
+    if (permission !== 'granted') {
+      showMsg('notif-msg', t('notif_no_answer'), false, true);
+      // REPÊCHAGE. Le butoir a rendu la main, il n'a pas fermé la demande du navigateur.
+      // Si le joueur y répond après coup — il était sur une partie, au téléphone — on
+      // reprend l'activation au lieu de la perdre. Sans ça il repartait avec une
+      // permission accordée, aucun abonnement, et plus jamais de bandeau (peutProposerNotif
+      // teste `!== 'default'`). Une seule relance possible : au second passage la
+      // permission vaut déjà 'granted' et la demande se résout immédiatement.
+      // Cette relance n'a plus de geste utilisateur derrière elle, donc `subscribe` peut
+      // la refuser sur certains navigateurs : dans ce cas on retombe exactement sur l'état
+      // qu'on aurait eu sans elle, jamais sur pire.
+      if (demandeEnCours && typeof demandeEnCours.then === 'function') {
+        demandeEnCours.then(v => { if (v === 'granted') subscribeToNotifications(); }).catch(() => {});
+      }
+      return;
+    }
     const reg = await avecDelai(navigator.serviceWorker.ready, 15);
     const sub = await avecDelai(reg.pushManager.subscribe({
       userVisibleOnly: true,
@@ -727,13 +870,25 @@ async function subscribeToNotifications() {
     const subId = btoa(subObj.endpoint).slice(-20);
     const cbO = document.getElementById('pref-officiel');
     const cbM = document.getElementById('pref-match');
-    await set(ref(db, SUB_PATH + '/' + subId), {
+    // L'écriture vers Firebase aussi : hors connexion, elle reste en attente au lieu
+    // d'échouer. Sans délai, le joueur resterait devant « Activation en cours… » sans
+    // jamais apprendre que le serveur ne l'a pas enregistré.
+    // Le drapeau local n'est posé qu'APRÈS cette ligne, donc le bouton ne peut jamais
+    // annoncer une activation qui n'est pas allée jusqu'au bout — c'est là, et nulle
+    // part ailleurs, que se joue la garantie « jamais de faux positif ».
+    // ⚠️ L'inverse, lui, est possible et ASSUMÉ : `subscribe` a déjà réussi plus haut,
+    // donc le navigateur EST abonné, et une écriture mise en file d'attente hors
+    // connexion finit par atterrir. Le joueur peut donc recevoir des notifications
+    // alors que son bouton affiche encore « Activer ». C'est volontairement le sens
+    // prudent de l'écart, jamais l'autre, et la vérification d'ouverture le rattrape
+    // au chargement suivant en reposant le drapeau.
+    await avecDelai(set(ref(db, SUB_PATH + '/' + subId), {
       endpoint: subObj.endpoint,
       keys: subObj.keys,
       timestamp: Date.now(),
       lang: langueCourante(),
       prefs: { officiel: cbO ? cbO.checked : true, match: cbM ? cbM.checked : true }
-    });
+    }), 15);
     localStorage.setItem('abct-notif-subid', subId);
     localStorage.setItem('abct-notif', 'on');
     localStorage.removeItem('abct-notif-volontaire');   // il revient : le choix précédent est caduc
@@ -752,6 +907,38 @@ async function subscribeToNotifications() {
     showMsg('notif-msg', t('notif_enabled'));
   } catch(e) {
     console.error('Subscription error:', e);
+    // ── UNE TENTATIVE LENTE N'ÉCRASE PAS UNE TENTATIVE RÉUSSIE ──
+    // Le joueur qui ne voit rien venir reclique. Mesuré : la seconde tentative
+    // aboutissait à 2,8 s, puis le délai de la PREMIÈRE repeignait une erreur rouge
+    // persistante à 16,3 s par-dessus des notifications qui fonctionnaient.
+    // Si le drapeau vaut 'on' à cet instant, une autre tentative a abouti entre-temps :
+    // l'erreur de CELLE-CI ne décrit plus rien et ne doit pas s'afficher.
+    // ⚠️ On n'en conclut RIEN sur l'état réel. Le drapeau n'est pas une preuve
+    // d'abonnement vivant — trois blocs de ce fichier existent précisément pour le
+    // démentir (`notif_lost`, `notif_cut_server`, la vérification d'ouverture). On se
+    // contente donc d'effacer, sans annoncer un succès qu'on ne peut pas garantir : le
+    // bouton, remis à jour juste après, est le seul à parler de l'état.
+    let dejaActif = false;
+    try { dejaActif = localStorage.getItem('abct-notif') === 'on'; } catch (e2) {}
+    if (dejaActif) {
+      // Effacer D'ABORD : c'est la seule sortie qui n'affiche pas de message à la place,
+      // et « ⏳ Activation en cours… » est PERSISTANT — il resterait figé pour toujours.
+      // Même geste que la croix du message. Ensuite seulement `updateNotifBtn`, pour que
+      // l'avertissement qu'elle pose parfois (permission révoquée) ne soit pas effacé.
+      // ⚠️ On n'efface QUE si la zone porte encore NOTRE message d'attente. Une tentative
+      // lente qui se termine à 16 s effaçait sinon un message écrit entre-temps par
+      // quelqu'un d'autre — typiquement « tu as décoché les deux catégories », qui est un
+      // avertissement important, ou le retour d'un envoi de test.
+      const zoneMsg = document.getElementById('notif-msg');
+      if (zoneMsg && texteAttente !== null && zoneMsg.textContent === texteAttente) {
+        if (zoneMsg._msgTimer) { clearTimeout(zoneMsg._msgTimer); zoneMsg._msgTimer = null; }
+        zoneMsg.textContent = ''; zoneMsg.className = 'msg';
+        zoneMsg.style.display = ''; zoneMsg.style.alignItems = '';
+      }
+      // Sous try : une exception ici s'échapperait du catch et figerait tout.
+      try { updateNotifBtn(); } catch (e3) {}
+      return;
+    }
     // Le message d'echec DOIT etre persistant : il demande une action au joueur, et
     // un message qui s'efface tout seul au bout de 3,5 s le laissait croire qu'il ne
     // s'etait rien passe. C'etait le defaut : « Erreur: Registration failed -
@@ -764,8 +951,22 @@ async function subscribeToNotifications() {
     // sur ce test — l'abonnement peut tres bien reussir sans controleur — on s'en sert
     // uniquement pour donner le bon conseil quand ca a echoue.
     const pasPilotee = !('serviceWorker' in navigator) || !navigator.serviceWorker.controller;
+    // ── NE PAS CONFONDRE « LE SERVEUR A REFUSÉ » ET « LE NAVIGATEUR A BLOQUÉ » ──
+    // Firebase rejette avec `PERMISSION_DENIED: Permission denied` quand l'écriture est
+    // refusée — typiquement si le joueur clique avant que le jeton d'authentification
+    // soit prêt, ce qui arrive sur un réseau chargé. L'ancien aiguillage cherchait
+    // « denied » dans le TEXTE de l'erreur : ce joueur, qui venait pourtant d'ACCORDER
+    // la permission, recevait « va débloquer les notifications dans les réglages du
+    // site ». Message persistant, conseil impossible à suivre, impasse totale.
+    // Un vrai refus du navigateur porte `name === 'NotAllowedError'`. C'est le SEUL
+    // signal fiable : le texte, lui, contient « denied » aussi bien pour un refus Firebase
+    // (`PERMISSION_DENIED`) que pour un échec du service push de Chrome
+    // (`AbortError: Registration failed - permission denied`) — deux cas où le conseil
+    // « va débloquer le site dans tes réglages » est faux et sans issue.
+    // Tout le reste part sur `notif_fail`, qui reste prudent et joint le détail technique.
+    const refusNavigateur = nom === 'NotAllowedError';
     const cle = brut === '__delai__' ? 'notif_timeout'
-      : /denied|permission|NotAllowed|blocked/i.test(brut + ' ' + nom) ? cleNotifBloquee()
+      : refusNavigateur ? cleNotifBloquee()
       : pasPilotee ? 'notif_reload'
       : 'notif_fail';
     // Le detail technique est conserve pour les cas non identifies : c'est la seule
@@ -777,9 +978,14 @@ async function subscribeToNotifications() {
 
 window.unsubscribeFromNotifications = async function unsubscribeFromNotifications() {
   try {
-    const reg = await navigator.serviceWorker.ready;
-    const sub = await reg.pushManager.getSubscription();
-    if (sub) await sub.unsubscribe();
+    // Bornées comme à l'activation : `serviceWorker.ready` ne se résout jamais tant
+    // qu'aucun service worker n'est actif, et `unsubscribe` peut rester en suspens si le
+    // service de notification du navigateur est injoignable. Sans ces bornes, cette
+    // fonction ne rendait JAMAIS la main : aucun message, bouton resté vert, pour
+    // quelqu'un qui venait de demander à être désabonné.
+    const reg = await avecDelai(navigator.serviceWorker.ready, 15);
+    const sub = await avecDelai(reg.pushManager.getSubscription(), 10);
+    if (sub) await avecDelai(sub.unsubscribe(), 15);
     const subId = localStorage.getItem('abct-notif-subid');
     // Le mémo local d'abord : sinon l'écouteur Firebase réagit à la suppression
     // AVANT qu'on l'ait effacé, et l'auto-guérison croit que le serveur a coupé
@@ -791,16 +997,41 @@ window.unsubscribeFromNotifications = async function unsubscribeFromNotification
     // Sans ce marqueur, la vérification d'ouverture annoncerait « tes notifications ne
     // fonctionnaient plus » à chaque lancement, à quelqu'un qui les a coupées exprès.
     localStorage.setItem('abct-notif-volontaire', '1');
-    if (subId) await set(ref(db, SUB_PATH + '/' + subId), null);
+    // ⚠️ LE BOUTON AVANT L'ÉCRITURE SERVEUR, PAS APRÈS.
+    // À cette ligne, l'abonnement du navigateur est DÉJÀ révoqué : le joueur ne recevra
+    // plus rien, quoi qu'il arrive ensuite. Le bouton doit donc le dire tout de suite.
+    // Il était mis à jour APRÈS l'écriture Firebase : hors connexion, Firebase met cette
+    // écriture en file d'attente au lieu d'échouer, la promesse ne se résout jamais, et
+    // le joueur restait devant un bouton VERT « Notifications activées », sans le moindre
+    // message, alors qu'il n'était plus abonné. C'est exactement le faux positif que tout
+    // le reste du fichier s'échine à rendre impossible — et il est en production.
+    // Avertissement rouge PERSISTANT dans la foulée : le joueur doit mesurer ce qu'il
+    // perd. Il reste jusqu'à ce qu'il le ferme (✕) ou recharge la page.
     updateNotifBtn();
-    // Avertissement rouge PERSISTANT : le joueur doit mesurer ce qu'il perd.
-    // Il reste jusqu'à ce qu'il le ferme (✕) ou recharge la page.
     showMsg('notif-msg', t('notif_disabled_warn'), false, true);
+    // L'écriture serveur ensuite, et BORNÉE : elle ne bloque plus rien d'affiché, mais
+    // un échec doit rester signalé — l'entrée resterait fantôme côté serveur et fausserait
+    // le compte des abonnés du panneau admin.
+    if (subId) await avecDelai(set(ref(db, SUB_PATH + '/' + subId), null), 15);
   } catch(e) {
     console.error('Unsubscribe error:', e);
-    // Meme defaut que dans subscribeToNotifications, jumeau reste non corrige jusqu'ici :
-    // un echec qui s'efface en 3,5 s laisse croire que la desactivation a fonctionne.
-    showMsg('notif-msg', t('notif_fail') + (e && e.message ? ' (' + e.message + ')' : ''), false, true);
+    // La coupure a-t-elle DÉJÀ eu lieu du point de vue du joueur ? Ces deux marqueurs ne
+    // valent ça qu'ensemble, et seulement après la révocation de l'abonnement navigateur.
+    // Si c'est le cas, seule la suppression de l'entrée serveur a échoué : on ne lui
+    // annonce pas un échec qui n'en est pas un pour lui. L'avertissement « notifications
+    // désactivées » posé juste avant reste à l'écran, et il est exact. L'entrée fantôme
+    // côté serveur sera retirée par le nettoyage des abonnements morts du panneau admin.
+    let dejaCoupe = false;
+    try {
+      dejaCoupe = localStorage.getItem('abct-notif') !== 'on'
+               && localStorage.getItem('abct-notif-volontaire') === '1';
+    } catch (e2) {}
+    if (dejaCoupe) { try { updateNotifBtn(); } catch (e3) {} return; }
+    // Sinon la coupure a échoué AVANT d'aboutir : l'abonnement navigateur est peut-être
+    // encore vivant. Message DÉDIÉ : `notif_fail` dit « Activation impossible… », ce qui
+    // n'a aucun sens pour quelqu'un dont la DÉSACTIVATION vient d'échouer. D'où le conseil
+    // de recharger pour voir l'état réel plutôt qu'une affirmation sur cet état.
+    showMsg('notif-msg', t('notif_disable_fail') + (e && e.message ? ' (' + e.message + ')' : ''), false, true);
   }
 }
 
@@ -1319,7 +1550,7 @@ const T = {
   fr:{
     loading:"Chargement...",offline:"⚠️ Hors ligne — données non synchronisées",write_denied:"⛔ Enregistrement refusé — recharge la page et réessaie.",
     dev_none:"⚠️ Aucun appareil admin enregistré pour l'alerte retard.",dev_orphan:"⚠️ L'appareil admin enregistré n'a plus d'abonnement actif — l'alerte retard ne parvient à personne.",dev_this_on:"✅ C'est cet appareil qui est enregistré pour l'alerte retard.",dev_this_off:"⏸️ Cet appareil est enregistré, mais l'alerte automatique est désactivée (case ci-dessus).",dev_other_since:"Abonné le",dev_other:"⚠️ Un <b>autre</b> appareil est enregistré pour l'alerte retard — pas celui-ci.",dev_register_btn:"📍 Faire de cet appareil mon appareil admin",dev_register_instead:"📍 Enregistrer cet appareil à la place",dev_remove_this:"🔄 Retirer cet enregistrement",dev_remove_current:"🔄 Retirer l'enregistrement actuel",dev_enable_first:"Active tes notifications ci-dessus d'abord.",dev_enable_then_register:"Active tes notifications ci-dessus, puis enregistre cet appareil.",dev_home_this_on:"✅ Appareil admin — alerte retard active ici",dev_home_this_off:"⏸️ Appareil admin enregistré ici — alerte désactivée",dev_home_other:"⚠️ Pas l'appareil admin enregistré — aucune alerte retard ici",dev_home_orphan:"⚠️ L'appareil admin enregistré n'est plus abonné — alerte sans destinataire",dev_home_none:"⚠️ Aucun appareil admin enregistré",
-    late_check_alert_sent:"{n} match(s) en retard — alerte envoyée à l'appareil admin",late_check_nothing_late:"Aucun match en retard. Rien à envoyer.",late_check_proof_sent:"Aucun retard. Le message hebdomadaire de contrôle a été envoyé.",late_check_not_playing:"Le tournoi n'est pas en phase de jeu : aucun match ne peut être en retard.",late_check_no_admin_device:"Aucun appareil admin enregistré : l'alerte n'a pas de destinataire.",late_check_admin_sub_invalid:"L'abonnement de l'appareil admin est invalide. Réenregistre-le.",late_check_auto_off:"L'alerte automatique est désactivée (case dans l'onglet Notifs).",late_check_maintenance:"Mode maintenance actif : l'alerte est suspendue.",late_check_no_config:"Configuration serveur incomplète (clés manquantes sur Netlify).",notif_cleaned:"🧹 {n} abonnement(s) inactif(s) retiré(s).",subs_section_title:"👥 Abonnés",reset_subs_warn:"⚠️ Efface TOUS les abonnements, y compris les valides. Chacun devra rouvrir le site pour être réabonné, et ses préférences seront remises par défaut. À réserver aux cas de désordre : le nettoyage ci-dessus suffit d'ordinaire.",late_checking:"⏳ Vérification en cours…",notif_muted:"🔕 Aucune notification ne te parviendra",notif_all_muted:"⚠️ Tu as décoché les deux catégories : plus aucune notification ne te parviendra. Tu risques de manquer une échéance et d'être déclaré forfait. Recoche au moins une case.",prefs_loading:"Chargement de tes préférences…",prefs_close_btn:"✓ OK",auto_notif_title:"⚙️ Réglages automatiques",prefs_title:"🔔 Mes notifications",late_check_admin_dead:"L'appareil admin n'était plus joignable : abonnement et enregistrement retirés. Enregistre un appareil ci-dessus.",pin_current:"PIN actuel",reg_closed:"Les inscriptions sont fermées.",pin_new:"Nouveau PIN",pin_confirm:"Confirmer",set_semis:"Format demi-finales",set_final:"Format finale",whatsapp_title:"📲 Rappel WhatsApp",save_seed:"💾 Sauvegarder",
+    late_check_alert_sent:"{n} match(s) en retard — alerte envoyée à l'appareil admin",late_check_nothing_late:"Aucun match en retard. Rien à envoyer.",late_check_proof_sent:"Aucun retard. Le message hebdomadaire de contrôle a été envoyé.",late_check_not_playing:"Le tournoi n'est pas en phase de jeu : aucun match ne peut être en retard.",late_check_no_admin_device:"Aucun appareil admin enregistré : l'alerte n'a pas de destinataire.",late_check_admin_sub_invalid:"L'abonnement de l'appareil admin est invalide. Réenregistre-le.",late_check_auto_off:"L'alerte automatique est désactivée (case dans l'onglet Notifs).",late_check_maintenance:"Mode maintenance actif : l'alerte est suspendue.",late_check_no_config:"Configuration serveur incomplète (clés manquantes sur Netlify).",notif_cleaned:"🧹 {n} abonnement(s) inactif(s) retiré(s).",subs_section_title:"👥 Abonnés",reset_subs_warn:"⚠️ Efface TOUS les abonnements, y compris les valides. Chacun devra rouvrir le site pour être réabonné, et ses préférences seront remises par défaut. À réserver aux cas de désordre : le nettoyage ci-dessus suffit d'ordinaire.",late_checking:"⏳ Vérification en cours…",notif_muted:"🔕 Aucune notification ne te parviendra",notif_all_muted:"⚠️ Tu as décoché les deux catégories : plus aucune notification ne te parviendra. Tu risques de manquer une échéance et d'être déclaré forfait. Recoche au moins une case.",prefs_loading:"Chargement de tes préférences…",prefs_close_btn:"✓ OK",auto_notif_title:"⚙️ Réglages automatiques",prefs_title:"🔔 Mes notifications",late_check_admin_dead:"L'appareil admin n'était plus joignable : abonnement et enregistrement retirés. Enregistre un appareil ci-dessus.",pin_current:"PIN actuel",reg_closed:"Les inscriptions sont fermées.",modif_closed:"Les inscriptions sont fermées : la liste des joueurs ne peut plus être modifiée. Un joueur renommé ou retiré maintenant resterait dans les matchs et les classements déjà établis.",sync_wait:"⏳ Données pas encore chargées. Réessaie dans quelques secondes.",pin_new:"Nouveau PIN",pin_confirm:"Confirmer",set_semis:"Format demi-finales",set_final:"Format finale",whatsapp_title:"📲 Rappel WhatsApp",save_seed:"💾 Sauvegarder",
     tab_home:"Tournoi",tab_groups:"Groupes",tab_matches:"Matchs",tab_finals:"Finales",
     tab_info:"Infos",confirm_archive_before_reset:"⚠️ ARCHIVER LE TOURNOI ?\n\nLe classement final de {n} joueur(s) va être rangé dans le palmarès, avec toutes les statistiques.\n\n✅ OK = archiver, puis réinitialiser\n❌ Annuler = réinitialiser SANS archiver\n\n(Une copie de sécurité du tournoi est conservée dans tous les cas.)",palmares_admin_title:"🏅 Palmarès",palmares_edition_name_placeholder:"Nom de l'édition",info_rules_btn:"📜 Règlement",info_palmares_btn:"🏅 Palmarès",info_ranking_btn:"📊 Classement en direct",live_rank_title:"Classement en direct",info_admin_btn:"⚙️ Admin",info_rules_title:"Règlement",info_palmares_title:"Palmarès",
     status_registration:"Inscriptions ouvertes",status_playing:"Phase de poules",status_finals:"Phases finales",status_finished:"Terminé",
@@ -1360,7 +1591,7 @@ const T = {
     palmares_pseudo_placeholder:"Pseudo Chess.com",
     palmares_name_optional_placeholder:"Nom (optionnel)",
     palmares_bulk_placeholder:"Un joueur par ligne : pseudo-Nom, ou juste le pseudo",
-    palmares_bulk_btn:"➕ Ajouter la liste",palmares_fill_names_btn:"🔗 Retrouver les noms",palmares_search_ph:"🔎 Rechercher un joueur…",palmares_player_none:"Aucun joueur trouvé.",palmares_edition:"édition",palmares_editions:"éditions",palmares_podium:"podium",palmares_podiums:"podiums",palmares_best:"meilleur rang :",palmares_of:" sur ",palmares_stats_btn:"Statistiques des joueurs",tri_points:"📊 Points",tri_ratio:"⚡ Par match",tri_titres:"🏆 Titres",legende_general_poules:"ℹ️ <b>Ordre du classement :</b> 1) rang dans le groupe — tous les 1ers de groupe, puis tous les 2es, etc. 2) points par match 3) victoires par match 4) victoires avec les Noirs par match 5) Buchholz par match — la force des adversaires rencontrés en poules 6) tête de série.<br>Les valeurs sont ramenées au match car les groupes n'ont pas tous la même taille.",legende_general_finales:"ℹ️ <b>Ordre du classement :</b> 1) le tour atteint en phases finales passe avant tout — un demi-finaliste devance un quart de finaliste, même avec moins de points 2) puis le rang dans le groupe 3) puis points, victoires et victoires avec les Noirs, par match 4) puis le Buchholz, figé sur les poules 5) puis tête de série.<br>Un joueur peut donc afficher plus de points qu'un autre placé au-dessus de lui : c'est le parcours en finales qui décide.",legende_edition:"ℹ️ <b>Ordre du classement final :</b> le tour atteint en phases finales passe avant tout, puis le rang dans le groupe, puis les statistiques par match et le Buchholz. Un joueur peut donc afficher plus de points qu'un autre placé au-dessus de lui.",bracket_title:"🏆 Tableau des finales",bracket_legend:"Matchs joués en trait plein, à venir en pointillé. Le vainqueur est en gras. Défile horizontalement.",bracket_pending:"à déterminer",bracket_bye:"Qualifié",fab_admin:"Espace d'organisation",fab_admin_device:"Espace d'organisation — appareil enregistré",bracket_how_title:"🎯 Comment les finales sont organisées",bracket_directs:"Les {n} mieux classés sont directement qualifiés pour les {tour}.<br><br>",bracket_explain_std:"Les qualifiés sont classés toutes poules confondues : d'abord les premiers de chaque groupe, puis les meilleurs deuxièmes, puis les meilleurs troisièmes, et ainsi de suite.<br><br>{directs}Les appariements suivent ce classement : le mieux classé affronte le moins bien classé, et ainsi de suite.<br><br>Deux joueurs d'un même groupe ne s'affrontent pas au premier tour.",bracket_explain_two:"Les qualifiés sont classés toutes poules confondues : d'abord les premiers de chaque groupe, puis les meilleurs deuxièmes, puis les meilleurs troisièmes, et ainsi de suite.<br><br>Les premiers de groupe sont directement qualifiés pour le tour suivant.<br><br>Les appariements suivent ce classement : le mieux classé affronte le moins bien classé, et ainsi de suite.<br><br>Deux joueurs d'un même groupe ne s'affrontent pas au premier tour.",rank_modal_title:"ℹ️ À propos du classement",rank_modal_body:"Le classement ne suit pas que les points, mais aussi le <b>parcours en phases finales</b>.<br><br>Un joueur éliminé en demi-finale passe devant un quart-de-finaliste, même avec moins de points.",rank_modal_ok:"Compris",rank_hint:"ℹ️ Classement selon le parcours en finales, pas seulement les points.",palmares_stats_desc:"Tous les joueurs ayant participé, classés sur l'ensemble des éditions.",palmares_ongoing:"en cours",palmares_ended:"terminé",palmares_pick:"Choisis un tournoi ci-dessus.",palmares_no_result_yet:"Aucun match encore joué.",palmares_provisional:"⏳ Classement provisoire — le tournoi est en cours",palmares_virtual_desc:"⏳ Qui serait qualifié si les poules s'arrêtaient maintenant",palmares_qualified_desc:"✅ Joueurs qualifiés pour les phases finales",palmares_player:"joueur",palmares_players:"joueurs",palmares_format_help:"<b>Un joueur par ligne, dans l'ordre du classement :</b><br><code>pseudo-Nom</code> &nbsp;— sans statistiques<br><code>pseudo-Nom;V;N;D;V;N;D</code> &nbsp;— avec statistiques<br>Les 3 premiers chiffres = victoires, nulles, défaites <b>avec les Blancs</b> ⬜<br>Les 3 suivants = victoires, nulles, défaites <b>avec les Noirs</b> ⬛<br>Exemple : <code>Goudi8-Romain;1;3;1;4;0;1</code><br>Matchs joués et points se calculent automatiquement.",qual_rg:"Rg",qual_grp:"Grp",qual_ptsm:"Pts/M",qual_vm:"V/M",qual_vnm:"VN/M",qual_tbm:"TB/M",qual_seed:"Seed",sep_virtuels:"— LIMITE DE QUALIFICATION ({n}) —",sep_qualifies:"— QUALIFIÉS ({n}) —",sep_directs:"— DIRECTEMENT EN {tour} ({n}) —",qual_legend:"Départage, dans l'ordre : Pts/M (points par match) → V/M (victoires par match) → VN/M (victoires avec les Noirs par match) → TB/M (Buchholz par match) → Seed (tête de série). Rg = rang dans le groupe.",palmares_pts:"pts",palmares_m:"m",palmares_v:"V",palmares_n:"N",palmares_d:"D",palmares_white:"Blancs",palmares_black:"Noirs",palmares_total:"Total",palmares_on:"sur",palmares_names_filled:"✓ {n} nom(s) retrouvé(s) !",palmares_no_name_found:"Aucun nom à retrouver.",
+    palmares_bulk_btn:"➕ Ajouter la liste",palmares_fill_names_btn:"🔗 Retrouver les noms",palmares_search_ph:"🔎 Rechercher un joueur…",palmares_player_none:"Aucun joueur trouvé.",palmares_edition:"édition",palmares_editions:"éditions",palmares_podium:"podium",palmares_podiums:"podiums",palmares_best:"meilleur rang :",palmares_of:" sur ",palmares_stats_btn:"Statistiques des joueurs",tri_points:"📊 Points",tri_ratio:"⚡ Par match",tri_titres:"🏆 Titres",legende_general_poules:"ℹ️ <b>Ordre du classement :</b> 1) rang dans le groupe — tous les 1ers de groupe, puis tous les 2es, etc. 2) points par match 3) victoires par match 4) victoires avec les Noirs par match 5) Buchholz par match — la force des adversaires rencontrés en poules 6) tête de série.<br>Les valeurs sont ramenées au match car les groupes n'ont pas tous la même taille.",legende_general_finales:"ℹ️ <b>Ordre du classement :</b> 1) le tour atteint en phases finales passe avant tout — un demi-finaliste devance un quart de finaliste, même avec moins de points 2) puis le rang dans le groupe 3) puis points, victoires et victoires avec les Noirs, par match 4) puis le Buchholz, figé sur les poules 5) puis tête de série.<br>Un joueur peut donc afficher plus de points qu'un autre placé au-dessus de lui : c'est le parcours en finales qui décide.",legende_edition:"ℹ️ <b>Ordre du classement final :</b> le tour atteint en phases finales passe avant tout, puis le rang dans le groupe, puis les statistiques par match et le Buchholz. Un joueur peut donc afficher plus de points qu'un autre placé au-dessus de lui.",bracket_title:"🏆 Tableau des finales",bracket_legend:"Matchs joués en trait plein, à venir en pointillé. Le vainqueur est en gras. Défile horizontalement.",bracket_pending:"à déterminer",bracket_bye:"Qualifié",fab_admin:"Espace d'organisation",fab_admin_device:"Espace d'organisation — appareil enregistré",bracket_how_title:"🎯 Comment les finales sont organisées",bracket_directs:"Les {n} mieux classés sont directement qualifiés pour les {tour}.<br><br>",bracket_explain_std:"Les qualifiés sont classés toutes poules confondues : d'abord les premiers de chaque groupe, puis les meilleurs deuxièmes, puis les meilleurs troisièmes, et ainsi de suite.<br><br>{directs}Les appariements suivent ce classement : le mieux classé affronte le moins bien classé, et ainsi de suite.<br><br>Deux joueurs d'un même groupe ne s'affrontent pas au premier tour.",bracket_explain_two:"Les qualifiés sont classés toutes poules confondues : d'abord les premiers de chaque groupe, puis les meilleurs deuxièmes, puis les meilleurs troisièmes, et ainsi de suite.<br><br>Les premiers de groupe sont directement qualifiés pour le tour suivant.<br><br>Les appariements suivent ce classement : le mieux classé affronte le moins bien classé, et ainsi de suite.<br><br>Deux joueurs d'un même groupe ne s'affrontent pas au premier tour.",rank_modal_title:"ℹ️ À propos du classement",rank_modal_body:"Le classement ne suit pas que les points, mais aussi le <b>parcours en phases finales</b>.<br><br>Un joueur éliminé en demi-finale passe devant un quart-de-finaliste, même avec moins de points.",rank_modal_ok:"Compris",rank_hint:"ℹ️ Classement selon le parcours en finales, pas seulement les points.",palmares_stats_desc:"Tous les joueurs ayant participé, classés sur l'ensemble des éditions.",palmares_ongoing:"en cours",palmares_ended:"terminé",palmares_pick:"Choisis un tournoi ci-dessus.",palmares_no_result_yet:"Aucun match encore joué.",palmares_provisional:"⏳ Classement provisoire — le tournoi est en cours",palmares_virtual_desc:"⏳ Qui serait qualifié si les poules s'arrêtaient maintenant",palmares_qualified_desc:"✅ Joueurs qualifiés pour les phases finales",palmares_player:"joueur",palmares_players:"joueurs",palmares_format_help:"<b>Un joueur par ligne, dans l'ordre du classement :</b><br><code>pseudo-Nom</code> &nbsp;— sans statistiques<br><code>pseudo-Nom;V;N;D;V;N;D</code> &nbsp;— avec statistiques<br>Les 3 premiers chiffres = victoires, nulles, défaites <b>avec les Blancs</b> ⬜<br>Les 3 suivants = victoires, nulles, défaites <b>avec les Noirs</b> ⬛<br>Exemple : <code>Goudi8-Romain;1;3;1;4;0;1</code><br>Matchs joués et points se calculent automatiquement.",qual_rg:"Rg",group_long:"Groupe",group_short:"G",qual_grp:"Grp",qual_ptsm:"Pts/M",qual_vm:"V/M",qual_vnm:"VN/M",qual_tbm:"TB/M",qual_seed:"Seed",sep_virtuels:"— LIMITE DE QUALIFICATION ({n}) —",sep_qualifies:"— QUALIFIÉS ({n}) —",sep_directs:"— DIRECTEMENT EN {tour} ({n}) —",qual_legend:"Départage, dans l'ordre : Pts/M (points par match) → V/M (victoires par match) → VN/M (victoires avec les Noirs par match) → TB/M (Buchholz par match) → Seed (tête de série). Rg = rang dans le groupe.",palmares_pts:"pts",palmares_m:"m",palmares_v:"V",palmares_n:"N",palmares_d:"D",palmares_white:"Blancs",palmares_black:"Noirs",palmares_total:"Total",palmares_on:"sur",palmares_names_filled:"✓ {n} nom(s) retrouvé(s) !",palmares_no_name_found:"Aucun nom à retrouver.",
     rules:`<p>🚀 Consulte l'onglet Matchs pour voir tes parties dès que la phase de poules est lancée. Envoie une invitation à ton adversaire sur Chess.com (pseudo visible dans l'onglet Tournoi) ou jouez sur échiquier physique. Inscrivez le résultat dès la fin de chaque partie directement dans l'app.</p><br>
 <p>⏰ <strong>Commence tes parties dès le début du tournoi</strong> et termine-les avant l'échéance affichée sur chaque match. Tu peux jouer plusieurs parties en parallèle, mais <strong>respecte l'ordre des rondes</strong> : traite d'abord celles dont l'échéance est la plus proche. Même à cadence lente, enchaîne tes coups pour finir dans les délais.</p><br>
 <p>Format : Poules round-robin, puis phases finales à élimination directe. Le nombre de groupes et de qualifiés est fixé par l'organisateur selon le nombre d'inscrits, et annoncé au lancement du tournoi.</p><br>
@@ -1389,7 +1620,7 @@ const T = {
     notif_enabled:"✓ Notifications activées !",
     notif_disabled_warn:"⚠️ Notifications désactivées. Tu ne recevras plus les annonces du tournoi ni les résultats — tu risques de manquer une échéance et d'être déclaré forfait. Réactive-les dès que possible.",notif_cut_server:"⚠️ Tes notifications ont été coupées côté serveur — réactive-les si tu le souhaites.",notif_lost:"⚠️ Tes notifications ne fonctionnaient plus (abonnement perdu par ton navigateur). Réactive-les pour ne pas manquer d'échéance.",notif_off_reminder:"🔕 Tu ne reçois aucune notification. Active-les pour ne pas manquer d'échéance.",
     
-    notif_activating:"⏳ Activation en cours…",notif_send_fail:"Envoi impossible. L'annonce n'est PAS partie. Réessaie dans un instant.",notif_reload:"Le site vient d'être mis à jour : recharge la page, puis réessaie d'activer. C'est normal à la première visite.",notif_fail:"Activation impossible. Vérifie que les notifications ne sont pas bloquées par ton navigateur ou par ton système, puis réessaie.",notif_timeout:"Le navigateur ne répond pas. Recharge la page et réessaie ; si ça recommence, redémarre le navigateur.",notif_test_sending:"📤 Envoi du test en cours…",notif_test_no_entry:"⏳ Synchronisation en cours, réessaie dans quelques secondes.",notif_test_dead:"❌ Ton abonnement n'est plus valide (adresse expirée). Il a été retiré : réactive tes notifications.",notif_test_error:"❌ Le serveur n'a pas pu envoyer. Réessaie dans un instant.",notif_test_network:"❌ Serveur injoignable. Vérifie ta connexion.",notif_test_sent:"✓ Notification test envoyée !",
+    notif_activating:"⏳ Activation en cours…",notif_send_fail:"Envoi impossible. L'annonce n'est PAS partie. Réessaie dans un instant.",notif_no_answer:"Ton navigateur n'a pas affiché la demande d'autorisation, ou elle est restée sans réponse. Si ton navigateur est géré par ton entreprise (edge://policy), les notifications peuvent y être bloquées : essaie depuis ton téléphone ou un navigateur personnel.",notif_reload:"Le site vient d'être mis à jour : recharge la page, puis réessaie d'activer. C'est normal à la première visite.",notif_fail:"Activation impossible. Vérifie que les notifications ne sont pas bloquées par ton navigateur ou par ton système, puis réessaie.",notif_disable_fail:"Désactivation impossible. Recharge la page pour voir l'état réel de tes notifications, puis réessaie.",notif_timeout:"Le navigateur ne répond pas. Recharge la page et réessaie ; si ça recommence, redémarre le navigateur.",notif_test_sending:"📤 Envoi du test en cours…",notif_test_no_entry:"⏳ Synchronisation en cours, réessaie dans quelques secondes.",notif_test_dead:"❌ Ton abonnement n'est plus valide (adresse expirée). Il a été retiré : réactive tes notifications.",notif_test_error:"❌ Le serveur n'a pas pu envoyer. Réessaie dans un instant.",notif_test_network:"❌ Serveur injoignable. Vérifie ta connexion.",notif_test_sent:"✓ Notification test envoyée !",
     notif_test_nosub:"❌ Pas d'abonnement actif. Désactive puis réactive les notifications.",
     notif_enter_msg:"Entrez un message.",
     notif_sent:"✓ Notification enregistrée !",
@@ -1408,7 +1639,7 @@ const T = {
     groups_created:" groupes créés, ",
     matches_generated:" matchs générés.",
     seeding_done:[" groupes créés, "," matchs générés."],
-    confirm_reset_finals_title:"Réinitialiser les phases finales ?",
+    confirm_assign_groups_title:"Générer les groupes et les matchs ?",confirm_assign_groups_text:"Les groupes sont refaits et TOUS les matchs de poule sont regénérés : les scores déjà saisis et le tableau des finales seront effacés. Aucune sauvegarde n'est créée.",confirm_launch_finals_title:"Lancer les phases finales ?",confirm_launch_finals_text:"Le tableau final est construit à partir du classement actuel. S'il existe déjà un tableau, il est remplacé et les résultats de finales déjà saisis sont perdus.",confirm_reset_finals_title:"Réinitialiser les phases finales ?",
     confirm_reset_finals_text:"❌ EFFACÉ : le tableau des finales.\n✅ CONSERVÉ : joueurs, groupes, matchs de poule et leurs scores.\n\nLe tournoi revient en phase de poules.",
     confirm_reset_groups_title:"Réinitialiser les groupes ?",
     confirm_reset_groups_text:"❌ EFFACÉ : les groupes, TOUS les matchs de poule avec leurs scores, et le tableau des finales.\n✅ CONSERVÉ : les joueurs inscrits et leur ordre de têtes de série.\n\nLe tournoi revient en phase d'inscriptions.",
@@ -1454,7 +1685,7 @@ const T = {
   de:{
     loading:"Wird geladen...",offline:"⚠️ Offline — Daten werden nicht synchronisiert",write_denied:"⛔ Speichern abgelehnt — Seite neu laden und erneut versuchen.",
     dev_none:"⚠️ Kein Admin-Gerät für die Verspätungswarnung registriert.",dev_orphan:"⚠️ Das registrierte Admin-Gerät hat kein aktives Abonnement mehr — die Warnung erreicht niemanden.",dev_this_on:"✅ Dieses Gerät ist für die Verspätungswarnung registriert.",dev_this_off:"⏸️ Dieses Gerät ist registriert, aber die automatische Warnung ist deaktiviert (Kästchen oben).",dev_other_since:"Angemeldet am",dev_other:"⚠️ Ein <b>anderes</b> Gerät ist für die Verspätungswarnung registriert — nicht dieses.",dev_register_btn:"📍 Dieses Gerät zu meinem Admin-Gerät machen",dev_register_instead:"📍 Stattdessen dieses Gerät registrieren",dev_remove_this:"🔄 Diese Registrierung entfernen",dev_remove_current:"🔄 Aktuelle Registrierung entfernen",dev_enable_first:"Aktiviere zuerst oben deine Benachrichtigungen.",dev_enable_then_register:"Aktiviere oben deine Benachrichtigungen und registriere dann dieses Gerät.",dev_home_this_on:"✅ Admin-Gerät — Verspätungswarnung hier aktiv",dev_home_this_off:"⏸️ Admin-Gerät hier registriert — Warnung deaktiviert",dev_home_other:"⚠️ Nicht das registrierte Admin-Gerät — keine Warnung hier",dev_home_orphan:"⚠️ Registriertes Admin-Gerät nicht mehr abonniert — Warnung ohne Empfänger",dev_home_none:"⚠️ Kein Admin-Gerät registriert",
-    late_check_alert_sent:"{n} verspätete Partie(n) — Warnung an das Admin-Gerät gesendet",late_check_nothing_late:"Keine verspätete Partie. Nichts zu senden.",late_check_proof_sent:"Keine Verspätung. Die wöchentliche Kontrollnachricht wurde gesendet.",late_check_not_playing:"Das Turnier ist nicht in der Spielphase: keine Partie kann verspätet sein.",late_check_no_admin_device:"Kein Admin-Gerät registriert: die Warnung hat keinen Empfänger.",late_check_admin_sub_invalid:"Das Abonnement des Admin-Geräts ist ungültig. Bitte neu registrieren.",late_check_auto_off:"Die automatische Warnung ist deaktiviert (Kästchen im Tab Benachrichtigungen).",late_check_maintenance:"Wartungsmodus aktiv: die Warnung ist ausgesetzt.",late_check_no_config:"Serverkonfiguration unvollständig (fehlende Schlüssel auf Netlify).",notif_cleaned:"🧹 {n} inaktive(s) Abonnement(s) entfernt.",subs_section_title:"👥 Abonnenten",reset_subs_warn:"⚠️ Löscht ALLE Abonnements, auch die gültigen. Jeder muss die Website erneut öffnen, um wieder angemeldet zu werden, und seine Einstellungen werden zurückgesetzt. Nur bei Problemen verwenden: die Bereinigung oben genügt normalerweise.",late_checking:"⏳ Prüfung läuft…",notif_muted:"🔕 Du erhältst keine Benachrichtigungen",notif_all_muted:"⚠️ Du hast beide Kategorien abgewählt: du erhältst keine Benachrichtigung mehr. Du riskierst, eine Frist zu verpassen und kampflos zu verlieren. Wähle mindestens eine wieder aus.",prefs_loading:"Deine Einstellungen werden geladen…",prefs_close_btn:"✓ OK",auto_notif_title:"⚙️ Automatische Einstellungen",prefs_title:"🔔 Meine Benachrichtigungen",late_check_admin_dead:"Das Admin-Gerät war nicht mehr erreichbar: Abonnement und Registrierung entfernt. Registriere oben ein Gerät.",pin_current:"Aktueller PIN",reg_closed:"Die Anmeldung ist geschlossen.",pin_new:"Neuer PIN",pin_confirm:"Bestätigen",set_semis:"Format Halbfinale",set_final:"Format Finale",whatsapp_title:"📲 WhatsApp-Erinnerung",save_seed:"💾 Speichern",
+    late_check_alert_sent:"{n} verspätete Partie(n) — Warnung an das Admin-Gerät gesendet",late_check_nothing_late:"Keine verspätete Partie. Nichts zu senden.",late_check_proof_sent:"Keine Verspätung. Die wöchentliche Kontrollnachricht wurde gesendet.",late_check_not_playing:"Das Turnier ist nicht in der Spielphase: keine Partie kann verspätet sein.",late_check_no_admin_device:"Kein Admin-Gerät registriert: die Warnung hat keinen Empfänger.",late_check_admin_sub_invalid:"Das Abonnement des Admin-Geräts ist ungültig. Bitte neu registrieren.",late_check_auto_off:"Die automatische Warnung ist deaktiviert (Kästchen im Tab Benachrichtigungen).",late_check_maintenance:"Wartungsmodus aktiv: die Warnung ist ausgesetzt.",late_check_no_config:"Serverkonfiguration unvollständig (fehlende Schlüssel auf Netlify).",notif_cleaned:"🧹 {n} inaktive(s) Abonnement(s) entfernt.",subs_section_title:"👥 Abonnenten",reset_subs_warn:"⚠️ Löscht ALLE Abonnements, auch die gültigen. Jeder muss die Website erneut öffnen, um wieder angemeldet zu werden, und seine Einstellungen werden zurückgesetzt. Nur bei Problemen verwenden: die Bereinigung oben genügt normalerweise.",late_checking:"⏳ Prüfung läuft…",notif_muted:"🔕 Du erhältst keine Benachrichtigungen",notif_all_muted:"⚠️ Du hast beide Kategorien abgewählt: du erhältst keine Benachrichtigung mehr. Du riskierst, eine Frist zu verpassen und kampflos zu verlieren. Wähle mindestens eine wieder aus.",prefs_loading:"Deine Einstellungen werden geladen…",prefs_close_btn:"✓ OK",auto_notif_title:"⚙️ Automatische Einstellungen",prefs_title:"🔔 Meine Benachrichtigungen",late_check_admin_dead:"Das Admin-Gerät war nicht mehr erreichbar: Abonnement und Registrierung entfernt. Registriere oben ein Gerät.",pin_current:"Aktueller PIN",reg_closed:"Die Anmeldung ist geschlossen.",modif_closed:"Die Anmeldung ist geschlossen: Die Spielerliste kann nicht mehr geändert werden. Wer jetzt umbenannt oder entfernt wird, bliebe in den bereits erstellten Partien und Ranglisten stehen.",sync_wait:"⏳ Daten noch nicht geladen. Versuche es in ein paar Sekunden erneut.",pin_new:"Neuer PIN",pin_confirm:"Bestätigen",set_semis:"Format Halbfinale",set_final:"Format Finale",whatsapp_title:"📲 WhatsApp-Erinnerung",save_seed:"💾 Speichern",
     tab_home:"Turnier",tab_groups:"Gruppen",tab_matches:"Partien",tab_finals:"Finale",
     tab_info:"Infos",confirm_archive_before_reset:"⚠️ TURNIER ARCHIVIEREN?\n\nDie Endrangliste von {n} Spieler(n) wird mit allen Statistiken in der Siegerliste abgelegt.\n\n✅ OK = archivieren, dann zurücksetzen\n❌ Abbrechen = zurücksetzen OHNE Archivierung\n\n(Eine Sicherungskopie des Turniers bleibt in jedem Fall erhalten.)",palmares_admin_title:"🏅 Siegerliste",palmares_edition_name_placeholder:"Name der Ausgabe",info_rules_btn:"📜 Reglement",info_palmares_btn:"🏅 Siegerliste",info_ranking_btn:"📊 Live-Rangliste",live_rank_title:"Live-Rangliste",info_admin_btn:"⚙️ Admin",info_rules_title:"Reglement",info_palmares_title:"Siegerliste",
     status_registration:"Anmeldung offen",status_playing:"Gruppenphase",status_finals:"Finalphase",status_finished:"Beendet",
@@ -1495,7 +1726,7 @@ const T = {
     palmares_pseudo_placeholder:"Chess.com-Benutzername",
     palmares_name_optional_placeholder:"Name (optional)",
     palmares_bulk_placeholder:"Ein Spieler pro Zeile: Pseudo-Name, oder nur das Pseudo",
-    palmares_bulk_btn:"➕ Liste hinzufügen",palmares_fill_names_btn:"🔗 Namen ergänzen",palmares_search_ph:"🔎 Spieler suchen…",palmares_player_none:"Kein Spieler gefunden.",palmares_edition:"Ausgabe",palmares_editions:"Ausgaben",palmares_podium:"Podium",palmares_podiums:"Podien",palmares_best:"beste Platzierung:",palmares_of:" von ",palmares_stats_btn:"Spielerstatistiken",tri_points:"📊 Punkte",tri_ratio:"⚡ Pro Partie",tri_titres:"🏆 Titel",legende_general_poules:"ℹ️ <b>Reihenfolge:</b> 1) Rang in der Gruppe — zuerst alle Gruppenersten, dann alle Zweiten usw. 2) Punkte pro Partie 3) Siege pro Partie 4) Siege mit Schwarz pro Partie 5) Buchholz pro Partie — die Stärke der Gegner aus der Gruppenphase 6) Setzrang.<br>Die Werte sind auf die Partie umgerechnet, da die Gruppen unterschiedlich gross sind.",legende_general_finales:"ℹ️ <b>Reihenfolge:</b> 1) die erreichte Finalrunde zählt zuerst — ein Halbfinalist steht vor einem Viertelfinalisten, auch mit weniger Punkten 2) dann der Rang in der Gruppe 3) dann Punkte, Siege und Siege mit Schwarz, pro Partie 4) dann Buchholz, auf die Gruppenphase eingefroren 5) dann Setzrang.<br>Ein Spieler kann also mehr Punkte haben als jemand über ihm: entscheidend ist der Weg in den Finalrunden.",legende_edition:"ℹ️ <b>Endrangliste:</b> die erreichte Finalrunde zählt zuerst, dann der Rang in der Gruppe, dann die Statistiken pro Partie und Buchholz. Ein Spieler kann also mehr Punkte haben als jemand über ihm.",bracket_title:"🏆 Finalrunden-Tableau",bracket_legend:"Gespielte Partien durchgezogen, kommende gestrichelt. Der Sieger steht fett. Horizontal scrollbar.",bracket_pending:"offen",bracket_bye:"Qualifiziert",fab_admin:"Verwaltungsbereich",fab_admin_device:"Verwaltungsbereich — registriertes Gerät",bracket_how_title:"🎯 Wie die Endrunde organisiert ist",bracket_directs:"Die {n} Bestplatzierten sind direkt für das {tour} qualifiziert.<br><br>",bracket_explain_std:"Die Qualifizierten werden über alle Gruppen hinweg gereiht: zuerst die Gruppensieger, dann die besten Zweiten, dann die besten Dritten und so weiter.<br><br>{directs}Die Paarungen folgen dieser Reihung: der Bestplatzierte trifft auf den Schlechtestplatzierten und so weiter.<br><br>Zwei Spieler aus derselben Gruppe treffen in der ersten Runde nicht aufeinander.",bracket_explain_two:"Die Qualifizierten werden über alle Gruppen hinweg gereiht: zuerst die Gruppensieger, dann die besten Zweiten, dann die besten Dritten und so weiter.<br><br>Die Gruppensieger sind direkt für die nächste Runde qualifiziert.<br><br>Die Paarungen folgen dieser Reihung: der Bestplatzierte trifft auf den Schlechtestplatzierten und so weiter.<br><br>Zwei Spieler aus derselben Gruppe treffen in der ersten Runde nicht aufeinander.",rank_modal_title:"ℹ️ Zur Rangliste",rank_modal_body:"Die Rangliste richtet sich nicht nur nach den Punkten, sondern auch nach dem <b>Abschneiden in den Finalrunden</b>.<br><br>Wer im Halbfinale ausscheidet, steht vor einem Viertelfinalisten — auch mit weniger Punkten.",rank_modal_ok:"Verstanden",rank_hint:"ℹ️ Rangliste nach dem Finalverlauf, nicht nur nach Punkten.",palmares_stats_desc:"Alle Teilnehmer, über alle Ausgaben hinweg gewertet.",palmares_ongoing:"laufend",palmares_ended:"beendet",palmares_pick:"Wähle oben ein Turnier.",palmares_no_result_yet:"Noch keine Partie gespielt.",palmares_provisional:"⏳ Vorläufige Rangliste — das Turnier läuft",palmares_virtual_desc:"⏳ Wer sich qualifizieren würde, wenn die Gruppenphase jetzt endete",palmares_qualified_desc:"✅ Für die Finalrunden qualifizierte Spieler",palmares_player:"Spieler",palmares_players:"Spieler",palmares_format_help:"<b>Ein Spieler pro Zeile, in der Reihenfolge der Rangliste:</b><br><code>Pseudo-Name</code> &nbsp;— ohne Statistik<br><code>Pseudo-Name;S;R;N;S;R;N</code> &nbsp;— mit Statistik<br>Die ersten 3 Zahlen = Siege, Remis, Niederlagen <b>mit Weiß</b> ⬜<br>Die nächsten 3 = Siege, Remis, Niederlagen <b>mit Schwarz</b> ⬛<br>Beispiel: <code>Goudi8-Romain;1;3;1;4;0;1</code><br>Partien und Punkte werden automatisch berechnet.",qual_rg:"Rg",qual_grp:"Gr",qual_ptsm:"Pkt/P",qual_vm:"S/P",qual_vnm:"SS/P",qual_tbm:"TB/P",qual_seed:"Setz",sep_virtuels:"— QUALIFIKATIONSGRENZE ({n}) —",sep_qualifies:"— QUALIFIZIERT ({n}) —",sep_directs:"— DIREKT INS {tour} ({n}) —",qual_legend:"Tiebreak in dieser Reihenfolge: Pkt/P (Punkte pro Partie) → S/P (Siege pro Partie) → SS/P (Siege mit Schwarz pro Partie) → TB/P (Buchholz pro Partie) → Setzrang. Rg = Rang in der Gruppe.",palmares_pts:"Pkt",palmares_m:"P",palmares_v:"S",palmares_n:"R",palmares_d:"N",palmares_white:"Weiß",palmares_black:"Schwarz",palmares_total:"Gesamt",palmares_on:"von",palmares_names_filled:"✓ {n} Name(n) ergänzt!",palmares_no_name_found:"Keine Namen zu ergänzen.",
+    palmares_bulk_btn:"➕ Liste hinzufügen",palmares_fill_names_btn:"🔗 Namen ergänzen",palmares_search_ph:"🔎 Spieler suchen…",palmares_player_none:"Kein Spieler gefunden.",palmares_edition:"Ausgabe",palmares_editions:"Ausgaben",palmares_podium:"Podium",palmares_podiums:"Podien",palmares_best:"beste Platzierung:",palmares_of:" von ",palmares_stats_btn:"Spielerstatistiken",tri_points:"📊 Punkte",tri_ratio:"⚡ Pro Partie",tri_titres:"🏆 Titel",legende_general_poules:"ℹ️ <b>Reihenfolge:</b> 1) Rang in der Gruppe — zuerst alle Gruppenersten, dann alle Zweiten usw. 2) Punkte pro Partie 3) Siege pro Partie 4) Siege mit Schwarz pro Partie 5) Buchholz pro Partie — die Stärke der Gegner aus der Gruppenphase 6) Setzrang.<br>Die Werte sind auf die Partie umgerechnet, da die Gruppen unterschiedlich gross sind.",legende_general_finales:"ℹ️ <b>Reihenfolge:</b> 1) die erreichte Finalrunde zählt zuerst — ein Halbfinalist steht vor einem Viertelfinalisten, auch mit weniger Punkten 2) dann der Rang in der Gruppe 3) dann Punkte, Siege und Siege mit Schwarz, pro Partie 4) dann Buchholz, auf die Gruppenphase eingefroren 5) dann Setzrang.<br>Ein Spieler kann also mehr Punkte haben als jemand über ihm: entscheidend ist der Weg in den Finalrunden.",legende_edition:"ℹ️ <b>Endrangliste:</b> die erreichte Finalrunde zählt zuerst, dann der Rang in der Gruppe, dann die Statistiken pro Partie und Buchholz. Ein Spieler kann also mehr Punkte haben als jemand über ihm.",bracket_title:"🏆 Finalrunden-Tableau",bracket_legend:"Gespielte Partien durchgezogen, kommende gestrichelt. Der Sieger steht fett. Horizontal scrollbar.",bracket_pending:"offen",bracket_bye:"Qualifiziert",fab_admin:"Verwaltungsbereich",fab_admin_device:"Verwaltungsbereich — registriertes Gerät",bracket_how_title:"🎯 Wie die Endrunde organisiert ist",bracket_directs:"Die {n} Bestplatzierten sind direkt für das {tour} qualifiziert.<br><br>",bracket_explain_std:"Die Qualifizierten werden über alle Gruppen hinweg gereiht: zuerst die Gruppensieger, dann die besten Zweiten, dann die besten Dritten und so weiter.<br><br>{directs}Die Paarungen folgen dieser Reihung: der Bestplatzierte trifft auf den Schlechtestplatzierten und so weiter.<br><br>Zwei Spieler aus derselben Gruppe treffen in der ersten Runde nicht aufeinander.",bracket_explain_two:"Die Qualifizierten werden über alle Gruppen hinweg gereiht: zuerst die Gruppensieger, dann die besten Zweiten, dann die besten Dritten und so weiter.<br><br>Die Gruppensieger sind direkt für die nächste Runde qualifiziert.<br><br>Die Paarungen folgen dieser Reihung: der Bestplatzierte trifft auf den Schlechtestplatzierten und so weiter.<br><br>Zwei Spieler aus derselben Gruppe treffen in der ersten Runde nicht aufeinander.",rank_modal_title:"ℹ️ Zur Rangliste",rank_modal_body:"Die Rangliste richtet sich nicht nur nach den Punkten, sondern auch nach dem <b>Abschneiden in den Finalrunden</b>.<br><br>Wer im Halbfinale ausscheidet, steht vor einem Viertelfinalisten — auch mit weniger Punkten.",rank_modal_ok:"Verstanden",rank_hint:"ℹ️ Rangliste nach dem Finalverlauf, nicht nur nach Punkten.",palmares_stats_desc:"Alle Teilnehmer, über alle Ausgaben hinweg gewertet.",palmares_ongoing:"laufend",palmares_ended:"beendet",palmares_pick:"Wähle oben ein Turnier.",palmares_no_result_yet:"Noch keine Partie gespielt.",palmares_provisional:"⏳ Vorläufige Rangliste — das Turnier läuft",palmares_virtual_desc:"⏳ Wer sich qualifizieren würde, wenn die Gruppenphase jetzt endete",palmares_qualified_desc:"✅ Für die Finalrunden qualifizierte Spieler",palmares_player:"Spieler",palmares_players:"Spieler",palmares_format_help:"<b>Ein Spieler pro Zeile, in der Reihenfolge der Rangliste:</b><br><code>Pseudo-Name</code> &nbsp;— ohne Statistik<br><code>Pseudo-Name;S;R;N;S;R;N</code> &nbsp;— mit Statistik<br>Die ersten 3 Zahlen = Siege, Remis, Niederlagen <b>mit Weiß</b> ⬜<br>Die nächsten 3 = Siege, Remis, Niederlagen <b>mit Schwarz</b> ⬛<br>Beispiel: <code>Goudi8-Romain;1;3;1;4;0;1</code><br>Partien und Punkte werden automatisch berechnet.",qual_rg:"Rg",group_long:"Gruppe",group_short:"G",qual_grp:"Gr",qual_ptsm:"Pkt/P",qual_vm:"S/P",qual_vnm:"SS/P",qual_tbm:"TB/P",qual_seed:"Setz",sep_virtuels:"— QUALIFIKATIONSGRENZE ({n}) —",sep_qualifies:"— QUALIFIZIERT ({n}) —",sep_directs:"— DIREKT INS {tour} ({n}) —",qual_legend:"Tiebreak in dieser Reihenfolge: Pkt/P (Punkte pro Partie) → S/P (Siege pro Partie) → SS/P (Siege mit Schwarz pro Partie) → TB/P (Buchholz pro Partie) → Setzrang. Rg = Rang in der Gruppe.",palmares_pts:"Pkt",palmares_m:"P",palmares_v:"S",palmares_n:"R",palmares_d:"N",palmares_white:"Weiß",palmares_black:"Schwarz",palmares_total:"Gesamt",palmares_on:"von",palmares_names_filled:"✓ {n} Name(n) ergänzt!",palmares_no_name_found:"Keine Namen zu ergänzen.",
     rules:`<p>🚀 Sieh dir deine Partien im Tab <strong>Partien</strong> an, sobald die Gruppenphase gestartet ist. Sende deinem Gegner eine Einladung auf Chess.com (Benutzername im Tab <strong>Turnier</strong>) oder spiele auf dem Brett. Trage das Ergebnis direkt im Tab <strong>Partien</strong> ein.</p><br>
 <p>⏰ <strong>Beginne deine Partien gleich zu Turnierbeginn</strong> und beende sie vor der bei jeder Partie angezeigten Frist. Ihr dürft mehrere Partien parallel spielen, aber <strong>haltet die Reihenfolge der Runden ein</strong>: spielt zuerst die Partien mit der nächstliegenden Frist. Auch bei langsamem Tempo: zieht zügig weiter, um fristgerecht fertig zu werden.</p><br>
 <p>Format: Round-Robin-Gruppen, dann K.o.-Finalrunden. Die Anzahl Gruppen und Qualifizierter wird vom Organisator je nach Teilnehmerzahl festgelegt und beim Turnierstart bekannt gegeben.</p><br>
@@ -1559,7 +1790,7 @@ const T = {
     notif_enabled:"✓ Benachrichtigungen aktiviert!",
     notif_disabled_warn:"⚠️ Benachrichtigungen deaktiviert. Du erhältst keine Turnierankündigungen und Ergebnisse mehr — du riskierst, eine Frist zu verpassen und kampflos zu verlieren. Aktiviere sie so bald wie möglich wieder.",notif_cut_server:"⚠️ Deine Benachrichtigungen wurden serverseitig abgeschaltet — aktiviere sie bei Bedarf erneut.",notif_lost:"⚠️ Deine Benachrichtigungen funktionierten nicht mehr (Abo vom Browser verloren). Aktiviere sie erneut, um keine Frist zu verpassen.",notif_off_reminder:"🔕 Du erhältst keine Benachrichtigungen. Aktiviere sie, um keine Frist zu verpassen.",
     
-    notif_activating:"⏳ Wird aktiviert…",notif_send_fail:"Senden nicht möglich. Die Ankündigung wurde NICHT verschickt. Versuche es gleich noch einmal.",notif_reload:"Die Seite wurde gerade aktualisiert: lade sie neu und versuche die Aktivierung erneut. Beim ersten Besuch ist das normal.",notif_fail:"Aktivierung nicht möglich. Prüfe, ob Benachrichtigungen von deinem Browser oder deinem System blockiert werden, und versuche es erneut.",notif_timeout:"Der Browser antwortet nicht. Lade die Seite neu und versuche es erneut; wenn es wieder passiert, starte den Browser neu.",notif_test_sending:"📤 Test wird gesendet…",notif_test_no_entry:"⏳ Synchronisierung läuft, versuche es in ein paar Sekunden erneut.",notif_test_dead:"❌ Dein Abo ist nicht mehr gültig (Adresse abgelaufen). Es wurde entfernt: aktiviere die Benachrichtigungen erneut.",notif_test_error:"❌ Der Server konnte nicht senden. Versuche es gleich noch einmal.",notif_test_network:"❌ Server nicht erreichbar. Prüfe deine Verbindung.",notif_test_sent:"✓ Testbenachrichtigung gesendet!",
+    notif_activating:"⏳ Wird aktiviert…",notif_send_fail:"Senden nicht möglich. Die Ankündigung wurde NICHT verschickt. Versuche es gleich noch einmal.",notif_no_answer:"Dein Browser hat die Berechtigungsanfrage nicht angezeigt oder sie blieb unbeantwortet. Wird dein Browser von deiner Firma verwaltet (edge://policy), können Benachrichtigungen dort gesperrt sein: versuche es auf deinem Handy oder in einem privaten Browser.",notif_reload:"Die Seite wurde gerade aktualisiert: lade sie neu und versuche die Aktivierung erneut. Beim ersten Besuch ist das normal.",notif_fail:"Aktivierung nicht möglich. Prüfe, ob Benachrichtigungen von deinem Browser oder deinem System blockiert werden, und versuche es erneut.",notif_disable_fail:"Deaktivierung nicht möglich. Lade die Seite neu, um den tatsächlichen Stand deiner Benachrichtigungen zu sehen, und versuche es erneut.",notif_timeout:"Der Browser antwortet nicht. Lade die Seite neu und versuche es erneut; wenn es wieder passiert, starte den Browser neu.",notif_test_sending:"📤 Test wird gesendet…",notif_test_no_entry:"⏳ Synchronisierung läuft, versuche es in ein paar Sekunden erneut.",notif_test_dead:"❌ Dein Abo ist nicht mehr gültig (Adresse abgelaufen). Es wurde entfernt: aktiviere die Benachrichtigungen erneut.",notif_test_error:"❌ Der Server konnte nicht senden. Versuche es gleich noch einmal.",notif_test_network:"❌ Server nicht erreichbar. Prüfe deine Verbindung.",notif_test_sent:"✓ Testbenachrichtigung gesendet!",
     notif_test_nosub:"❌ Kein aktives Abo. Deaktiviere und reaktiviere die Benachrichtigungen.",
     notif_enter_msg:"Bitte eine Nachricht eingeben.",
     notif_sent:"✓ Benachrichtigung gespeichert!",
@@ -1579,7 +1810,7 @@ const T = {
     groups_created:" Gruppen erstellt, ",
     matches_generated:" Partien generiert.",
     seeding_done:[" Gruppen erstellt, "," Partien generiert."],
-    confirm_reset_finals_title:"Finalrunden zurücksetzen?",
+    confirm_assign_groups_title:"Gruppen und Partien erzeugen?",confirm_assign_groups_text:"Die Gruppen werden neu gebildet und ALLE Gruppenpartien neu erzeugt: bereits eingetragene Ergebnisse und der Finalbaum werden gelöscht. Es wird keine Sicherung angelegt.",confirm_launch_finals_title:"Finalrunden starten?",confirm_launch_finals_text:"Der Finalbaum wird aus der aktuellen Rangliste gebildet. Ein bereits bestehender Baum wird ersetzt und eingetragene Finalergebnisse gehen verloren.",confirm_reset_finals_title:"Finalrunden zurücksetzen?",
     confirm_reset_finals_text:"❌ GELÖSCHT: das Finalturnier-Tableau.\n✅ BEHALTEN: Spieler, Gruppen, Gruppenpartien und deren Ergebnisse.\n\nDas Turnier kehrt zur Gruppenphase zurück.",
     confirm_reset_groups_title:"Gruppen zurücksetzen?",
     confirm_reset_groups_text:"❌ GELÖSCHT: die Gruppen, ALLE Gruppenpartien mit Ergebnissen und das Finaltableau.\n✅ BEHALTEN: die angemeldeten Spieler und ihre Setzreihenfolge.\n\nDas Turnier kehrt zur Anmeldephase zurück.",
@@ -1588,7 +1819,7 @@ const T = {
   en:{
     loading:"Loading...",offline:"⚠️ Offline — data not syncing",write_denied:"⛔ Save refused — reload the page and try again.",
     dev_none:"⚠️ No admin device registered for the late alert.",dev_orphan:"⚠️ The registered admin device no longer has an active subscription — the late alert reaches no one.",dev_this_on:"✅ This device is registered for the late alert.",dev_this_off:"⏸️ This device is registered, but the automatic alert is disabled (checkbox above).",dev_other_since:"Subscribed on",dev_other:"⚠️ <b>Another</b> device is registered for the late alert — not this one.",dev_register_btn:"📍 Make this device my admin device",dev_register_instead:"📍 Register this device instead",dev_remove_this:"🔄 Remove this registration",dev_remove_current:"🔄 Remove the current registration",dev_enable_first:"Enable your notifications above first.",dev_enable_then_register:"Enable your notifications above, then register this device.",dev_home_this_on:"✅ Admin device — late alert active here",dev_home_this_off:"⏸️ Admin device registered here — alert disabled",dev_home_other:"⚠️ Not the registered admin device — no late alert here",dev_home_orphan:"⚠️ Registered admin device no longer subscribed — alert has no recipient",dev_home_none:"⚠️ No admin device registered",
-    late_check_alert_sent:"{n} late game(s) — alert sent to the admin device",late_check_nothing_late:"No late game. Nothing to send.",late_check_proof_sent:"No delay. The weekly check message was sent.",late_check_not_playing:"The tournament is not in a playing phase: no game can be late.",late_check_no_admin_device:"No admin device registered: the alert has no recipient.",late_check_admin_sub_invalid:"The admin device subscription is invalid. Please register it again.",late_check_auto_off:"The automatic alert is disabled (checkbox in the Notifs tab).",late_check_maintenance:"Maintenance mode active: the alert is suspended.",late_check_no_config:"Server configuration incomplete (missing keys on Netlify).",notif_cleaned:"🧹 {n} inactive subscription(s) removed.",subs_section_title:"👥 Subscribers",reset_subs_warn:"⚠️ Erases ALL subscriptions, including valid ones. Everyone will have to reopen the site to be resubscribed, and their preferences will be reset. Reserve this for real trouble: the cleanup above is usually enough.",late_checking:"⏳ Checking…",notif_muted:"🔕 You will receive no notifications",notif_all_muted:"⚠️ You unchecked both categories: you will receive no notification at all. You risk missing a deadline and forfeiting. Check at least one box again.",prefs_loading:"Loading your preferences…",prefs_close_btn:"✓ OK",auto_notif_title:"⚙️ Automatic settings",prefs_title:"🔔 My notifications",late_check_admin_dead:"The admin device was no longer reachable: subscription and registration removed. Register a device above.",pin_current:"Current PIN",reg_closed:"Registration is closed.",pin_new:"New PIN",pin_confirm:"Confirm",set_semis:"Semi-finals format",set_final:"Final format",whatsapp_title:"📲 WhatsApp reminder",save_seed:"💾 Save",
+    late_check_alert_sent:"{n} late game(s) — alert sent to the admin device",late_check_nothing_late:"No late game. Nothing to send.",late_check_proof_sent:"No delay. The weekly check message was sent.",late_check_not_playing:"The tournament is not in a playing phase: no game can be late.",late_check_no_admin_device:"No admin device registered: the alert has no recipient.",late_check_admin_sub_invalid:"The admin device subscription is invalid. Please register it again.",late_check_auto_off:"The automatic alert is disabled (checkbox in the Notifs tab).",late_check_maintenance:"Maintenance mode active: the alert is suspended.",late_check_no_config:"Server configuration incomplete (missing keys on Netlify).",notif_cleaned:"🧹 {n} inactive subscription(s) removed.",subs_section_title:"👥 Subscribers",reset_subs_warn:"⚠️ Erases ALL subscriptions, including valid ones. Everyone will have to reopen the site to be resubscribed, and their preferences will be reset. Reserve this for real trouble: the cleanup above is usually enough.",late_checking:"⏳ Checking…",notif_muted:"🔕 You will receive no notifications",notif_all_muted:"⚠️ You unchecked both categories: you will receive no notification at all. You risk missing a deadline and forfeiting. Check at least one box again.",prefs_loading:"Loading your preferences…",prefs_close_btn:"✓ OK",auto_notif_title:"⚙️ Automatic settings",prefs_title:"🔔 My notifications",late_check_admin_dead:"The admin device was no longer reachable: subscription and registration removed. Register a device above.",pin_current:"Current PIN",reg_closed:"Registration is closed.",modif_closed:"Registration is closed: the player list can no longer be changed. Anyone renamed or removed now would stay in the matches and standings already drawn up.",sync_wait:"⏳ Data not loaded yet. Try again in a few seconds.",pin_new:"New PIN",pin_confirm:"Confirm",set_semis:"Semi-finals format",set_final:"Final format",whatsapp_title:"📲 WhatsApp reminder",save_seed:"💾 Save",
     tab_home:"Tournament",tab_groups:"Groups",tab_matches:"Matches",tab_finals:"Finals",
     tab_info:"Info",confirm_archive_before_reset:"⚠️ ARCHIVE THE TOURNAMENT?\n\nThe final ranking of {n} player(s) will be filed in the hall of fame, with all statistics.\n\n✅ OK = archive, then reset\n❌ Cancel = reset WITHOUT archiving\n\n(A safety copy of the tournament is kept either way.)",palmares_admin_title:"🏅 Hall of fame",palmares_edition_name_placeholder:"Edition name",info_rules_btn:"📜 Rules",info_palmares_btn:"🏅 Hall of fame",info_ranking_btn:"📊 Live ranking",live_rank_title:"Live ranking",info_admin_btn:"⚙️ Admin",info_rules_title:"Rules",info_palmares_title:"Hall of fame",
     status_registration:"Registration open",status_playing:"Group stage",status_finals:"Final stage",status_finished:"Finished",
@@ -1631,7 +1862,7 @@ const T = {
     palmares_pseudo_placeholder:"Chess.com username",
     palmares_name_optional_placeholder:"Name (optional)",
     palmares_bulk_placeholder:"One player per line: username-Name, or just the username",
-    palmares_bulk_btn:"➕ Add the list",palmares_fill_names_btn:"🔗 Find names",palmares_search_ph:"🔎 Search a player…",palmares_player_none:"No player found.",palmares_edition:"edition",palmares_editions:"editions",palmares_podium:"podium",palmares_podiums:"podiums",palmares_best:"best rank:",palmares_of:" of ",palmares_stats_btn:"Player statistics",tri_points:"📊 Points",tri_ratio:"⚡ Per game",tri_titres:"🏆 Titles",legende_general_poules:"ℹ️ <b>Ranking order:</b> 1) rank within the group — all group winners first, then all runners-up, etc. 2) points per game 3) wins per game 4) wins with Black per game 5) Buchholz per game — the strength of opponents faced in the groups 6) seed.<br>Values are per game because groups are not all the same size.",legende_general_finales:"ℹ️ <b>Ranking order:</b> 1) the round reached in the final stages comes first — a semi-finalist ranks above a quarter-finalist, even with fewer points 2) then rank within the group 3) then points, wins and wins with Black, per game 4) then Buchholz, frozen on the group stage 5) then seed.<br>A player may therefore show more points than someone ranked above them: the final-stage run decides.",legende_edition:"ℹ️ <b>Final ranking order:</b> the round reached in the final stages comes first, then rank within the group, then per-game statistics and Buchholz. A player may therefore show more points than someone ranked above them.",bracket_title:"🏆 Finals bracket",bracket_legend:"Played matches solid, upcoming dashed. The winner is in bold. Scrolls horizontally.",bracket_pending:"to be decided",bracket_bye:"Qualified",fab_admin:"Admin area",fab_admin_device:"Admin area — registered device",bracket_how_title:"🎯 How the finals are organised",bracket_directs:"The top {n} qualify straight for the {tour}.<br><br>",bracket_explain_std:"Qualifiers are ranked across all groups: the group winners first, then the best runners-up, then the best third-placed players, and so on.<br><br>{directs}Pairings follow that ranking: the highest ranked plays the lowest ranked, and so on.<br><br>Two players from the same group do not meet in the first round.",bracket_explain_two:"Qualifiers are ranked across all groups: the group winners first, then the best runners-up, then the best third-placed players, and so on.<br><br>Group winners qualify straight for the next round.<br><br>Pairings follow that ranking: the highest ranked plays the lowest ranked, and so on.<br><br>Two players from the same group do not meet in the first round.",rank_modal_title:"ℹ️ About the ranking",rank_modal_body:"The ranking does not follow points alone, but also <b>how far a player went in the final stages</b>.<br><br>A player knocked out in the semi-finals ranks above a quarter-finalist, even with fewer points.",rank_modal_ok:"Got it",rank_hint:"ℹ️ Ranking follows the final stages, not points alone.",palmares_stats_desc:"Every player who took part, ranked across all editions.",palmares_ongoing:"ongoing",palmares_ended:"finished",palmares_pick:"Pick a tournament above.",palmares_no_result_yet:"No match played yet.",palmares_provisional:"⏳ Provisional ranking — tournament in progress",palmares_virtual_desc:"⏳ Who would qualify if the group stage ended now",palmares_qualified_desc:"✅ Players qualified for the final stages",palmares_player:"player",palmares_players:"players",palmares_format_help:"<b>One player per line, in ranking order:</b><br><code>username-Name</code> &nbsp;— without stats<br><code>username-Name;W;D;L;W;D;L</code> &nbsp;— with stats<br>First 3 numbers = wins, draws, losses <b>with White</b> ⬜<br>Next 3 = wins, draws, losses <b>with Black</b> ⬛<br>Example: <code>Goudi8-Romain;1;3;1;4;0;1</code><br>Games played and points are calculated automatically.",qual_rg:"Rk",qual_grp:"Grp",qual_ptsm:"Pts/G",qual_vm:"W/G",qual_vnm:"BW/G",qual_tbm:"TB/G",qual_seed:"Seed",sep_virtuels:"— QUALIFICATION CUT-OFF ({n}) —",sep_qualifies:"— QUALIFIED ({n}) —",sep_directs:"— STRAIGHT TO {tour} ({n}) —",qual_legend:"Tiebreak order: Pts/G (points per game) → W/G (wins per game) → BW/G (wins with Black per game) → TB/G (Buchholz per game) → Seed. Rk = rank within the group.",palmares_pts:"pts",palmares_m:"m",palmares_v:"W",palmares_n:"D",palmares_d:"L",palmares_white:"White",palmares_black:"Black",palmares_total:"Total",palmares_on:"of",palmares_names_filled:"✓ {n} name(s) found!",palmares_no_name_found:"No names to fill in.",
+    palmares_bulk_btn:"➕ Add the list",palmares_fill_names_btn:"🔗 Find names",palmares_search_ph:"🔎 Search a player…",palmares_player_none:"No player found.",palmares_edition:"edition",palmares_editions:"editions",palmares_podium:"podium",palmares_podiums:"podiums",palmares_best:"best rank:",palmares_of:" of ",palmares_stats_btn:"Player statistics",tri_points:"📊 Points",tri_ratio:"⚡ Per game",tri_titres:"🏆 Titles",legende_general_poules:"ℹ️ <b>Ranking order:</b> 1) rank within the group — all group winners first, then all runners-up, etc. 2) points per game 3) wins per game 4) wins with Black per game 5) Buchholz per game — the strength of opponents faced in the groups 6) seed.<br>Values are per game because groups are not all the same size.",legende_general_finales:"ℹ️ <b>Ranking order:</b> 1) the round reached in the final stages comes first — a semi-finalist ranks above a quarter-finalist, even with fewer points 2) then rank within the group 3) then points, wins and wins with Black, per game 4) then Buchholz, frozen on the group stage 5) then seed.<br>A player may therefore show more points than someone ranked above them: the final-stage run decides.",legende_edition:"ℹ️ <b>Final ranking order:</b> the round reached in the final stages comes first, then rank within the group, then per-game statistics and Buchholz. A player may therefore show more points than someone ranked above them.",bracket_title:"🏆 Finals bracket",bracket_legend:"Played matches solid, upcoming dashed. The winner is in bold. Scrolls horizontally.",bracket_pending:"to be decided",bracket_bye:"Qualified",fab_admin:"Admin area",fab_admin_device:"Admin area — registered device",bracket_how_title:"🎯 How the finals are organised",bracket_directs:"The top {n} qualify straight for the {tour}.<br><br>",bracket_explain_std:"Qualifiers are ranked across all groups: the group winners first, then the best runners-up, then the best third-placed players, and so on.<br><br>{directs}Pairings follow that ranking: the highest ranked plays the lowest ranked, and so on.<br><br>Two players from the same group do not meet in the first round.",bracket_explain_two:"Qualifiers are ranked across all groups: the group winners first, then the best runners-up, then the best third-placed players, and so on.<br><br>Group winners qualify straight for the next round.<br><br>Pairings follow that ranking: the highest ranked plays the lowest ranked, and so on.<br><br>Two players from the same group do not meet in the first round.",rank_modal_title:"ℹ️ About the ranking",rank_modal_body:"The ranking does not follow points alone, but also <b>how far a player went in the final stages</b>.<br><br>A player knocked out in the semi-finals ranks above a quarter-finalist, even with fewer points.",rank_modal_ok:"Got it",rank_hint:"ℹ️ Ranking follows the final stages, not points alone.",palmares_stats_desc:"Every player who took part, ranked across all editions.",palmares_ongoing:"ongoing",palmares_ended:"finished",palmares_pick:"Pick a tournament above.",palmares_no_result_yet:"No match played yet.",palmares_provisional:"⏳ Provisional ranking — tournament in progress",palmares_virtual_desc:"⏳ Who would qualify if the group stage ended now",palmares_qualified_desc:"✅ Players qualified for the final stages",palmares_player:"player",palmares_players:"players",palmares_format_help:"<b>One player per line, in ranking order:</b><br><code>username-Name</code> &nbsp;— without stats<br><code>username-Name;W;D;L;W;D;L</code> &nbsp;— with stats<br>First 3 numbers = wins, draws, losses <b>with White</b> ⬜<br>Next 3 = wins, draws, losses <b>with Black</b> ⬛<br>Example: <code>Goudi8-Romain;1;3;1;4;0;1</code><br>Games played and points are calculated automatically.",qual_rg:"Rk",group_long:"Group",group_short:"G",qual_grp:"Grp",qual_ptsm:"Pts/G",qual_vm:"W/G",qual_vnm:"BW/G",qual_tbm:"TB/G",qual_seed:"Seed",sep_virtuels:"— QUALIFICATION CUT-OFF ({n}) —",sep_qualifies:"— QUALIFIED ({n}) —",sep_directs:"— STRAIGHT TO {tour} ({n}) —",qual_legend:"Tiebreak order: Pts/G (points per game) → W/G (wins per game) → BW/G (wins with Black per game) → TB/G (Buchholz per game) → Seed. Rk = rank within the group.",palmares_pts:"pts",palmares_m:"m",palmares_v:"W",palmares_n:"D",palmares_d:"L",palmares_white:"White",palmares_black:"Black",palmares_total:"Total",palmares_on:"of",palmares_names_filled:"✓ {n} name(s) found!",palmares_no_name_found:"No names to fill in.",
     rules:`<p>🚀 Check the <strong>Matches</strong> tab to see your games when the group stage starts. Send an invitation to your opponent on Chess.com (username in the <strong>Tournament</strong> tab) or play on a physical board. Enter the result directly in the <strong>Matches</strong> tab.</p><br>
 <p>⏰ <strong>Start your games as soon as the tournament begins</strong> and finish them before the deadline shown on each match. You may play several games in parallel, but <strong>respect the order of the rounds</strong>: deal first with those whose deadline is closest. Even at a slow pace, keep making your moves so you finish on time.</p><br>
 <p>Format: Round-robin groups, then knockout finals. The number of groups and qualifiers is set by the organiser based on the number of entrants, and announced when the tournament starts.</p><br>
@@ -1659,7 +1890,7 @@ const T = {
     notif_enabled:"✓ Notifications enabled!",
     notif_disabled_warn:"⚠️ Notifications disabled. You will no longer receive tournament announcements or results — you risk missing a deadline and forfeiting. Re-enable them as soon as possible.",notif_cut_server:"⚠️ Your notifications were cut off server-side — re-enable them if you wish.",notif_lost:"⚠️ Your notifications had stopped working (subscription lost by your browser). Re-enable them so you don't miss a deadline.",notif_off_reminder:"🔕 You're not receiving any notifications. Turn them on so you don't miss a deadline.",
     
-    notif_activating:"⏳ Enabling…",notif_send_fail:"Could not send. The announcement did NOT go out. Try again in a moment.",notif_reload:"The site has just been updated: reload the page, then try enabling again. This is normal on a first visit.",notif_fail:"Could not activate. Check that notifications are not blocked by your browser or by your system, then try again.",notif_timeout:"The browser is not responding. Reload the page and try again; if it happens again, restart the browser.",notif_test_sending:"📤 Sending test…",notif_test_no_entry:"⏳ Still syncing, try again in a few seconds.",notif_test_dead:"❌ Your subscription is no longer valid (address expired). It was removed: enable notifications again.",notif_test_error:"❌ The server could not send. Try again in a moment.",notif_test_network:"❌ Server unreachable. Check your connection.",notif_test_sent:"✓ Test notification sent!",
+    notif_activating:"⏳ Enabling…",notif_send_fail:"Could not send. The announcement did NOT go out. Try again in a moment.",notif_no_answer:"Your browser did not show the permission request, or it went unanswered. If your browser is managed by your company (edge://policy), notifications may be blocked there: try from your phone or a personal browser.",notif_reload:"The site has just been updated: reload the page, then try enabling again. This is normal on a first visit.",notif_fail:"Could not activate. Check that notifications are not blocked by your browser or by your system, then try again.",notif_disable_fail:"Could not turn off. Reload the page to see the real state of your notifications, then try again.",notif_timeout:"The browser is not responding. Reload the page and try again; if it happens again, restart the browser.",notif_test_sending:"📤 Sending test…",notif_test_no_entry:"⏳ Still syncing, try again in a few seconds.",notif_test_dead:"❌ Your subscription is no longer valid (address expired). It was removed: enable notifications again.",notif_test_error:"❌ The server could not send. Try again in a moment.",notif_test_network:"❌ Server unreachable. Check your connection.",notif_test_sent:"✓ Test notification sent!",
     notif_test_nosub:"❌ No active subscription. Disable then re-enable notifications.",
     notif_enter_msg:"Please enter a message.",
     notif_sent:"✓ Notification saved!",
@@ -1675,10 +1906,10 @@ const T = {
     pin_section:"Change PIN",
     saved_ok:"Saved!",cancel:"Cancel",
     seed_saved:"✓ Order saved",seed_propose_btn:"🏅 Suggest from hall of fame",seed_propose_none:"No edition in the hall of fame — cannot suggest an order.",seed_propose_done:"Order suggested from « {edition} »: {n} ranked, {r} after. Review then save.",
-    groups_created:" Gruppen erstellt, ",
-    matches_generated:" Partien generiert.",
-    seeding_done:[" Gruppen erstellt, "," Partien generiert."],
-    confirm_reset_finals_title:"Reset final stage?",
+    groups_created:" groups created, ",
+    matches_generated:" matches generated.",
+    seeding_done:[" groups created, "," matches generated."],
+    confirm_assign_groups_title:"Generate groups and matches?",confirm_assign_groups_text:"Groups are rebuilt and ALL pool matches are regenerated: scores already entered and the finals bracket will be erased. No backup is created.",confirm_launch_finals_title:"Launch the final stage?",confirm_launch_finals_text:"The bracket is built from the current standings. If a bracket already exists it is replaced, and any final results already entered are lost.",confirm_reset_finals_title:"Reset final stage?",
     confirm_reset_finals_text:"❌ ERASED: the finals bracket.\n✅ KEPT: players, groups, group matches and their scores.\n\nThe tournament returns to the group stage.",
     confirm_reset_groups_title:"Reset groups?",
     confirm_reset_groups_text:"❌ ERASED: the groups, ALL group matches with their scores, and the finals bracket.\n✅ KEPT: registered players and their seed order.\n\nThe tournament returns to the registration phase.",
@@ -1722,7 +1953,7 @@ const T = {
   it:{
     loading:"Caricamento...",offline:"⚠️ Offline — dati non sincronizzati",write_denied:"⛔ Salvataggio rifiutato — ricarica la pagina e riprova.",
     dev_none:"⚠️ Nessun dispositivo admin registrato per l'avviso di ritardo.",dev_orphan:"⚠️ Il dispositivo admin registrato non ha più un abbonamento attivo — l'avviso non raggiunge nessuno.",dev_this_on:"✅ Questo dispositivo è registrato per l'avviso di ritardo.",dev_this_off:"⏸️ Questo dispositivo è registrato, ma l'avviso automatico è disattivato (casella sopra).",dev_other_since:"Abbonato il",dev_other:"⚠️ Un <b>altro</b> dispositivo è registrato per l'avviso di ritardo — non questo.",dev_register_btn:"📍 Rendere questo dispositivo il mio dispositivo admin",dev_register_instead:"📍 Registrare invece questo dispositivo",dev_remove_this:"🔄 Rimuovere questa registrazione",dev_remove_current:"🔄 Rimuovere la registrazione attuale",dev_enable_first:"Attiva prima le notifiche qui sopra.",dev_enable_then_register:"Attiva le notifiche qui sopra, poi registra questo dispositivo.",dev_home_this_on:"✅ Dispositivo admin — avviso di ritardo attivo qui",dev_home_this_off:"⏸️ Dispositivo admin registrato qui — avviso disattivato",dev_home_other:"⚠️ Non è il dispositivo admin registrato — nessun avviso qui",dev_home_orphan:"⚠️ Dispositivo admin registrato non più abbonato — avviso senza destinatario",dev_home_none:"⚠️ Nessun dispositivo admin registrato",
-    late_check_alert_sent:"{n} partita/e in ritardo — avviso inviato al dispositivo admin",late_check_nothing_late:"Nessuna partita in ritardo. Niente da inviare.",late_check_proof_sent:"Nessun ritardo. Il messaggio settimanale di controllo è stato inviato.",late_check_not_playing:"Il torneo non è in fase di gioco: nessuna partita può essere in ritardo.",late_check_no_admin_device:"Nessun dispositivo admin registrato: l'avviso non ha destinatario.",late_check_admin_sub_invalid:"L'abbonamento del dispositivo admin non è valido. Registralo di nuovo.",late_check_auto_off:"L'avviso automatico è disattivato (casella nella scheda Notifiche).",late_check_maintenance:"Modalità manutenzione attiva: l'avviso è sospeso.",late_check_no_config:"Configurazione server incompleta (chiavi mancanti su Netlify).",notif_cleaned:"🧹 {n} abbonamento/i inattivo/i rimosso/i.",subs_section_title:"👥 Abbonati",reset_subs_warn:"⚠️ Cancella TUTTI gli abbonamenti, compresi quelli validi. Ognuno dovrà riaprire il sito per essere riabbonato e le sue preferenze verranno ripristinate. Da riservare ai casi problematici: la pulizia qui sopra basta di solito.",late_checking:"⏳ Verifica in corso…",notif_muted:"🔕 Non riceverai alcuna notifica",notif_all_muted:"⚠️ Hai deselezionato entrambe le categorie: non riceverai più alcuna notifica. Rischi di perdere una scadenza e di perdere a tavolino. Seleziona almeno una casella.",prefs_loading:"Caricamento delle tue preferenze…",prefs_close_btn:"✓ OK",auto_notif_title:"⚙️ Impostazioni automatiche",prefs_title:"🔔 Le mie notifiche",late_check_admin_dead:"Il dispositivo admin non era più raggiungibile: abbonamento e registrazione rimossi. Registra un dispositivo qui sopra.",pin_current:"PIN attuale",reg_closed:"Le iscrizioni sono chiuse.",pin_new:"Nuovo PIN",pin_confirm:"Confermare",set_semis:"Formato semifinali",set_final:"Formato finale",whatsapp_title:"📲 Promemoria WhatsApp",save_seed:"💾 Salvare",
+    late_check_alert_sent:"{n} partita/e in ritardo — avviso inviato al dispositivo admin",late_check_nothing_late:"Nessuna partita in ritardo. Niente da inviare.",late_check_proof_sent:"Nessun ritardo. Il messaggio settimanale di controllo è stato inviato.",late_check_not_playing:"Il torneo non è in fase di gioco: nessuna partita può essere in ritardo.",late_check_no_admin_device:"Nessun dispositivo admin registrato: l'avviso non ha destinatario.",late_check_admin_sub_invalid:"L'abbonamento del dispositivo admin non è valido. Registralo di nuovo.",late_check_auto_off:"L'avviso automatico è disattivato (casella nella scheda Notifiche).",late_check_maintenance:"Modalità manutenzione attiva: l'avviso è sospeso.",late_check_no_config:"Configurazione server incompleta (chiavi mancanti su Netlify).",notif_cleaned:"🧹 {n} abbonamento/i inattivo/i rimosso/i.",subs_section_title:"👥 Abbonati",reset_subs_warn:"⚠️ Cancella TUTTI gli abbonamenti, compresi quelli validi. Ognuno dovrà riaprire il sito per essere riabbonato e le sue preferenze verranno ripristinate. Da riservare ai casi problematici: la pulizia qui sopra basta di solito.",late_checking:"⏳ Verifica in corso…",notif_muted:"🔕 Non riceverai alcuna notifica",notif_all_muted:"⚠️ Hai deselezionato entrambe le categorie: non riceverai più alcuna notifica. Rischi di perdere una scadenza e di perdere a tavolino. Seleziona almeno una casella.",prefs_loading:"Caricamento delle tue preferenze…",prefs_close_btn:"✓ OK",auto_notif_title:"⚙️ Impostazioni automatiche",prefs_title:"🔔 Le mie notifiche",late_check_admin_dead:"Il dispositivo admin non era più raggiungibile: abbonamento e registrazione rimossi. Registra un dispositivo qui sopra.",pin_current:"PIN attuale",reg_closed:"Le iscrizioni sono chiuse.",modif_closed:"Le iscrizioni sono chiuse: l'elenco dei giocatori non può più essere modificato. Chi venisse rinominato o rimosso ora resterebbe nelle partite e nelle classifiche già stabilite.",sync_wait:"⏳ Dati non ancora caricati. Riprova tra qualche secondo.",pin_new:"Nuovo PIN",pin_confirm:"Confermare",set_semis:"Formato semifinali",set_final:"Formato finale",whatsapp_title:"📲 Promemoria WhatsApp",save_seed:"💾 Salvare",
     tab_home:"Torneo",tab_groups:"Gruppi",tab_matches:"Partite",tab_finals:"Finali",
     tab_info:"Info",confirm_archive_before_reset:"⚠️ ARCHIVIARE IL TORNEO?\n\nLa classifica finale di {n} giocatore/i verrà inserita nell'albo d'oro, con tutte le statistiche.\n\n✅ OK = archiviare, poi azzerare\n❌ Annulla = azzerare SENZA archiviare\n\n(Una copia di sicurezza del torneo viene conservata in ogni caso.)",palmares_admin_title:"🏅 Albo d'oro",palmares_edition_name_placeholder:"Nome dell'edizione",info_rules_btn:"📜 Regolamento",info_palmares_btn:"🏅 Albo d'oro",info_ranking_btn:"📊 Classifica in diretta",live_rank_title:"Classifica in diretta",info_admin_btn:"⚙️ Admin",info_rules_title:"Regolamento",info_palmares_title:"Albo d'oro",
     status_registration:"Iscrizioni aperte",status_playing:"Fase a gironi",status_finals:"Fase finale",status_finished:"Terminato",
@@ -1763,7 +1994,7 @@ const T = {
     palmares_pseudo_placeholder:"Nome utente Chess.com",
     palmares_name_optional_placeholder:"Nome (facoltativo)",
     palmares_bulk_placeholder:"Un giocatore per riga: nomeutente-Nome, o solo il nome utente",
-    palmares_bulk_btn:"➕ Aggiungi la lista",palmares_fill_names_btn:"🔗 Ritrovare i nomi",palmares_search_ph:"🔎 Cercare un giocatore…",palmares_player_none:"Nessun giocatore trovato.",palmares_edition:"edizione",palmares_editions:"edizioni",palmares_podium:"podio",palmares_podiums:"podi",palmares_best:"miglior posizione:",palmares_of:" su ",palmares_stats_btn:"Statistiche giocatori",tri_points:"📊 Punti",tri_ratio:"⚡ Per partita",tri_titres:"🏆 Titoli",legende_general_poules:"ℹ️ <b>Ordine della classifica:</b> 1) posizione nel girone — prima tutti i primi, poi tutti i secondi, ecc. 2) punti per partita 3) vittorie per partita 4) vittorie con i Neri per partita 5) Buchholz per partita — la forza degli avversari affrontati nei gironi 6) testa di serie.<br>I valori sono per partita perché i gironi non hanno tutti la stessa dimensione.",legende_general_finales:"ℹ️ <b>Ordine della classifica:</b> 1) il turno raggiunto nelle fasi finali viene prima di tutto — un semifinalista precede un quartofinalista, anche con meno punti 2) poi la posizione nel girone 3) poi punti, vittorie e vittorie con i Neri, per partita 4) poi il Buchholz, congelato sui gironi 5) poi testa di serie.<br>Un giocatore può quindi mostrare più punti di uno collocato sopra di lui: decide il percorso nelle finali.",legende_edition:"ℹ️ <b>Classifica finale:</b> il turno raggiunto nelle fasi finali viene prima di tutto, poi la posizione nel girone, poi le statistiche per partita e il Buchholz. Un giocatore può quindi mostrare più punti di uno collocato sopra di lui.",bracket_title:"🏆 Tabellone delle finali",bracket_legend:"Partite giocate a tratto pieno, da giocare tratteggiate. Il vincitore è in grassetto. Scorre in orizzontale.",bracket_pending:"da definire",bracket_bye:"Qualificato",fab_admin:"Area di gestione",fab_admin_device:"Area di gestione — dispositivo registrato",bracket_how_title:"🎯 Come sono organizzate le finali",bracket_directs:"I {n} meglio piazzati sono qualificati direttamente per i {tour}.<br><br>",bracket_explain_std:"I qualificati sono classificati su tutti i gironi: prima i primi di ogni girone, poi i migliori secondi, poi i migliori terzi, e così via.<br><br>{directs}Gli abbinamenti seguono questa classifica: il meglio piazzato affronta il peggio piazzato, e così via.<br><br>Due giocatori dello stesso girone non si affrontano al primo turno.",bracket_explain_two:"I qualificati sono classificati su tutti i gironi: prima i primi di ogni girone, poi i migliori secondi, poi i migliori terzi, e così via.<br><br>I primi di girone sono qualificati direttamente per il turno successivo.<br><br>Gli abbinamenti seguono questa classifica: il meglio piazzato affronta il peggio piazzato, e così via.<br><br>Due giocatori dello stesso girone non si affrontano al primo turno.",rank_modal_title:"ℹ️ Sulla classifica",rank_modal_body:"La classifica non segue solo i punti, ma anche il <b>percorso nelle fasi finali</b>.<br><br>Chi esce in semifinale precede un quartofinalista, anche con meno punti.",rank_modal_ok:"Ho capito",rank_hint:"ℹ️ Classifica secondo il percorso nelle finali, non solo i punti.",palmares_stats_desc:"Tutti i partecipanti, classificati su tutte le edizioni.",palmares_ongoing:"in corso",palmares_ended:"terminato",palmares_pick:"Scegli un torneo qui sopra.",palmares_no_result_yet:"Nessuna partita ancora giocata.",palmares_provisional:"⏳ Classifica provvisoria — torneo in corso",palmares_virtual_desc:"⏳ Chi si qualificherebbe se i gironi finissero ora",palmares_qualified_desc:"✅ Giocatori qualificati per le fasi finali",palmares_player:"giocatore",palmares_players:"giocatori",palmares_format_help:"<b>Un giocatore per riga, in ordine di classifica:</b><br><code>nomeutente-Nome</code> &nbsp;— senza statistiche<br><code>nomeutente-Nome;V;P;S;V;P;S</code> &nbsp;— con statistiche<br>I primi 3 numeri = vittorie, patte, sconfitte <b>con i Bianchi</b> ⬜<br>I 3 successivi = vittorie, patte, sconfitte <b>con i Neri</b> ⬛<br>Esempio: <code>Goudi8-Romain;1;3;1;4;0;1</code><br>Partite e punti si calcolano automaticamente.",qual_rg:"Pos",qual_grp:"Gir",qual_ptsm:"Pt/P",qual_vm:"V/P",qual_vnm:"VN/P",qual_tbm:"TB/P",qual_seed:"Testa",sep_virtuels:"— LIMITE DI QUALIFICAZIONE ({n}) —",sep_qualifies:"— QUALIFICATI ({n}) —",sep_directs:"— DIRETTAMENTE AI {tour} ({n}) —",qual_legend:"Spareggio nell'ordine: Pt/P (punti per partita) → V/P (vittorie per partita) → VN/P (vittorie con i Neri per partita) → TB/P (Buchholz per partita) → testa di serie. Pos = posizione nel girone.",palmares_pts:"pt",palmares_m:"p",palmares_v:"V",palmares_n:"P",palmares_d:"S",palmares_white:"Bianchi",palmares_black:"Neri",palmares_total:"Totale",palmares_on:"su",palmares_names_filled:"✓ {n} nome(i) ritrovato(i)!",palmares_no_name_found:"Nessun nome da ritrovare.",
+    palmares_bulk_btn:"➕ Aggiungi la lista",palmares_fill_names_btn:"🔗 Ritrovare i nomi",palmares_search_ph:"🔎 Cercare un giocatore…",palmares_player_none:"Nessun giocatore trovato.",palmares_edition:"edizione",palmares_editions:"edizioni",palmares_podium:"podio",palmares_podiums:"podi",palmares_best:"miglior posizione:",palmares_of:" su ",palmares_stats_btn:"Statistiche giocatori",tri_points:"📊 Punti",tri_ratio:"⚡ Per partita",tri_titres:"🏆 Titoli",legende_general_poules:"ℹ️ <b>Ordine della classifica:</b> 1) posizione nel girone — prima tutti i primi, poi tutti i secondi, ecc. 2) punti per partita 3) vittorie per partita 4) vittorie con i Neri per partita 5) Buchholz per partita — la forza degli avversari affrontati nei gironi 6) testa di serie.<br>I valori sono per partita perché i gironi non hanno tutti la stessa dimensione.",legende_general_finales:"ℹ️ <b>Ordine della classifica:</b> 1) il turno raggiunto nelle fasi finali viene prima di tutto — un semifinalista precede un quartofinalista, anche con meno punti 2) poi la posizione nel girone 3) poi punti, vittorie e vittorie con i Neri, per partita 4) poi il Buchholz, congelato sui gironi 5) poi testa di serie.<br>Un giocatore può quindi mostrare più punti di uno collocato sopra di lui: decide il percorso nelle finali.",legende_edition:"ℹ️ <b>Classifica finale:</b> il turno raggiunto nelle fasi finali viene prima di tutto, poi la posizione nel girone, poi le statistiche per partita e il Buchholz. Un giocatore può quindi mostrare più punti di uno collocato sopra di lui.",bracket_title:"🏆 Tabellone delle finali",bracket_legend:"Partite giocate a tratto pieno, da giocare tratteggiate. Il vincitore è in grassetto. Scorre in orizzontale.",bracket_pending:"da definire",bracket_bye:"Qualificato",fab_admin:"Area di gestione",fab_admin_device:"Area di gestione — dispositivo registrato",bracket_how_title:"🎯 Come sono organizzate le finali",bracket_directs:"I {n} meglio piazzati sono qualificati direttamente per i {tour}.<br><br>",bracket_explain_std:"I qualificati sono classificati su tutti i gironi: prima i primi di ogni girone, poi i migliori secondi, poi i migliori terzi, e così via.<br><br>{directs}Gli abbinamenti seguono questa classifica: il meglio piazzato affronta il peggio piazzato, e così via.<br><br>Due giocatori dello stesso girone non si affrontano al primo turno.",bracket_explain_two:"I qualificati sono classificati su tutti i gironi: prima i primi di ogni girone, poi i migliori secondi, poi i migliori terzi, e così via.<br><br>I primi di girone sono qualificati direttamente per il turno successivo.<br><br>Gli abbinamenti seguono questa classifica: il meglio piazzato affronta il peggio piazzato, e così via.<br><br>Due giocatori dello stesso girone non si affrontano al primo turno.",rank_modal_title:"ℹ️ Sulla classifica",rank_modal_body:"La classifica non segue solo i punti, ma anche il <b>percorso nelle fasi finali</b>.<br><br>Chi esce in semifinale precede un quartofinalista, anche con meno punti.",rank_modal_ok:"Ho capito",rank_hint:"ℹ️ Classifica secondo il percorso nelle finali, non solo i punti.",palmares_stats_desc:"Tutti i partecipanti, classificati su tutte le edizioni.",palmares_ongoing:"in corso",palmares_ended:"terminato",palmares_pick:"Scegli un torneo qui sopra.",palmares_no_result_yet:"Nessuna partita ancora giocata.",palmares_provisional:"⏳ Classifica provvisoria — torneo in corso",palmares_virtual_desc:"⏳ Chi si qualificherebbe se i gironi finissero ora",palmares_qualified_desc:"✅ Giocatori qualificati per le fasi finali",palmares_player:"giocatore",palmares_players:"giocatori",palmares_format_help:"<b>Un giocatore per riga, in ordine di classifica:</b><br><code>nomeutente-Nome</code> &nbsp;— senza statistiche<br><code>nomeutente-Nome;V;P;S;V;P;S</code> &nbsp;— con statistiche<br>I primi 3 numeri = vittorie, patte, sconfitte <b>con i Bianchi</b> ⬜<br>I 3 successivi = vittorie, patte, sconfitte <b>con i Neri</b> ⬛<br>Esempio: <code>Goudi8-Romain;1;3;1;4;0;1</code><br>Partite e punti si calcolano automaticamente.",qual_rg:"Pos",group_long:"Girone",group_short:"G",qual_grp:"Gir",qual_ptsm:"Pt/P",qual_vm:"V/P",qual_vnm:"VN/P",qual_tbm:"TB/P",qual_seed:"Testa",sep_virtuels:"— LIMITE DI QUALIFICAZIONE ({n}) —",sep_qualifies:"— QUALIFICATI ({n}) —",sep_directs:"— DIRETTAMENTE AI {tour} ({n}) —",qual_legend:"Spareggio nell'ordine: Pt/P (punti per partita) → V/P (vittorie per partita) → VN/P (vittorie con i Neri per partita) → TB/P (Buchholz per partita) → testa di serie. Pos = posizione nel girone.",palmares_pts:"pt",palmares_m:"p",palmares_v:"V",palmares_n:"P",palmares_d:"S",palmares_white:"Bianchi",palmares_black:"Neri",palmares_total:"Totale",palmares_on:"su",palmares_names_filled:"✓ {n} nome(i) ritrovato(i)!",palmares_no_name_found:"Nessun nome da ritrovare.",
     rules:`<p>🚀 Consulta la scheda <strong>Partite</strong> per vedere le tue partite non appena inizia la fase a gironi. Invia un invito al tuo avversario su Chess.com (nome utente nella scheda <strong>Torneo</strong>) o gioca su una scacchiera. Inserisci il risultato nella scheda <strong>Partite</strong>.</p><br>
 <p>⏰ <strong>Inizia le tue partite fin dall'inizio del torneo</strong> e concludile entro la scadenza indicata su ogni partita. Potete giocare più partite in parallelo, ma <strong>rispettate l'ordine dei turni</strong>: affrontate per prime quelle con la scadenza più vicina. Anche con un ritmo lento, continuate a muovere per finire nei tempi.</p><br>
 <p>Formato: Gironi round-robin, poi fasi finali ad eliminazione diretta. Il numero di gironi e di qualificati è stabilito dall'organizzatore in base agli iscritti, e annunciato all'avvio del torneo.</p><br>
@@ -1791,7 +2022,7 @@ const T = {
     notif_enabled:"✓ Notifiche attivate!",
     notif_disabled_warn:"⚠️ Notifiche disattivate. Non riceverai più gli annunci del torneo né i risultati — rischi di perdere una scadenza e di perdere a tavolino. Riattivale appena possibile.",notif_cut_server:"⚠️ Le tue notifiche sono state disattivate lato server — riattivale se lo desideri.",notif_lost:"⚠️ Le tue notifiche non funzionavano più (abbonamento perso dal browser). Riattivale per non perdere una scadenza.",notif_off_reminder:"🔕 Non ricevi alcuna notifica. Attivale per non perdere una scadenza.",
     
-    notif_activating:"⏳ Attivazione in corso…",notif_send_fail:"Invio impossibile. L'annuncio NON è partito. Riprova tra un istante.",notif_reload:"Il sito è appena stato aggiornato: ricarica la pagina, poi riprova ad attivare. È normale alla prima visita.",notif_fail:"Attivazione impossibile. Verifica che le notifiche non siano bloccate dal browser o dal sistema, poi riprova.",notif_timeout:"Il browser non risponde. Ricarica la pagina e riprova; se succede di nuovo, riavvia il browser.",notif_test_sending:"📤 Invio del test…",notif_test_no_entry:"⏳ Sincronizzazione in corso, riprova tra qualche secondo.",notif_test_dead:"❌ Il tuo abbonamento non è più valido (indirizzo scaduto). È stato rimosso: riattiva le notifiche.",notif_test_error:"❌ Il server non è riuscito a inviare. Riprova tra poco.",notif_test_network:"❌ Server irraggiungibile. Controlla la connessione.",notif_test_sent:"✓ Notifica di prova inviata!",
+    notif_activating:"⏳ Attivazione in corso…",notif_send_fail:"Invio impossibile. L'annuncio NON è partito. Riprova tra un istante.",notif_no_answer:"Il tuo browser non ha mostrato la richiesta di autorizzazione, o è rimasta senza risposta. Se il browser è gestito dalla tua azienda (edge://policy), le notifiche possono esservi bloccate: prova dal telefono o da un browser personale.",notif_reload:"Il sito è appena stato aggiornato: ricarica la pagina, poi riprova ad attivare. È normale alla prima visita.",notif_fail:"Attivazione impossibile. Verifica che le notifiche non siano bloccate dal browser o dal sistema, poi riprova.",notif_disable_fail:"Disattivazione impossibile. Ricarica la pagina per vedere lo stato reale delle tue notifiche, poi riprova.",notif_timeout:"Il browser non risponde. Ricarica la pagina e riprova; se succede di nuovo, riavvia il browser.",notif_test_sending:"📤 Invio del test…",notif_test_no_entry:"⏳ Sincronizzazione in corso, riprova tra qualche secondo.",notif_test_dead:"❌ Il tuo abbonamento non è più valido (indirizzo scaduto). È stato rimosso: riattiva le notifiche.",notif_test_error:"❌ Il server non è riuscito a inviare. Riprova tra poco.",notif_test_network:"❌ Server irraggiungibile. Controlla la connessione.",notif_test_sent:"✓ Notifica di prova inviata!",
     notif_test_nosub:"❌ Nessun abbonamento attivo. Disattiva e riattiva le notifiche.",
     notif_enter_msg:"Inserire un messaggio.",
     notif_sent:"✓ Notifica salvata!",
@@ -1810,7 +2041,7 @@ const T = {
     groups_created:" gruppi creati, ",
     matches_generated:" partite generate.",
     seeding_done:[" gruppi creati, "," partite generate."],
-    confirm_reset_finals_title:"Azzerare le fasi finali?",
+    confirm_assign_groups_title:"Generare gironi e partite?",confirm_assign_groups_text:"I gironi vengono rifatti e TUTTE le partite dei gironi rigenerate: i punteggi già inseriti e il tabellone delle finali saranno cancellati. Non viene creato alcun backup.",confirm_launch_finals_title:"Avviare le fasi finali?",confirm_launch_finals_text:"Il tabellone è costruito dalla classifica attuale. Se esiste già un tabellone viene sostituito e i risultati delle finali già inseriti vanno persi.",confirm_reset_finals_title:"Azzerare le fasi finali?",
     confirm_reset_finals_text:"❌ CANCELLATO: il tabellone delle finali.\n✅ CONSERVATO: giocatori, gruppi, partite di girone e relativi risultati.\n\nIl torneo torna alla fase a gironi.",
     confirm_reset_groups_title:"Azzerare i gruppi?",
     confirm_reset_groups_text:"❌ CANCELLATO: i gruppi, TUTTE le partite di girone con i risultati, e il tabellone delle finali.\n✅ CONSERVATO: i giocatori iscritti e il loro ordine di teste di serie.\n\nIl torneo torna alla fase di iscrizioni.",
@@ -1856,16 +2087,33 @@ const T = {
 };
 
 // ── LANG ──
-let lang = localStorage.getItem('abct-lang') || 'fr';
-// Lecture directe depuis le stockage : utilisable AVANT la déclaration ci-dessus,
-// donc partout. Sert à enregistrer la langue dans l'abonnement, pour que le
-// serveur envoie à chaque joueur la notification dans sa langue.
-window.langueCourante = () => localStorage.getItem('abct-lang') || 'fr';
-function t(key) { return T[lang][key] || T['fr'][key] || key; }
+// ⚠️ Le stockage local peut LEVER, pas seulement être vide : navigateur réglé sur
+// « bloquer tous les cookies », stratégie d'entreprise, certains modes privés. Cette
+// lecture-ci se trouve au niveau du script, hors de toute fonction : non protégée, elle
+// emportait TOUT ce qui suit — écouteurs Firebase compris. Le joueur restait figé sur
+// l'écran de chargement, sans message, sans rien à tenter. Les autres accès au stockage
+// du fichier sont protégés depuis longtemps ; celui-là, le seul fatal, ne l'était pas.
+const LANGUES = ['fr', 'de', 'en', 'it'];
+function lireLangue() {
+  let v = null;
+  try { v = localStorage.getItem('abct-lang'); } catch (e) {}
+  return LANGUES.indexOf(v) !== -1 ? v : 'fr';
+}
+let lang = lireLangue();
+// Utilisable AVANT la déclaration ci-dessus, donc partout. Sert à enregistrer la langue
+// dans l'abonnement, pour que le serveur envoie à chaque joueur la notification dans sa
+// langue. Une valeur inattendue en stockage retombe sur le français plutôt que de se
+// propager jusqu'au serveur.
+window.langueCourante = lireLangue;
+// `T[lang]` était déréférencé AVANT le repli : une langue inconnue faisait lever CHAQUE
+// appel à t(), partout dans le site. Un repli qu'on ne peut pas atteindre ne sert à rien.
+function t(key) { return (T[lang] || T.fr)[key] || T.fr[key] || key; }
 
 window.setLang = function(l) {
   lang = l;
-  localStorage.setItem('abct-lang', l);
+  // Même raison qu'à la lecture : l'écriture peut lever. Le changement de langue doit
+  // marcher pour la session en cours même si rien ne peut être retenu pour la suivante.
+  try { localStorage.setItem('abct-lang', l); } catch (e) {}
   document.querySelectorAll('.lang-btn').forEach((b,i)=>{
     b.classList.toggle('active', ['fr','en','de','it'][i]===l);
   });
@@ -2137,6 +2385,20 @@ function showMsg(id, text, ok=true, persist=false) {
   }
 }
 function esc(s) { if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ══ NOM DE GROUPE AFFICHÉ ══
+// Le nom stocké dans Firebase est toujours « Groupe N » : c'est une CLÉ, partagée par les
+// matchs, les classements, les filtres et les fonctions serveur. On ne la traduit donc pas
+// à la source — la changer casserait toutes les données déjà écrites — mais uniquement à
+// l'affichage. Les notifications traduisaient déjà de leur côté, si bien qu'un joueur
+// germanophone lisait « Gr. 1 » dans sa notification et « Groupe 1 » sur le site, pour le
+// même match. `court` rend la forme compacte des tableaux de classement.
+function nomGroupe(brut, court) {
+  if (!brut) return '';
+  const n = String(brut).match(/(\d+)/);
+  if (!n) return String(brut);
+  return (court ? t('group_short') : t('group_long')) + ' ' + n[1];
+}
 
 // ── NAV ──
 // Affiche ou masque le raccourci flottant. Appelee a la connexion, a la deconnexion,
@@ -2523,10 +2785,36 @@ function renderLiveRanking() {
   }
 
   const standings = computeStandings();
-  const nbQualifies = state?.settings?.finalistsCount || 8;
+  let nbQualifies = state?.settings?.finalistsCount || 8;
   // TOUS les joueurs dans l'ordre de qualification, pas seulement les qualifiés :
   // on voit d'un coup le classement complet ET où passe la limite.
-  const tous = discoverFinalists(standings, 999);
+  let tous = discoverFinalists(standings, 999);
+
+  // ── UNE FOIS LES FINALES LANCÉES, LES QUALIFIÉS NE BOUGENT PLUS ──
+  // Avant le lancement, ce classement est vivant et la barre montre qui SERAIT qualifié si
+  // les poules s'arrêtaient maintenant : c'est le but de la page.
+  // Après, le tableau final fait foi — il est figé au lancement — alors que ce classement,
+  // lui, continue de bouger dès qu'un match de poule en retard est joué ou qu'un score est
+  // corrigé. Les deux divergeaient, et la page affirmait « ✅ Joueurs qualifiés » sur une
+  // liste qui contredisait le tableau : un joueur pouvait y lire son nom sans avoir le
+  // moindre match à disputer.
+  // On prend donc les qualifiés DANS LE TABLEAU, dans l'ordre où il les a figés — les
+  // rangs `rank1`/`rank2` sont écrits au lancement et ne changent plus. Le reste du
+  // classement, en dessous de la barre, continue de vivre normalement.
+  if (finalesLancees) {
+    const rangsFiges = new Map();
+    Object.values(state?.finals || {}).forEach(m => {
+      if (m.player1 && typeof m.rank1 === 'number' && !rangsFiges.has(m.player1)) rangsFiges.set(m.player1, m.rank1);
+      if (m.player2 && typeof m.rank2 === 'number' && !rangsFiges.has(m.player2)) rangsFiges.set(m.player2, m.rank2);
+    });
+    if (rangsFiges.size) {
+      const dedans = tous.filter(f => rangsFiges.has(f.player))
+                         .sort((a, b) => rangsFiges.get(a.player) - rangsFiges.get(b.player));
+      const dehors = tous.filter(f => !rangsFiges.has(f.player));
+      tous = dedans.concat(dehors);
+      nbQualifies = dedans.length;
+    }
+  }
   const noms = {}, seedMap = {};
   getPlayers().forEach(p => {
     noms[p.nickname] = p.name || null;
@@ -2549,7 +2837,7 @@ function renderLiveRanking() {
       <td><strong style="color:${qualifie?'var(--gold)':'var(--gray)'}">${i+1}</strong></td>
       <td${qualifie?' style="font-weight:600"':''}>${aff}</td>
       <td style="color:var(--gray)">${f.groupRank}</td>
-      <td style="color:var(--gray);font-size:11px">${esc((f.group||'').replace('Groupe ','G'))}</td>
+      <td style="color:var(--gray);font-size:11px">${esc(nomGroupe(f.group, true))}</td>
       <td>${nrm(s.points).toFixed(2)}</td><td>${s.matches}</td>
       <td>${nrm(s.totalWins).toFixed(2)}</td><td>${nrm(s.blackWins).toFixed(2)}</td>
       <td>${nrm(s.tieBreak).toFixed(2)}</td>
@@ -3283,6 +3571,11 @@ window.changePin = async function() {
   document.getElementById('pin-current').value='';
   document.getElementById('pin-new').value='';
   document.getElementById('pin-confirm').value='';
+  // Le PIN de session sert à AUTORISER les envois (annonces, vérification des retards).
+  // Sans cette ligne, changer son PIN laissait l'ancien en session : l'organisateur ne
+  // pouvait plus rien envoyer, avec un message l'accusant de se tromper de PIN, et rien
+  // n'indiquait qu'il fallait se reconnecter.
+  try { sessionStorage.setItem('abct-session-pin', newPin); } catch (e) {}
   showMsg('pin-msg',t('pin_changed'));
 };
 
@@ -3315,7 +3608,7 @@ function renderRanking() {
       return `<tr class="${qualified ? 'qualified' : ''}">
         <td><strong style="color:${qualified ? 'var(--gold)' : 'var(--gray)'}">${i+1}</strong></td>
         <td>${esc(f.player)}</td>
-        <td style="color:var(--gray);font-size:11px">${f.group}</td>
+        <td style="color:var(--gray);font-size:11px">${esc(nomGroupe(f.group, true))}</td>
         <td>${s.points}</td>
         <td>${s.matches}</td>
         <td>${s.totalWins}</td>
@@ -3395,7 +3688,36 @@ window.saveSettings = async function() {
   renderPage(currentPage);
 };
 
+// ══ LA LISTE DES JOUEURS EST FIGÉE DÈS QUE LES INSCRIPTIONS FERMENT ══
+// `games` et `finals` désignent les joueurs par leur PSEUDO, pas par leur identifiant.
+// Renommer quelqu'un après le tirage en fait donc un fantôme : l'ancien pseudo reste dans
+// tous les matchs et continue d'être classé, tandis que le nouveau apparaît à part avec
+// zéro match. Le désinscrire ne le retire d'aucun match non plus : il reste au classement,
+// peut se qualifier pour les finales, et finit archivé au palmarès sans nom.
+// Rien n'exigeait d'être admin pour déclencher ça : chaque ligne de joueur de la page
+// d'accueil portait le gestionnaire, et la « vérification » consistait à retaper un pseudo
+// affiché juste au-dessus et pré-rempli en indication du champ.
+// Le verrou vaut aussi pour l'admin. Pour corriger une identité en cours de tournoi, il
+// faut repasser explicitement le tournoi en phase d'inscription — un geste conscient,
+// pas un clic de travers.
+// `silencieux` : pour les endroits où le geste n'était PAS une demande de modification.
+// Sur la page d'accueil, chaque ligne de joueur porte le gestionnaire, et l'invitation à
+// modifier est déjà masquée hors inscriptions : une tape de travers ne doit pas déclencher
+// une alerte. Les boutons explicites (✕, crayon, enregistrer), eux, méritent une réponse.
+function listeJoueursFigee(silencieux) {
+  const etape = state?.settings?.status;
+  // Données pas encore arrivées de Firebase : on ignore dans quelle phase on est. On
+  // bloque — c'est le sens prudent — mais sans affirmer que les inscriptions sont
+  // fermées, ce qui serait faux et déroutant pour quelqu'un qui vient d'ouvrir la page
+  // pendant les inscriptions.
+  if (!etape) { if (!silencieux) alert(t('sync_wait')); return true; }
+  if (etape === 'registration') return false;
+  if (!silencieux) alert(t('modif_closed'));
+  return true;
+}
+
 window.confirmUnregister = function(id, nickname) {
+  if (listeJoueursFigee()) return;
   if (confirm(`Se désinscrire du tournoi ? (${nickname})`)) {
     set(ref(db,'players/'+id), null);
   }
@@ -3533,7 +3855,11 @@ window.registerPlayer = async function() {
   let nomFinal = name;
   if (ancien && ancien.name && ancien.name.trim().toLowerCase() !== name.toLowerCase()) {
     const choix = await demanderReconnaissance(nick, ancien.name, name, ancien.editions);
-    if (choix === 'annuler') { btn.disabled = false; return; }   // inscription abandonnée
+    // `btn` n'a jamais existé dans cette fonction : cette ligne levait un ReferenceError
+    // au lieu de sortir proprement. Sans effet visible — l'intention était de sortir, et
+    // c'est ce qui se passait — mais elle laissait un rejet non rattrapé en console et
+    // sautait tout ce qui aurait pu suivre. Défaut présent depuis l'origine.
+    if (choix === 'annuler') return;   // inscription abandonnée
     if (choix === 'garder') {
       // Le joueur confirme son ancien nom : on l'utilise pour cette inscription,
       // et on ne touche à rien dans le palmarès.
@@ -3554,9 +3880,13 @@ window.registerPlayer = async function() {
 };
 
 window.removePlayer = async function(id) {
-  // La croix supprimait sans rien demander. Le pendant public (confirmUnregister)
-  // demandait confirmation ; l'admin, qui supprime le joueur d'un AUTRE, doit au
-  // moins autant être protégé d'un clic malheureux.
+  // Même verrou que les autres chemins : la croix du panneau admin est LA porte la plus
+  // destructrice de la liste des joueurs, et elle était la seule à rester ouverte. Un ✕
+  // mal visé en pleine phase de poules laissait le joueur dans ses matchs, au classement,
+  // dans le tableau final — il pouvait gagner le tournoi tout en ayant disparu de la
+  // liste des inscrits.
+  if (!isAdmin) return;
+  if (listeJoueursFigee()) return;
   const p = getPlayers().find(x => x.id === id);
   const nom = p ? (p.name ? p.name + ' (' + p.nickname + ')' : p.nickname) : '';
   if (!confirm(t('confirm_remove_player').replace('{joueur}', nom))) return;
@@ -3638,6 +3968,9 @@ function refreshPlayerLists() {
 }
 
 window.startEditPlayer = function(id) {
+  // Ouvrir le formulaire est interdit hors inscriptions. Le REFERMER reste toujours
+  // possible, au cas où la phase changerait pendant qu'il est ouvert.
+  if (editingPlayerId !== id && listeJoueursFigee()) return;
   editingPlayerId = editingPlayerId === id ? null : id;
   refreshPlayerLists();
 };
@@ -3646,9 +3979,14 @@ window.startEditPlayer = function(id) {
 // Depuis l'admin, aucune vérification : le PIN a déjà été donné.
 let joueurAVerifier = null;
 window.demanderModifJoueur = function(id) {
-  if (isAdmin) { startEditPlayer(id); return; }
   // Déjà ouvert sur ce joueur : un second clic referme, comme le crayon avant.
+  // Testé AVANT le reste pour que la fermeture reste possible en toute circonstance.
   if (editingPlayerId === id) { startEditPlayer(id); return; }
+  // Inutile d'ouvrir la fenêtre de vérification si la liste est figée. En silence : ce
+  // gestionnaire est porté par CHAQUE ligne de la liste publique, et hors inscriptions
+  // rien n'invite plus à modifier — une tape de travers ne doit pas alerter.
+  if (listeJoueursFigee(true)) return;
+  if (isAdmin) { startEditPlayer(id); return; }
   const p = getPlayers().find(x => x.id === id);
   if (!p) return;
   joueurAVerifier = p;
@@ -3713,6 +4051,9 @@ window.fermerModifJoueur = function() {
 };
 
 window.saveEditPlayer = async function(id) {
+  // Dernier verrou avant écriture : la phase peut avoir changé pendant que le
+  // formulaire était ouvert.
+  if (listeJoueursFigee()) return;
   const nick = document.getElementById('edit-nick-'+id)?.value.trim();
   const name = document.getElementById('edit-name-'+id)?.value.trim();
   const sector = document.getElementById('edit-sector-'+id)?.value.trim();
@@ -3939,11 +4280,18 @@ window.assignGroups = async function() {
 
 // ── SCORES ──
 window.openScoreEdit = function(id) { editingMatchId=editingMatchId===id?null:id; renderMatches(); };
+// ══ RÉINITIALISER UN SCORE REND AUSSI LE DROIT DE L'ANNONCER ══
+// `notified` empêche d'inonder les joueurs : un résultat n'est annoncé qu'une fois. Mais
+// il n'était jamais effacé, donc après une faute de frappe le FAUX résultat restait le
+// dernier message reçu par tout le monde, et le bon n'était jamais envoyé — le serveur
+// répondait « déjà notifié » et le site ne lisait même pas cette réponse.
+// L'effacer ICI, et seulement ici, garde la protection intacte : corriger un score sans
+// passer par la réinitialisation ne renotifie toujours pas, et une réinitialisation suivie
+// d'une nouvelle saisie ne produit qu'une seule annonce, la bonne.
 window.resetScore = async function(id) {
   editingMatchId = null;
   renderMatches();
-  await set(ref(db,'games/'+id+'/scoreWhite'), null);
-  await set(ref(db,'games/'+id+'/scoreBlack'), null);
+  await update(ref(db,'games/'+id), { scoreWhite: null, scoreBlack: null, notified: null });
 };
 
 window.resetFinalScore = async function(id) {
@@ -3952,9 +4300,7 @@ window.resetFinalScore = async function(id) {
   editingFinalId = null;
   renderFinals();
   if (oldWinner) await removePropagatedWinner(id, oldWinner, game);
-  await set(ref(db,'finals/'+id+'/score1'), null);
-  await set(ref(db,'finals/'+id+'/score2'), null);
-  await set(ref(db,'finals/'+id+'/winner'), null);
+  await update(ref(db,'finals/'+id), { score1: null, score2: null, winner: null, notified: null });
 };
 
 window.autoFinalScore = function(id, side) {
@@ -3983,8 +4329,13 @@ window.submitScore = async function(id) {
   const wasPlayed = prev && prev.scoreWhite!==null && prev.scoreWhite!==undefined;
   editingMatchId=null;
   renderMatches();
-  await set(ref(db,'games/'+id+'/scoreWhite'),parseFloat(sw));
-  await set(ref(db,'games/'+id+'/scoreBlack'),parseFloat(sb));
+  // Les deux scores partent ENSEMBLE, comme pour les finales. En deux écritures, une
+  // coupure entre les deux laissait un demi-score DURABLE, et il était vicieux : le
+  // classement ne le comptait pas (il exige les deux scores), la carte affichait encore
+  // « Entrer le score », mais la liste des matchs le rangeait dans « joués » — et surtout
+  // l'alerte de retard le considérait comme joué et ne l'aurait JAMAIS signalé. Le match
+  // disparaissait sans que personne ne puisse s'en apercevoir.
+  await update(ref(db,'games/'+id), { scoreWhite: parseFloat(sw), scoreBlack: parseFloat(sb) });
   if (!wasPlayed) triggerAutoResultNotif(id, false);
 };
 window.cancelScore = function() { editingMatchId=null; renderMatches(); };
@@ -4011,10 +4362,11 @@ window.submitFinalScore = async function(id) {
   if(oldWinner && oldWinner!==newWinner) {
     await removePropagatedWinner(id, oldWinner, game);
   }
-  await set(ref(db,'finals/'+id+'/colorP1'),couleurP1);
-  await set(ref(db,'finals/'+id+'/score1'),s1);
-  await set(ref(db,'finals/'+id+'/score2'),s2);
-  await set(ref(db,'finals/'+id+'/winner'),newWinner);
+  // Le résultat part d'un seul bloc. En quatre écritures successives, une coupure entre
+  // le second score et le vainqueur laissait le match affiché « 1-0 » sans vainqueur et
+  // sans propagation : un tableau qui semble avancer mais ne se remplit pas. Même raison
+  // que pour le placement des joueurs plus bas.
+  await update(ref(db,'finals/'+id), { colorP1: couleurP1, score1: s1, score2: s2, winner: newWinner });
   if(newWinner) propagateFinalWinner(id,newWinner,game);
   if (!wasPlayed) triggerAutoResultNotif(id, true);
 };
@@ -4081,17 +4433,104 @@ async function removePropagatedWinner(id, oldWinner, game) {
   }
 }
 
+// ══ NE JAMAIS REPLACER QUELQU'UN QUI EST DÉJÀ LÀ ══
+// `submitFinalScore` ne retire le vainqueur précédent du match suivant QUE s'il change
+// (`oldWinner !== newWinner`), mais il relance la propagation dans tous les cas. Resaisir
+// le MÊME résultat — geste banal : rouvrir un match déjà scoré pour corriger la couleur,
+// qui est obligatoire — repassait donc ici avec un vainqueur déjà présent en player1.
+// `slot` tombait alors sur 'player2' et ÉCRASAIT l'adversaire déjà qualifié : une finale
+// « Alice vs Chloé » devenait « Alice vs Alice », et Chloé disparaissait du tableau sans
+// que rien ne le signale. Même effet sur la petite finale.
+// Vérifié : changer le vainqueur continue de fonctionner (retrait puis replacement) ;
+// resoumettre le même vainqueur ne touche plus à rien.
+function dejaPlace(match, joueur) {
+  return !!match && !!joueur && (match.player1 === joueur || match.player2 === joueur);
+}
+
+// ══ LE MIEUX CLASSÉ À GAUCHE, ET UNE CASE D'ARRIVÉE QUI NE SE DISPUTE PAS ══
+// La case de gauche n'est pas qu'une question d'affichage : c'est le mieux classé des deux
+// qui CHOISIT SA COULEUR. `renderFinals` le décide déjà d'après `rank1`/`rank2`, si bien
+// que le site pouvait annoncer « X choisit sa couleur » en montrant X à DROITE. Au premier
+// tour la règle est respectée — `launchFinals` place le meilleur en player1 — mais elle se
+// perdait ensuite, la case d'arrivée étant « la première libre ».
+//
+// Deux corrections d'un seul geste :
+//
+// 1. `caseFixe` ne dépend QUE du numéro du match d'origine. Deux matchs différents qui
+//    alimentent le même match suivant écrivent donc toujours dans des champs DIFFÉRENTS.
+//    Avant, les deux calculaient « player1 est libre » à partir de leur propre copie des
+//    données : saisis au même instant depuis deux téléphones, le second écrasait le
+//    premier et un finaliste disparaissait du tableau en ayant pourtant gagné son match.
+//
+// 2. Une fois le second joueur connu, le mieux classé passe à gauche. L'échange se calcule
+//    à partir des deux joueurs, pas de l'ordre d'arrivée : il donne le même résultat sur
+//    les deux appareils. Tant qu'un seul joueur est connu, il occupe sa case d'origine —
+//    il peut donc apparaître à droite en attendant son adversaire, et bascule à gauche
+//    tout seul si c'est lui le mieux classé.
+async function placerVainqueur(nextId, nextGame, joueur, rang, caseFixe) {
+  if (dejaPlace(nextGame, joueur)) return;
+  // ⚠️ On cherche QUI occupe déjà le match, pas « quelle case est libre ». Écrire
+  // aveuglément dans la case fixe écraserait un joueur déjà qualifié : après une
+  // correction de résultat, le nettoyage libère la case de l'ancien vainqueur, pas
+  // forcément celle que vise le nouveau.
+  let occupant = null, rangOccupant = null;
+  if (nextGame.player1 && nextGame.player1 !== joueur) { occupant = nextGame.player1; rangOccupant = nextGame.rank1; }
+  else if (nextGame.player2 && nextGame.player2 !== joueur) { occupant = nextGame.player2; rangOccupant = nextGame.rank2; }
+
+  if (!occupant) {
+    // Seul pour l'instant : on prend la case dictée par le numéro du match d'origine.
+    // Deux matchs différents qui alimentent celui-ci visent donc des champs DIFFÉRENTS
+    // et ne peuvent pas s'écraser, même saisis au même instant depuis deux appareils.
+    // Joueur et rang partent ENSEMBLE : sinon l'affichage se rafraîchit entre les deux et
+    // montre le nouveau joueur avec le rang de l'ancien occupant.
+    const champs = {};
+    champs[caseFixe] = joueur;
+    if (typeof rang === 'number') champs[caseFixe === 'player1' ? 'rank1' : 'rank2'] = rang;
+    await update(ref(db, 'finals/' + nextId), champs);
+    return;
+  }
+  // Les deux joueurs sont connus : le mieux classé passe à gauche, et les deux cases sont
+  // réécrites ensemble.
+  // ⚠️ Si les DEUX résultats sont saisis au même instant depuis deux appareils, chacun voit
+  // encore le match vide et personne ne passe par ici : les deux joueurs restent dans leur
+  // case d'origine. AUCUN N'EST PERDU — c'est le point qui compte — mais l'ordre peut être
+  // inversé, y compris quand les favoris gagnent : le vainqueur du match pair va à gauche,
+  // celui du match impair à droite, quels que soient leurs rangs. Vérifié par simulation de
+  // deux vues indépendantes. Sans conséquence sur le jeu : `finalCardHTML` désigne celui
+  // qui choisit sa couleur d'après les RANGS, pas d'après la position. Corriger puis
+  // rétablir l'un des deux résultats remet l'ordre d'aplomb.
+  // Rangs non comparables (valeur absente) : on s'en tient à la case d'origine plutôt que
+  // d'échanger sur une base incertaine.
+  const comparables = typeof rang === 'number' && typeof rangOccupant === 'number';
+  const jeSuisGauche = comparables ? rang < rangOccupant : caseFixe === 'player1';
+  const gauche = jeSuisGauche ? joueur : occupant;
+  const droite = jeSuisGauche ? occupant : joueur;
+  const rangGauche = jeSuisGauche ? rang : rangOccupant;
+  const rangDroite = jeSuisGauche ? rangOccupant : rang;
+  // ⚠️ UNE SEULE ÉCRITURE, et c'est essentiel. En quatre `set` successifs, l'écouteur
+  // Firebase redessine le tableau entre chacun : quand l'occupant passe de droite à
+  // gauche, la première écriture le met dans LES DEUX cases et tout le monde voit
+  // « X vs X » — l'état même que ce correctif est censé rendre impossible. Pire, il
+  // devient DURABLE si la connexion tombe ou si l'onglet se ferme entre deux écritures.
+  const champs = { player1: gauche, player2: droite };
+  if (typeof rangGauche === 'number') champs.rank1 = rangGauche;
+  if (typeof rangDroite === 'number') champs.rank2 = rangDroite;
+  await update(ref(db, 'finals/' + nextId), champs);
+}
+
 async function propagateFinalWinner(id, winner, game) {
   const finals = state.finals || {};
 
   // If this match has an explicit nextId link (two-speed bracket), use it directly
   if (game.nextId && finals[game.nextId]) {
     const nextGame = finals[game.nextId];
-    const slot = !nextGame.player1 ? 'player1' : 'player2';
-    const rankSlot = slot === 'player1' ? 'rank1' : 'rank2';
+    // À la création, `launchFinals` met le vainqueur de groupe en player2 puis remet le
+    // mieux classé à gauche : selon les cas il occupe donc player1 ou player2 quand le
+    // vainqueur du premier tour arrive. Peu importe — `placerVainqueur` cherche l'occupant,
+    // pas une case libre, et remet les deux dans l'ordre. `caseFixe` ne sert ici qu'au cas
+    // où le match serait encore vide.
     const winnerRank = winner === game.player1 ? game.rank1 : game.rank2;
-    await set(ref(db, 'finals/' + game.nextId + '/' + slot), winner);
-    if (winnerRank) await set(ref(db, 'finals/' + game.nextId + '/' + rankSlot), winnerRank);
+    await placerVainqueur(game.nextId, nextGame, winner, winnerRank, 'player1');
   } else {
     // Standard bracket: find next round by matchNum / 2
     const roundOrder = ['32èmes','16èmes','8èmes','Quarts','Demis','Finale'];
@@ -4105,11 +4544,11 @@ async function propagateFinalWinner(id, winner, game) {
       const nextEntry = nextGames.find(([,f]) => f.matchNum === nextMatchNum);
       if (nextEntry) {
         const [nextId, nextGame] = nextEntry;
-        const slot = !nextGame.player1 ? 'player1' : 'player2';
-        const rankSlot = slot === 'player1' ? 'rank1' : 'rank2';
         const winnerRank = winner === game.player1 ? game.rank1 : game.rank2;
-        await set(ref(db, 'finals/' + nextId + '/' + slot), winner);
-        if (winnerRank) await set(ref(db, 'finals/' + nextId + '/' + rankSlot), winnerRank);
+        // Match pair → gauche, impair → droite. Les deux matchs qui alimentent celui-ci
+        // ne peuvent donc jamais viser la même case.
+        await placerVainqueur(nextId, nextGame, winner, winnerRank,
+                              game.matchNum % 2 === 0 ? 'player1' : 'player2');
       }
     }
   }
@@ -4120,11 +4559,11 @@ async function propagateFinalWinner(id, winner, game) {
     const tp = Object.entries(finals).find(([,f]) => f.round === '3ème place');
     if (tp && loser) {
       const [tpId, tpGame] = tp;
-      const slot = !tpGame.player1 ? 'player1' : 'player2';
-      const rankSlot = slot === 'player1' ? 'rank1' : 'rank2';
       const loserRank = winner === game.player1 ? game.rank2 : game.rank1;
-      await set(ref(db, 'finals/' + tpId + '/' + slot), loser);
-      if (loserRank) await set(ref(db, 'finals/' + tpId + '/' + rankSlot), loserRank);
+      // Même règle que pour le tour suivant : case d'arrivée fixée par le numéro de la
+      // demi-finale, puis le mieux classé des deux perdants passe à gauche.
+      await placerVainqueur(tpId, tpGame, loser, loserRank,
+                            game.matchNum % 2 === 0 ? 'player1' : 'player2');
     }
   }
 }
@@ -4317,54 +4756,90 @@ function suggestPlayersPerGroup(totalPlayers, wantedFinalists) {
   return out.slice(0, 3);
 }
 
-function validateBracket(fin) {
+// ══ COHÉRENCE D'UN TABLEAU FINAL ══
+// Un SEUL endroit décide si une combinaison est jouable. `validateBracket` s'en sert pour
+// le verdict ET pour la liste des nombres de remplacement : les deux ne peuvent donc pas
+// diverger, ce qui était le cas avant et proposait des nombres eux-mêmes impossibles.
+//
+// Rappel de ce que construit `launchFinals` en tableau à deux vitesses : chaque match du
+// 2e tour reçoit le vainqueur de groupe n°i d'un côté, et le vainqueur du match n°i du
+// 1er tour de l'autre. Il faut donc EXACTEMENT autant de vainqueurs de groupe que de
+// matchs au premier tour. Sinon les matchs excédentaires n'ont jamais d'adversaire :
+// le tableau part, quelques matchs se jouent, puis plus rien n'avance et il n'y a pas
+// de champion. C'est ce qui arrivait avec 10 ou 11 finalistes sur 15 joueurs en 3 poules
+// — 3 vainqueurs de groupe pour 4 matchs de 8èmes — sans le moindre avertissement.
+// Vérifié sur 1113 combinaisons (2 à 8 groupes × 3 à 8 joueurs par groupe) en construisant
+// puis en jouant chaque tableau : 0 combinaison acceptée à tort, 0 refusée à tort.
+function tableauCoherent(numWinners, numOthers, nbFinalistes) {
+  let bracketSize = 2; while (bracketSize < nbFinalistes) bracketSize *= 2;
+  // Au-delà de 32, `roundNames` n'a plus de nom pour le tour et surtout la table
+  // `roundOrder` de `propagateFinalWinner` ne contient pas ce tour : le vainqueur ne
+  // serait jamais reporté au tour suivant. On refuse franchement au lieu de laisser
+  // construire un tableau qui ne peut pas se dérouler.
+  if (bracketSize > 32) return { ok: false, motif: 'trop_grand', bracketSize };
+  const nbTours = Math.round(Math.log2(bracketSize));
+  const deuxVitesses = bracketSize > nbFinalistes && nbTours > 1
+    && numWinners > 0 && numOthers > 0
+    && numWinners <= bracketSize / 2 && numOthers <= bracketSize / 2;
+  // Tableau simple : tout le monde entre au même tour, toujours cohérent.
+  if (!deuxVitesses) return { ok: true, bracketSize, deuxVitesses: false };
+  const nbPremierTour   = Math.ceil(numOthers / 2);
+  const nbDeuxiemeTour  = Math.max(numWinners, nbPremierTour);
+  const nbTroisiemeTour = bracketSize / 8;
+  if (numWinners !== nbPremierTour)
+    return { ok: false, motif: 'orphelins', bracketSize, deuxVitesses: true,
+             numWinners, nbPremierTour, nbDeuxiemeTour, nbTroisiemeTour };
+  if (nbDeuxiemeTour !== nbTroisiemeTour * 2)
+    return { ok: false, motif: 'reduction', bracketSize, deuxVitesses: true,
+             numWinners, nbPremierTour, nbDeuxiemeTour, nbTroisiemeTour };
+  return { ok: true, bracketSize, deuxVitesses: true };
+}
+
+// `standings` est facultatif. Fourni, il permet de proposer AUSSI des nombres de
+// finalistes supérieurs à celui choisi : sans lui, on ne peut regarder que les
+// sous-ensembles de `fin`, donc jamais plus haut — avec 10 finalistes impossibles,
+// l'ancienne version ne pouvait proposer que 8 ou 4, jamais 12.
+function validateBracket(fin, standings) {
   if (!fin || fin.length < 2) return { ok: false, reason: 'pas assez de finalistes', suggestions: [] };
 
   const numWinners = fin.filter(f => f.groupRank === 1).length;
   const numOthers = fin.filter(f => f.groupRank > 1).length;
-  let bracketSize = 2; while (bracketSize < fin.length) bracketSize *= 2;
+
+  const v = tableauCoherent(numWinners, numOthers, fin.length);
+  if (v.ok) return { ok: true };
 
   const roundNames = { 2:'Finale', 4:'Demis', 8:'Quarts', 16:'8èmes', 32:'16èmes' };
-  const allRoundNames = []; let rs = bracketSize;
+  const allRoundNames = []; let rs = v.bracketSize;
   while (rs >= 2) { allRoundNames.push(roundNames[rs] || ('Tour ' + rs)); rs = rs / 2; }
 
-  const hasTwoSpeed = bracketSize > fin.length && allRoundNames.length > 1
-    && numWinners > 0 && numOthers > 0
-    && numWinners <= bracketSize / 2 && numOthers <= bracketSize / 2;
-
-  // Bracket simple : tout le monde entre au même tour, toujours cohérent.
-  if (!hasTwoSpeed) return { ok: true };
-
-  // Bracket à deux vitesses : les vainqueurs de groupe entrent au 2e tour.
-  // Le nombre de matchs du 2e tour doit se réduire proprement jusqu'au 3e.
-  const nbFirstRound = Math.ceil(numOthers / 2);
-  const nbSecondRound = Math.max(numWinners, nbFirstRound);
-  const nbThirdRound = bracketSize / Math.pow(2, 3);
-  if (nbSecondRound === nbThirdRound * 2) return { ok: true };
-
-  // Incohérent : on cherche les nombres de finalistes qui marcheraient vraiment.
+  // Nombres de finalistes qui marcheraient vraiment, même jugement que ci-dessus.
   const suggestions = [];
-  for (let n = 4; n <= Math.min(32, fin.length + 12); n++) {
+  const maxN = standings
+    ? Object.values(standings).reduce((n, g) => n + Object.keys(g || {}).length, 0)
+    : fin.length;
+  for (let n = 2; n <= Math.min(32, maxN); n++) {
     if (n === fin.length) continue;
-    const sub = fin.slice(0, n);
-    if (sub.length < n) break;
+    let sub;
+    if (standings) { sub = discoverFinalists(standings, n); }
+    else { sub = fin.slice(0, n); }
+    if (!sub || sub.length < n) continue;
     const w = sub.filter(f => f.groupRank === 1).length;
     const o = sub.filter(f => f.groupRank > 1).length;
-    let bs = 2; while (bs < n) bs *= 2;
-    const rn = []; let r2 = bs;
-    while (r2 >= 2) { rn.push(roundNames[r2] || 'x'); r2 = r2 / 2; }
-    const twoSpeed = bs > n && rn.length > 1 && w > 0 && o > 0 && w <= bs/2 && o <= bs/2;
-    if (!twoSpeed) { suggestions.push(n); continue; }
-    if (Math.max(w, Math.ceil(o/2)) === (bs / Math.pow(2,3)) * 2) suggestions.push(n);
+    if (tableauCoherent(w, o, n).ok) suggestions.push(n);
   }
   // Les plus proches du nombre souhaité d'abord — plus utile qu'une liste croissante.
   suggestions.sort((a, b) => Math.abs(a - fin.length) - Math.abs(b - fin.length));
 
-  return {
-    ok: false,
-    reason: `${numWinners} vainqueurs de groupe qualifiés directement → ${nbSecondRound} matchs en ${allRoundNames[1]}, mais ${allRoundNames[2]} n'offre que ${nbThirdRound * 2} places. Le tableau ne pourrait pas aller à son terme.`,
-    suggestions: suggestions.slice(0, 6)
-  };
+  const reason = v.motif === 'trop_grand'
+    ? `${fin.length} finalistes demanderaient un tableau de ${v.bracketSize} places, au-delà de ce que le site sait dérouler (32 maximum).`
+    : v.motif === 'orphelins'
+      ? (() => {
+          const orphelins = Math.abs(v.nbPremierTour - v.numWinners);
+          return `${v.numWinners} vainqueurs de groupe entrent directement en ${allRoundNames[1]}, mais ${allRoundNames[0]} produirait ${v.nbPremierTour} qualifiés : ${orphelins} match${orphelins > 1 ? 's' : ''} de ${allRoundNames[1]} n'aura${orphelins > 1 ? 'ient' : ''} jamais d'adversaire et le tableau se figerait sans champion.`;
+        })()
+      : `${v.numWinners} vainqueurs de groupe qualifiés directement → ${v.nbDeuxiemeTour} matchs en ${allRoundNames[1]}, mais ${allRoundNames[2]} n'offre que ${v.nbTroisiemeTour * 2} places. Le tableau ne pourrait pas aller à son terme.`;
+
+  return { ok: false, reason, suggestions: suggestions.slice(0, 6) };
 }
 
 window.launchFinals = async function() {
@@ -4373,7 +4848,7 @@ window.launchFinals = async function() {
   const fin = discoverFinalists(standings, state.settings.finalistsCount || 8);
   if (fin.length < 2) { showMsg('actions-msg', t('not_enough_finalists'), false, true); return; }
 
-  const check = validateBracket(fin);
+  const check = validateBracket(fin, standings);
   if (!check.ok) {
     const wanted = state.settings.finalistsCount || 8;
     const ppgOpts = suggestPlayersPerGroup(getPlayers().length, wanted);
@@ -4490,8 +4965,14 @@ window.launchFinals = async function() {
         nextId: secondRoundIds[i] || null
       };
       // If bye, pre-fill player1 of next match
+      // Le RANG part avec le joueur, comme le fait la branche simple plus bas. Sans lui,
+      // `placerVainqueur` ne peut plus comparer les deux joueurs de ce match ni de tout
+      // son sous-arbre : la règle « le mieux classé à gauche » ne s'y appliquait jamais,
+      // et le qualifié d'office s'y retrouvait à droite d'un moins bien classé.
       if (winner && secondRoundIds[i]) {
         finals[secondRoundIds[i]].player1 = winner;
+        const rangExempt = (winner === p1) ? finals[id].rank1 : finals[id].rank2;
+        if (typeof rangExempt === 'number') finals[secondRoundIds[i]].rank1 = rangExempt;
       }
     });
 
@@ -4570,6 +5051,22 @@ window.launchFinals = async function() {
     finals[genId()] = { round: '3ème place', matchNum: 0, player1: null, player2: null, score1: null, score2: null, winner: null };
   }
 
+  // ══ LE MIEUX CLASSÉ À GAUCHE, DÈS LA CRÉATION ══
+  // Même règle que `placerVainqueur` applique ensuite tour après tour : dans tout match
+  // dont les deux joueurs sont déjà connus, le mieux classé occupe player1 — c'est lui qui
+  // choisit sa couleur. Les deux branches pré-remplissent des matchs sans se soucier de
+  // l'ordre : un qualifié d'office se retrouvait à gauche d'un vainqueur de groupe
+  // pourtant mieux classé. Fait ICI, en mémoire, avant l'unique écriture du tableau :
+  // aucun état intermédiaire n'est jamais visible.
+  Object.values(finals).forEach(m => {
+    if (!m.player1 || !m.player2) return;
+    if (typeof m.rank1 !== 'number' || typeof m.rank2 !== 'number') return;
+    if (m.rank1 <= m.rank2) return;
+    const j = m.player1, r = m.rank1;
+    m.player1 = m.player2; m.rank1 = m.rank2;
+    m.player2 = j;         m.rank2 = r;
+  });
+
   await set(ref(db, 'finals'), finals);
   await set(ref(db, 'settings/status'), 'finals');
   const fl = t('finals_launched');
@@ -4577,6 +5074,12 @@ window.launchFinals = async function() {
 }
 window.confirmAction = function(action,t1,t2,isScores) {
   const titles = {
+    // Les deux actions les plus destructrices du panneau n'avaient AUCUNE confirmation,
+    // alors que tous les boutons de réinitialisation voisins en ont une. « Assigner
+    // groupes » remplace `games` en entier — 30 résultats effacés d'un clic, sans
+    // sauvegarde — et « Lancer les finales » écrase un tableau déjà en cours.
+    assignGroups: t('confirm_assign_groups_title'),
+    launchFinals: t('confirm_launch_finals_title'),
     resetGroups: t('confirm_reset_groups_title'),
     resetScores: t('confirm_reset_scores_title'),
     resetFinals: t('confirm_reset_finals_title'),
@@ -4585,6 +5088,8 @@ window.confirmAction = function(action,t1,t2,isScores) {
     resetSubscriptions: t('confirm_reset_subs_title')
   };
   const texts = {
+    assignGroups: t('confirm_assign_groups_text'),
+    launchFinals: t('confirm_launch_finals_text'),
     resetGroups: t('confirm_reset_groups_text'),
     resetScores: t('confirm_reset_scores_text'),
     resetFinals: t('confirm_reset_finals_text'),
@@ -4613,9 +5118,13 @@ window.maintAdminLogin = async function() {
     isAdmin = true;
     majBoutonAdmin();
     sessionStorage.setItem('abct-session-pin', pin);
-    // Disable maintenance
-    maintenanceMode = false;
-    await set(ref(db,'maintenance'), false);
+    // ⚠️ NE PAS lever la maintenance ici. Ce bouton dit « connexion admin » et ne doit
+    // faire que ça. Il désactivait la maintenance POUR TOUT LE MONDE : l'organisateur
+    // ferme le site pour travailler au calme, se reconnecte par l'unique porte visible,
+    // et les 15 joueurs rentrent au milieu de l'opération sans que rien ne le lui dise.
+    // C'est inutile en plus d'être destructeur : `applyMaintenanceOverlay` masque déjà le
+    // voile pour l'admin (`maintenanceMode && !isAdmin`). La connexion admin normale, elle,
+    // n'y a jamais touché. La maintenance se lève par son propre bouton, sciemment.
     applyMaintenanceOverlay();
     // Show admin panel
     document.getElementById('admin-login').style.display='none';
@@ -4793,7 +5302,10 @@ function generateWhatsAppMsg() {
 
   const lateFinals = finals.filter(f => {
     const played = f.score1 !== null && f.score1 !== undefined;
-    const isPresential = f.round === 'Demis' || f.round === 'Finale';
+    // La petite finale se joue en présentiel le même jour que la finale : elle suit
+    // donc la même règle. Elle est optionnelle (réglage admin) ; quand elle n'existe
+    // pas, ce test n'est simplement jamais vrai pour elle.
+    const isPresential = f.round === 'Demis' || f.round === 'Finale' || f.round === '3ème place';
     return !played && !isPresential && f.player1 && f.player2 && isMatchLate(f, true);
   });
 
@@ -4816,7 +5328,11 @@ function generateWhatsAppMsg() {
 
   if (lateGames.length === 0 && lateFinals.length === 0) {
     const pendingGames = games.filter(g => g.scoreWhite === null || g.scoreWhite === undefined);
-    const pendingFinals = finals.filter(f => f.score1 === null && f.player1 && f.player2 && f.round !== 'Demis' && f.round !== 'Finale');
+    // `== null` et non `=== null` : Firebase NE STOCKE PAS les valeurs nulles, donc un
+    // match non joué n'a pas de champ `score1` du tout — il vaut `undefined`. Avec le
+    // test strict, la liste des matchs en attente était VIDE pendant toute la phase
+    // finale : le message affichait son titre et rien en dessous.
+    const pendingFinals = finals.filter(f => f.score1 == null && f.player1 && f.player2 && f.round !== 'Demis' && f.round !== 'Finale');
     msg += t('pending_msg') + "\n\n";
     msg += "⚔️ *Matchs en attente :*\n";
     [...pendingGames, ...pendingFinals].forEach(m => {
@@ -5093,7 +5609,7 @@ function playerEditForm(p) {
     <div style="display:flex;gap:8px">
       <button onclick="saveEditPlayer('${p.id}')" style="flex:1;padding:8px;border:none;border-radius:8px;background:var(--green);color:#fff;font-weight:700;cursor:pointer;font-size:13px">✓ Enregistrer</button>
       <button onclick="cancelEditPlayer()" style="padding:8px 14px;border:none;border-radius:8px;background:#eee;color:#666;font-weight:600;cursor:pointer;font-size:13px">✕</button>
-      <button onclick="confirmUnregister('${p.id}','${esc(p.nickname)}')" style="padding:8px 14px;border:none;border-radius:8px;background:var(--red);color:#fff;font-weight:700;cursor:pointer;font-size:13px">🗑️</button>
+      <button onclick="confirmUnregister('${p.id}','${esc(p.nickname).replace(/'/g,"\\'")}')" style="padding:8px 14px;border:none;border-radius:8px;background:var(--red);color:#fff;font-weight:700;cursor:pointer;font-size:13px">🗑️</button>
     </div>
   </div>`;
 }
@@ -5151,7 +5667,7 @@ function renderHome(){
         <div style="flex:1">
           <div style="font-weight:700;font-size:13px">${esc(p.nickname)}</div>
           <div style="font-size:12px;color:#555;margin-top:2px">${esc(p.name)}${p.sector?' · <span style="color:var(--gray)">'+esc(p.sector)+'</span>':''}</div>
-          ${p.group?`<div style="font-size:11px;color:var(--gold);margin-top:2px;font-weight:600">${esc(p.group)}</div>`:''}
+          ${p.group?`<div style="font-size:11px;color:var(--gold);margin-top:2px;font-weight:600">${esc(nomGroupe(p.group))}</div>`:''}
         </div>
       </div>
       ${isEditing ? playerEditForm(p) : ''}
@@ -5171,7 +5687,7 @@ function renderGroups(){
   const qualifiedPlayers = new Set(finalists.map(f => f.player));
   container.innerHTML=groupNames.map(grp=>{
     const g=standings[grp],sorted=sortGroup(g);
-    return `<div class="card"><h3>${grp.toUpperCase()}</h3><div class="scroll-x"><table class="rank-table">
+    return `<div class="card"><h3>${esc(nomGroupe(grp)).toUpperCase()}</h3><div class="scroll-x"><table class="rank-table">
       <thead><tr><th>#</th><th>${t('rank_player')}</th><th>${t('rank_pts')}</th><th>${t('rank_mj')}</th><th>${t('rank_v')}</th><th>${t('rank_vn')}</th><th>TB</th></tr></thead>
       <tbody>${sorted.map((p, i)=>{
         return `<tr class="${qualifiedPlayers.has(p)?'qualified':''}">
@@ -5190,7 +5706,7 @@ function renderMatches(){
   // aucun sens. Les filtres apparaissent donc d'un bloc au moment ou les matchs sont
   // crees, et disparaissent si les groupes sont reinitialises.
   document.getElementById('match-filters').innerHTML = groups.length
-    ? [{id:'all',label:t('matches_all')},...groups.map(g=>({id:g,label:g}))].map(f=>`
+    ? [{id:'all',label:t('matches_all')},...groups.map(g=>({id:g,label:nomGroupe(g)}))].map(f=>`
     <button class="pill ${currentMatchFilter===f.id?'active':'inactive'}" onclick="setMatchFilter('${f.id}')">${f.label}</button>`).join('')
     : '';
   const filtered=currentMatchFilter==='all'?games:games.filter(g=>g.group===currentMatchFilter);
@@ -5256,7 +5772,7 @@ function matchCardHTML(g){
   const due = matchDueDate(g, false);
   const dueStr = due ? due.toLocaleDateString(lang==='fr'?'fr-CH':lang==='de'?'de-CH':lang==='it'?'it-CH':'en-GB',{day:'numeric',month:'short'}) : null;
   return `<div class="match-card" style="${late?'border-left:3px solid #E67E22;':''}">
-    <div class="match-grp">${esc(g.group)}${typeof g.round==='number'?` <span style="font-weight:600;color:#aaa">· ${t('round_short')} ${g.round}</span>`:''}${late?` <span style="font-size:13px;font-weight:700;color:#E67E22;background:#FFF3E0;padding:2px 6px;border-radius:5px;margin-left:4px">${t("late_badge")}</span>`:''}</div>
+    <div class="match-grp">${esc(nomGroupe(g.group))}${typeof g.round==='number'?` <span style="font-weight:600;color:#aaa">· ${t('round_short')} ${g.round}</span>`:''}${late?` <span style="font-size:13px;font-weight:700;color:#E67E22;background:#FFF3E0;padding:2px 6px;border-radius:5px;margin-left:4px">${t("late_badge")}</span>`:''}</div>
     <div class="match-players">
       <div class="match-player"><div class="match-player-name">${esc(g.playerWhite)}</div><div class="match-player-color" style="display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px;margin-top:4px;background:#F5F5F0;color:#555;border:1px solid #ddd">${t('whites')}</div></div>
       ${played&&!isEditing?`<div style="text-align:center;cursor:pointer" onclick="openScoreEdit('${g.id}')">
@@ -5522,7 +6038,7 @@ function finalCardHTML(f){
   // Les deux scores sont exigés : ils sont écrits en plusieurs opérations successives,
   // et sans cette double condition l'affichage montre brièvement "1 — undefined".
   const played=f.score1!==null&&f.score1!==undefined&&f.score2!==null&&f.score2!==undefined;
-  const isPresential = f.round==='Demis'||f.round==='Finale';
+  const isPresential = f.round==='Demis'||f.round==='Finale'||f.round==='3ème place';
   const lateFinal = !played && !isPresential && f.player1 && f.player2 && isMatchLate(f, true);
   const dueF = !played && f.player1 && f.player2 ? matchDueDate(f, true) : null;
   const dueStrF = dueF ? dueF.toLocaleDateString(lang==='fr'?'fr-CH':lang==='de'?'de-CH':lang==='it'?'it-CH':'en-GB',{day:'numeric',month:'short'}) : null;
@@ -5534,9 +6050,9 @@ function finalCardHTML(f){
     ${lateFinal?`<div style="font-size:13px;color:#E67E22;font-weight:700;margin-bottom:6px;padding:4px 8px;background:#FFF3E0;border-radius:6px;text-align:center">${t("late_match")}</div>`:''}
     ${(f.player1&&f.player2&&!f.winner&&(f.rank1||f.rank2))?`<div style="font-size:11px;color:#888;text-align:center;margin-bottom:5px">⚪ ${(f.rank1!==null&&f.rank1!==undefined&&(f.rank2===null||f.rank2===undefined||f.rank1<=f.rank2))?esc(f.player1):esc(f.player2)} ${t("color_choice")}</div>`:''}
     <div class="match-players">
-      <div class="match-player"><div class="match-player-name" style="color:${f.winner===f.player1?'var(--green)':'var(--dark)'}">${f.player1||'?'}</div></div>
+      <div class="match-player"><div class="match-player-name" style="color:${f.winner===f.player1?'var(--green)':'var(--dark)'}">${f.player1?esc(f.player1):'?'}</div></div>
       ${played&&!isEditing?`<div class="match-score" onclick="openFinalEdit('${f.id}')" style="cursor:pointer" title="Modifier">${f.score1} — ${f.score2}</div>`:`<div class="match-vs">vs</div>`}
-      <div class="match-player"><div class="match-player-name" style="color:${f.winner===f.player2?'var(--green)':'var(--dark)'}">${f.player2||'?'}</div></div>
+      <div class="match-player"><div class="match-player-name" style="color:${f.winner===f.player2?'var(--green)':'var(--dark)'}">${f.player2?esc(f.player2):'?'}</div></div>
     </div>
     ${f.winner?`<div style="text-align:center;margin-top:8px;font-size:12px;color:var(--green);font-weight:700">${t('winner')}: ${esc(f.winner)}</div>`:''}
     ${canPlay&&!played&&!isEditing?`<button class="btn btn-gold" style="margin-top:10px;font-size:13px;padding:9px" onclick="openFinalEdit('${f.id}')">${t('enter_score')}</button>`:''}
@@ -5587,7 +6103,7 @@ function renderAdmin(){
       <div style="display:flex;align-items:center;gap:8px;width:100%">
         <div style="flex:1">
           <div style="font-size:13px;font-weight:600">${esc(p.nickname)}</div>
-          <div style="font-size:11px;color:var(--gray)">${esc(p.name)}${p.sector?' · '+esc(p.sector):''}${p.group?' · '+esc(p.group):''}</div>
+          <div style="font-size:11px;color:var(--gray)">${esc(p.name)}${p.sector?' · '+esc(p.sector):''}${p.group?' · '+esc(nomGroupe(p.group)):''}</div>
         </div>
         <button onclick="startEditPlayer('${p.id}')" style="border:none;background:none;color:var(--gold);cursor:pointer;font-size:16px" title="Modifier">✏️</button>
         <button onclick="removePlayer('${p.id}')" style="border:none;background:none;color:var(--red);cursor:pointer;font-size:18px;padding:4px">✕</button>
@@ -5700,7 +6216,7 @@ function renderAdmin(){
     // Avertissement préventif : signale une combinaison impossible AVANT le clic sur "Lancer".
     const bw = document.getElementById('bracket-warning');
     if (bw) {
-      const chk = fin.length >= 2 ? validateBracket(fin) : { ok: true };
+      const chk = fin.length >= 2 ? validateBracket(fin, standings) : { ok: true };
       if (!chk.ok) {
         const wanted = s.finalistsCount || 8;
         const ppgOpts = suggestPlayersPerGroup(getPlayers().length, wanted);
@@ -5734,7 +6250,7 @@ function renderAdmin(){
           <td><strong style="color:var(--gold)">${i+1}</strong></td>
           <td>${esc(f.player)}</td>
           <td style="color:var(--gray)">${f.groupRank}</td>
-          <td style="color:var(--gray);font-size:11px">${esc(f.group.replace('Groupe ','G'))}</td>
+          <td style="color:var(--gray);font-size:11px">${esc(nomGroupe(f.group, true))}</td>
           <td>${nrm(s.points).toFixed(2)}</td><td>${s.matches}</td>
           <td>${nrm(s.totalWins).toFixed(2)}</td><td>${nrm(s.blackWins).toFixed(2)}</td>
           <td>${nrm(s.tieBreak).toFixed(2)}</td>
@@ -5815,6 +6331,10 @@ function surDonneesChangees() {
       })();
     }
   }
+  // Le site a réellement démarré : le filet posé dans le HTML (hors module) ne doit plus
+  // afficher son message d'échec. Posé AVANT de masquer l'écran, pour qu'il n'y ait aucune
+  // fenêtre où les deux pourraient se croiser.
+  window.ABCT_DEMARRE = true;
   document.getElementById('loading').style.opacity='0';
   setTimeout(()=>{
     document.getElementById('loading').style.display='none';

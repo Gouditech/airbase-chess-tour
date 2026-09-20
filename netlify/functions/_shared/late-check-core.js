@@ -89,7 +89,13 @@ async function runLateCheck(siteUrl) {
   });
   const lateFinals = finals.filter(f => {
     const played = f.score1 !== null && f.score1 !== undefined;
-    const isPresential = f.round === 'Demis' || f.round === 'Finale';
+    // ⚠️ DOIT RESTER ALIGNÉ AVEC index.html (matchCardHTML et finalCardHTML).
+    // La petite finale se joue en présentiel le jour de la finale, comme les demies. Elle
+    // n'avait pas d'échéance jusqu'ici, donc l'oubli était sans effet ; depuis qu'elle
+    // reçoit celle de la finale, l'omettre ici ferait signaler par le serveur un retard
+    // que le site n'affiche pas — et l'alerte se répéterait tous les jours, indéfiniment,
+    // puisque ce match peut très bien ne jamais recevoir de score.
+    const isPresential = f.round === 'Demis' || f.round === 'Finale' || f.round === '3ème place';
     return !played && !isPresential && f.player1 && f.player2 && isMatchLate(f, true, settings, finals);
   });
   const total = lateGames.length + lateFinals.length;

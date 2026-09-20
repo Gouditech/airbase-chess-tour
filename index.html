@@ -1407,7 +1407,7 @@ function renderAdminDeviceStatus() {
       // appareil de l'admin lui-même, et la date permet de le reconnaître.
       const sAdmin = state?.[SUB_PATH]?.[state?.settings?.[ADMIN_SUB_KEY]];
       const quand = sAdmin?.timestamp
-        ? new Date(sAdmin.timestamp).toLocaleString(lang==='fr'?'fr-CH':lang==='de'?'de-CH':lang==='it'?'it-CH':'en-GB', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})
+        ? new Date(sAdmin.timestamp).toLocaleString(localeDates(), {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})
         : null;
       devStatus.innerHTML = t('dev_other')
         + (quand ? `<div style="font-size:11px;color:var(--gray);margin-top:4px">${t('dev_other_since')} ${esc(quand)}</div>` : '');
@@ -1619,7 +1619,7 @@ const T = {
 <p>Arbitrage : En cas de litige, l'organisateur tranche. Fair-play attendu de tous.</p>`,
     modify:"modifier",
     late_badge:"⏰ Retard",
-    due_by:"📅 Échéance :",round_short:"Ronde",
+    date_window:"À jouer du {a} au {b}",date_late_since:"⏰ En retard depuis le {b}",pool_end_estimate:"Fin estimée des poules : {d}",finals_end_estimate:"Fin estimée des finales (si le rythme tient jusqu'au bout) : {d}",round_short:"Ronde",
     late_match:"⏰ Match en retard",
     color_choice:"choisit sa couleur",color_of:"Couleur de {n}",color_pick:"— choisir —",color_required:"Indique la couleur de {n} avant de valider le score.",
     presential:"Présentiel",
@@ -1646,7 +1646,7 @@ const T = {
     pin_mismatch:"Les nouveaux PIN ne correspondent pas.",
     pin_short:"PIN trop court (min. 4 caractères).",
     pin_changed:"PIN modifié avec succès !",
-    nick_taken:"Ce pseudo est déjà pris.",edit_sync_pseudo:"⚠️ Ce joueur figure dans {n} édition(s) du palmarès sous le pseudo précédent.\n\nChanger son pseudo sans mettre le palmarès à jour coupera DÉFINITIVEMENT le lien avec son historique.\n\nMettre le palmarès à jour aussi ?",edit_sync_nom:"Ce joueur figure dans {n} édition(s) du palmarès sous le nom « {ancien} ».\n\nMettre le palmarès à jour avec le nouveau nom ?",edit_sync_done:"✅ Palmarès mis à jour ({n} entrées).",edit_sync_title:"✏️ Et le palmarès ?",edit_sync_yes:"✅ Oui, mettre le palmarès à jour",edit_sync_no:"➡️ Non, laisser le palmarès tel quel",edit_sync_back:"✕ Annuler — ne rien modifier",match_voided:"Match annulé",confirm_void_match:"Marquer ce match comme NON JOUÉ (-:-) ?\n\nIl n'aura plus d'échéance, ne sera plus signalé en retard et ne comptera pas au classement.\n\nÀ utiliser quand un joueur a abandonné le tournoi.",reset_match:"Réinitialiser",save_edit:"✓ Enregistrer",confirm_unregister:"Se désinscrire du tournoi ? ({n})",edit_sync_tournoi:"✅ Pseudo corrigé dans {m} match(s) de poule et {f} match(s) du tableau final.",edit_sync_fail:"⚠️ Rien n'a été modifié : l'enregistrement a échoué. La fiche et les matchs sont intacts — réessaie.",edit_sync_partiel:"⚠️ Correction incomplète : {n} écriture(s) ont échoué. La fiche a gardé l'ancien pseudo — réenregistre pour terminer.",
+    nick_taken:"Ce pseudo est déjà pris.",edit_sync_pseudo:"⚠️ Ce joueur figure dans {n} édition(s) du palmarès sous le pseudo précédent.\n\nChanger son pseudo sans mettre le palmarès à jour coupera DÉFINITIVEMENT le lien avec son historique.\n\nMettre le palmarès à jour aussi ?",edit_sync_nom:"Ce joueur figure dans {n} édition(s) du palmarès sous le nom « {ancien} ».\n\nMettre le palmarès à jour avec le nouveau nom ?",edit_sync_done:"✅ Palmarès mis à jour ({n} entrées).",edit_sync_title:"✏️ Et le palmarès ?",edit_sync_yes:"✅ Oui, mettre le palmarès à jour",edit_sync_no:"➡️ Non, laisser le palmarès tel quel",edit_sync_back:"✕ Annuler — ne rien modifier",match_voided:"Match annulé",score_incomplet:"Choisis un score pour les deux joueurs.",score_hint_effacer:"🗑️ efface le score",confirm_void_match:"Marquer ce match comme NON JOUÉ (-:-) ?\n\nIl n'aura plus d'échéance, ne sera plus signalé en retard et ne comptera pas au classement.\n\nÀ utiliser quand un joueur a abandonné le tournoi.",reset_match:"Réinitialiser",save_edit:"✓ Enregistrer",confirm_unregister:"Se désinscrire du tournoi ? ({n})",edit_sync_tournoi:"✅ Pseudo corrigé dans {m} match(s) de poule et {f} match(s) du tableau final.",edit_sync_fail:"⚠️ Rien n'a été modifié : l'enregistrement a échoué. La fiche et les matchs sont intacts — réessaie.",edit_sync_partiel:"⚠️ Correction incomplète : {n} écriture(s) ont échoué. La fiche a gardé l'ancien pseudo — réenregistre pour terminer.",
     groups_reset:"Groupes réinitialisés. Les joueurs sont conservés.",
     finals_reset:"Phases finales réinitialisées.",
     pin_section:"Modifier le PIN",
@@ -1789,7 +1789,7 @@ const T = {
     
     modify:"ändern",
     late_badge:"⏰ Verspätet",
-    due_by:"📅 Fällig bis",round_short:"Runde",
+    date_window:"Zu spielen vom {a} bis {b}",date_late_since:"⏰ Überfällig seit dem {b}",pool_end_estimate:"Voraussichtliches Ende der Gruppenphase: {d}",finals_end_estimate:"Voraussichtliches Ende der Finalrunden (bei gleichbleibendem Rhythmus): {d}",round_short:"Runde",
     late_match:"⏰ Partie verspätet",
     color_choice:"wählt die Farbe",color_of:"Farbe von {n}",color_pick:"— wählen —",color_required:"Gib die Farbe von {n} an, bevor du das Ergebnis bestätigst.",
     presential:"Präsenz",
@@ -1818,7 +1818,7 @@ const T = {
     pin_mismatch:"Die neuen PINs stimmen nicht überein.",
     pin_short:"PIN zu kurz (min. 4 Zeichen).",
     pin_changed:"PIN erfolgreich geändert!",
-    nick_taken:"Dieser Spitzname ist bereits vergeben.",edit_sync_pseudo:"⚠️ Dieser Spieler erscheint in {n} Ausgabe(n) der Bestenliste unter dem bisherigen Pseudonym.\n\nDas Pseudonym zu ändern, ohne die Bestenliste anzupassen, trennt die Verbindung zu seiner Historie ENDGÜLTIG.\n\nBestenliste ebenfalls aktualisieren?",edit_sync_nom:"Dieser Spieler erscheint in {n} Ausgabe(n) der Bestenliste unter dem Namen « {ancien} ».\n\nBestenliste mit dem neuen Namen aktualisieren?",edit_sync_done:"✅ Bestenliste aktualisiert ({n} Einträge).",edit_sync_title:"✏️ Und die Bestenliste?",edit_sync_yes:"✅ Ja, Bestenliste aktualisieren",edit_sync_no:"➡️ Nein, Bestenliste unverändert lassen",edit_sync_back:"✕ Abbrechen — nichts ändern",match_voided:"Partie annulliert",confirm_void_match:"Diese Partie als NICHT GESPIELT (-:-) markieren?\n\nSie hat dann keine Frist mehr, wird nicht mehr als verspätet gemeldet und zählt nicht für die Tabelle.\n\nZu verwenden, wenn ein Spieler das Turnier aufgegeben hat.",reset_match:"Zurücksetzen",save_edit:"✓ Speichern",confirm_unregister:"Vom Turnier abmelden? ({n})",edit_sync_tournoi:"✅ Pseudonym in {m} Gruppenspiel(en) und {f} Spiel(en) des Finaltableaus korrigiert.",edit_sync_fail:"⚠️ Nichts wurde geändert: das Speichern ist fehlgeschlagen. Spielerkarte und Spiele sind unverändert — bitte erneut versuchen.",edit_sync_partiel:"⚠️ Korrektur unvollständig: {n} Schreibvorgang/-vorgänge fehlgeschlagen. Die Spielerkarte behält das alte Pseudonym — erneut speichern, um abzuschliessen.",
+    nick_taken:"Dieser Spitzname ist bereits vergeben.",edit_sync_pseudo:"⚠️ Dieser Spieler erscheint in {n} Ausgabe(n) der Bestenliste unter dem bisherigen Pseudonym.\n\nDas Pseudonym zu ändern, ohne die Bestenliste anzupassen, trennt die Verbindung zu seiner Historie ENDGÜLTIG.\n\nBestenliste ebenfalls aktualisieren?",edit_sync_nom:"Dieser Spieler erscheint in {n} Ausgabe(n) der Bestenliste unter dem Namen « {ancien} ».\n\nBestenliste mit dem neuen Namen aktualisieren?",edit_sync_done:"✅ Bestenliste aktualisiert ({n} Einträge).",edit_sync_title:"✏️ Und die Bestenliste?",edit_sync_yes:"✅ Ja, Bestenliste aktualisieren",edit_sync_no:"➡️ Nein, Bestenliste unverändert lassen",edit_sync_back:"✕ Abbrechen — nichts ändern",match_voided:"Partie annulliert",score_incomplet:"Wähle ein Ergebnis für beide Spieler.",score_hint_effacer:"🗑️ löscht das Ergebnis",confirm_void_match:"Diese Partie als NICHT GESPIELT (-:-) markieren?\n\nSie hat dann keine Frist mehr, wird nicht mehr als verspätet gemeldet und zählt nicht für die Tabelle.\n\nZu verwenden, wenn ein Spieler das Turnier aufgegeben hat.",reset_match:"Zurücksetzen",save_edit:"✓ Speichern",confirm_unregister:"Vom Turnier abmelden? ({n})",edit_sync_tournoi:"✅ Pseudonym in {m} Gruppenspiel(en) und {f} Spiel(en) des Finaltableaus korrigiert.",edit_sync_fail:"⚠️ Nichts wurde geändert: das Speichern ist fehlgeschlagen. Spielerkarte und Spiele sind unverändert — bitte erneut versuchen.",edit_sync_partiel:"⚠️ Korrektur unvollständig: {n} Schreibvorgang/-vorgänge fehlgeschlagen. Die Spielerkarte behält das alte Pseudonym — erneut speichern, um abzuschliessen.",
     groups_reset:"Gruppen zurückgesetzt. Spieler bleiben erhalten.",
     finals_reset:"Finalrunden zurückgesetzt.",
     saved_ok:"Gespeichert!",cancel:"Abbrechen",
@@ -1889,7 +1889,7 @@ const T = {
 <p>Arbiter: In case of dispute, the organizer decides. Fair play expected from all.</p>`,
     modify:"edit",
     late_badge:"⏰ Late",
-    due_by:"📅 Due by",round_short:"Round",
+    date_window:"Play between {a} and {b}",date_late_since:"⏰ Overdue since {b}",pool_end_estimate:"Estimated end of the group stage: {d}",finals_end_estimate:"Estimated end of the final stages (if the pace holds): {d}",round_short:"Round",
     late_match:"⏰ Match overdue",
     color_choice:"chooses color",color_of:"Colour of {n}",color_pick:"— select —",color_required:"Indicate the colour of {n} before confirming the score.",
     presential:"In-person",
@@ -1916,7 +1916,7 @@ const T = {
     pin_mismatch:"The new PINs don't match.",
     pin_short:"PIN too short (min. 4 characters).",
     pin_changed:"PIN changed successfully!",
-    nick_taken:"This nickname is already taken.",edit_sync_pseudo:"⚠️ This player appears in {n} edition(s) of the hall of fame under the previous nickname.\n\nChanging the nickname without updating the hall of fame will PERMANENTLY break the link to their history.\n\nUpdate the hall of fame too?",edit_sync_nom:"This player appears in {n} edition(s) of the hall of fame under the name « {ancien} ».\n\nUpdate the hall of fame with the new name?",edit_sync_done:"✅ Hall of fame updated ({n} entries).",edit_sync_title:"✏️ What about the hall of fame?",edit_sync_yes:"✅ Yes, update the hall of fame",edit_sync_no:"➡️ No, leave the hall of fame as it is",edit_sync_back:"✕ Cancel — change nothing",match_voided:"Match cancelled",confirm_void_match:"Mark this match as NOT PLAYED (-:-)?\n\nIt will have no deadline, will no longer be flagged as overdue, and will not count towards the standings.\n\nUse this when a player has withdrawn from the tournament.",reset_match:"Reset",save_edit:"✓ Save",confirm_unregister:"Withdraw from the tournament? ({n})",edit_sync_tournoi:"✅ Nickname corrected in {m} pool match(es) and {f} match(es) of the final bracket.",edit_sync_fail:"⚠️ Nothing was changed: saving failed. The player card and the matches are untouched — please try again.",edit_sync_partiel:"⚠️ Incomplete correction: {n} write(s) failed. The player card kept the old nickname — save again to finish.",
+    nick_taken:"This nickname is already taken.",edit_sync_pseudo:"⚠️ This player appears in {n} edition(s) of the hall of fame under the previous nickname.\n\nChanging the nickname without updating the hall of fame will PERMANENTLY break the link to their history.\n\nUpdate the hall of fame too?",edit_sync_nom:"This player appears in {n} edition(s) of the hall of fame under the name « {ancien} ».\n\nUpdate the hall of fame with the new name?",edit_sync_done:"✅ Hall of fame updated ({n} entries).",edit_sync_title:"✏️ What about the hall of fame?",edit_sync_yes:"✅ Yes, update the hall of fame",edit_sync_no:"➡️ No, leave the hall of fame as it is",edit_sync_back:"✕ Cancel — change nothing",match_voided:"Match cancelled",score_incomplet:"Pick a score for both players.",score_hint_effacer:"🗑️ clears the score",confirm_void_match:"Mark this match as NOT PLAYED (-:-)?\n\nIt will have no deadline, will no longer be flagged as overdue, and will not count towards the standings.\n\nUse this when a player has withdrawn from the tournament.",reset_match:"Reset",save_edit:"✓ Save",confirm_unregister:"Withdraw from the tournament? ({n})",edit_sync_tournoi:"✅ Nickname corrected in {m} pool match(es) and {f} match(es) of the final bracket.",edit_sync_fail:"⚠️ Nothing was changed: saving failed. The player card and the matches are untouched — please try again.",edit_sync_partiel:"⚠️ Incomplete correction: {n} write(s) failed. The player card kept the old nickname — save again to finish.",
     groups_reset:"Groups reset. Players are kept.",
     finals_reset:"Final stage reset.",
     pin_section:"Change PIN",
@@ -2021,7 +2021,7 @@ const T = {
 <p>Arbitraggio: In caso di controversia, decide l'organizzatore. Fair play atteso da tutti.</p>`,
     modify:"modificare",
     late_badge:"⏰ Ritardo",
-    due_by:"📅 Scadenza:",round_short:"Turno",
+    date_window:"Da giocare dal {a} al {b}",date_late_since:"⏰ In ritardo dal {b}",pool_end_estimate:"Fine stimata dei gironi: {d}",finals_end_estimate:"Fine stimata delle finali (se il ritmo regge): {d}",round_short:"Turno",
     late_match:"⏰ Partita in ritardo",
     color_choice:"sceglie il colore",color_of:"Colore di {n}",color_pick:"— scegli —",color_required:"Indica il colore di {n} prima di confermare il risultato.",
     presential:"Presenza",
@@ -2048,7 +2048,7 @@ const T = {
     pin_mismatch:"I nuovi PIN non corrispondono.",
     pin_short:"PIN troppo corto (min. 4 caratteri).",
     pin_changed:"PIN modificato con successo!",
-    nick_taken:"Questo soprannome è già utilizzato.",edit_sync_pseudo:"⚠️ Questo giocatore compare in {n} edizione/i dell'albo d'oro con il nickname precedente.\n\nCambiare il nickname senza aggiornare l'albo d'oro interromperà DEFINITIVAMENTE il legame con il suo storico.\n\nAggiornare anche l'albo d'oro?",edit_sync_nom:"Questo giocatore compare in {n} edizione/i dell'albo d'oro con il nome « {ancien} ».\n\nAggiornare l'albo d'oro con il nuovo nome?",edit_sync_done:"✅ Albo d'oro aggiornato ({n} voci).",edit_sync_title:"✏️ E l'albo d'oro?",edit_sync_yes:"✅ Sì, aggiornare l'albo d'oro",edit_sync_no:"➡️ No, lasciare l'albo d'oro com'è",edit_sync_back:"✕ Annullare — non modificare nulla",match_voided:"Partita annullata",confirm_void_match:"Segnare questa partita come NON GIOCATA (-:-)?\n\nNon avrà più una scadenza, non sarà più segnalata in ritardo e non conterà per la classifica.\n\nDa usare quando un giocatore si è ritirato dal torneo.",reset_match:"Reimposta",save_edit:"✓ Salva",confirm_unregister:"Ritirarsi dal torneo? ({n})",edit_sync_tournoi:"✅ Nickname corretto in {m} partita/e di girone e {f} partita/e del tabellone finale.",edit_sync_fail:"⚠️ Niente è stato modificato: il salvataggio non è riuscito. La scheda e le partite sono intatte — riprova.",edit_sync_partiel:"⚠️ Correzione incompleta: {n} scrittura/e non riuscita/e. La scheda ha mantenuto il vecchio nickname — salva di nuovo per completare.",
+    nick_taken:"Questo soprannome è già utilizzato.",edit_sync_pseudo:"⚠️ Questo giocatore compare in {n} edizione/i dell'albo d'oro con il nickname precedente.\n\nCambiare il nickname senza aggiornare l'albo d'oro interromperà DEFINITIVAMENTE il legame con il suo storico.\n\nAggiornare anche l'albo d'oro?",edit_sync_nom:"Questo giocatore compare in {n} edizione/i dell'albo d'oro con il nome « {ancien} ».\n\nAggiornare l'albo d'oro con il nuovo nome?",edit_sync_done:"✅ Albo d'oro aggiornato ({n} voci).",edit_sync_title:"✏️ E l'albo d'oro?",edit_sync_yes:"✅ Sì, aggiornare l'albo d'oro",edit_sync_no:"➡️ No, lasciare l'albo d'oro com'è",edit_sync_back:"✕ Annullare — non modificare nulla",match_voided:"Partita annullata",score_incomplet:"Scegli un risultato per entrambi i giocatori.",score_hint_effacer:"🗑️ cancella il risultato",confirm_void_match:"Segnare questa partita come NON GIOCATA (-:-)?\n\nNon avrà più una scadenza, non sarà più segnalata in ritardo e non conterà per la classifica.\n\nDa usare quando un giocatore si è ritirato dal torneo.",reset_match:"Reimposta",save_edit:"✓ Salva",confirm_unregister:"Ritirarsi dal torneo? ({n})",edit_sync_tournoi:"✅ Nickname corretto in {m} partita/e di girone e {f} partita/e del tabellone finale.",edit_sync_fail:"⚠️ Niente è stato modificato: il salvataggio non è riuscito. La scheda e le partite sono intatte — riprova.",edit_sync_partiel:"⚠️ Correzione incompleta: {n} scrittura/e non riuscita/e. La scheda ha mantenuto il vecchio nickname — salva di nuovo per completare.",
     groups_reset:"Gruppi azzerati. I giocatori sono conservati.",
     finals_reset:"Fasi finali azzerate.",
     pin_section:"Modificare il PIN",
@@ -4031,7 +4031,7 @@ window.updatePoolEndEstimate = function() {
   if (maxRound < 1) { el.textContent = ''; return; }
 
   const due = ABCT_DATES.matchDueDate({ round: maxRound }, false, { poolStartDate: start, poolInterval: interval }, []);
-  el.textContent = due ? '📅 Fin estimée des poules : ' + formatEstimate(due) : '';
+  el.textContent = due ? t('pool_end_estimate').replace('{d}', () => formatEstimate(due)) : '';
 };
 
 window.updateFinalsEndEstimate = function() {
@@ -4060,7 +4060,7 @@ window.updateFinalsEndEstimate = function() {
   const bracket = [];
   for (let i = 0; i < totalRounds; i++) bracket.push({ round: FINALS_ROUND_SEQUENCE[FINALS_ROUND_SEQUENCE.length - totalRounds + i] });
   const due = ABCT_DATES.matchDueDate({ round: 'Finale' }, true, { finalsStartDate: start, finalsInterval: interval }, bracket);
-  el.textContent = due ? '📅 Fin estimée des finales (si même rythme jusqu\'au bout) : ' + formatEstimate(due) : '';
+  el.textContent = due ? t('finals_end_estimate').replace('{d}', () => formatEstimate(due)) : '';
 };
 
 function refreshPlayerLists() {
@@ -4549,28 +4549,41 @@ window.autoScore = function(id, side) {
 };
 
 window.submitScore = async function(id) {
-  const sw=document.getElementById('sw-'+id)?.value;
-  const sb=document.getElementById('sb-'+id)?.value;
-  // ── « — » DES DEUX CÔTÉS : LE MATCH NE SE JOUERA PAS ──
-  // Jusqu'ici, valider sur « — » ne faisait RIEN, en silence : aucune écriture, le match
-  // gardait son échéance et continuait d'être réclamé tous les jours. C'est pourtant le
-  // geste naturel quand un joueur abandonne le tournoi. On l'enregistre donc.
-  // Réservé à l'admin : la saisie d'un score est ouverte à tous, c'est voulu — les joueurs
-  // entrent leurs propres résultats — mais décider qu'un match ne se jouera pas est une
-  // décision d'organisateur. Pour un joueur, le comportement ne change pas : rien.
-  // Confirmation demandée, parce que c'est l'état par défaut des deux menus : sans elle,
-  // ouvrir une carte et cliquer sur ✓ par réflexe annulerait le match.
-  if (sw==='' && sb==='') {
-    if (!isAdmin) return;
+  const elB = document.getElementById('sw-'+id), elN = document.getElementById('sb-'+id);
+  if (!elB || !elN) return;              // carte fermée : rien à valider
+  const sw = elB.value, sb = elN.value;
+  const prev = state.games?.[id];
+  const dejaJoue = !!prev && prev.scoreWhite !== null && prev.scoreWhite !== undefined;
+  // ══ « — » DES DEUX CÔTÉS VEUT TOUJOURS DIRE « PAS DE RÉSULTAT » ══
+  // Ce que ça produit dépend de ce qu'il y avait avant, et c'est la seule lecture qui
+  // ne laisse personne dans une impasse :
+  //
+  //   • match DÉJÀ JOUÉ  -> on efface le score. C'est le geste de celui qui s'est trompé
+  //     de match : il rouvre la carte, remet « — », valide, et le score s'en va. Avant,
+  //     le ✓ vert ne faisait RIEN ici, sans un mot — il ne restait que deux croix
+  //     identiques dont rien ne disait laquelle effaçait quoi. Ouvert à tous, comme la
+  //     saisie elle-même : qui peut inscrire un score doit pouvoir le retirer. Même
+  //     effet que la corbeille rouge à côté ; deux chemins, aucun piège.
+  //
+  //   • match SANS score -> il ne se jouera pas (joueur qui abandonne). Réservé à
+  //     l'admin : saisir un résultat est l'affaire des joueurs, décider qu'un match
+  //     n'aura pas lieu est celle de l'organisateur. Confirmation demandée, parce que
+  //     « — » est l'état par défaut des deux menus et qu'un ✓ réflexe annulerait le match.
+  //
+  // Pour annuler un match déjà joué il faut donc d'abord effacer son score : deux gestes
+  // délibérés plutôt qu'un bouton qui emporterait un résultat au passage.
+  if (sw === '' && sb === '') {
+    if (dejaJoue) { await window.resetScore(id); return; }
+    if (!isAdmin) { showToast(t('score_incomplet'), false); return; }
     if (!confirm(t('confirm_void_match'))) return;
     editingMatchId=null;
     renderMatches();
     await update(ref(db,'games/'+id), { annule: true, scoreWhite: null, scoreBlack: null, notified: null });
     return;
   }
-  if(sw===''||sb===''||sw===undefined||sb===undefined) return;
-  const prev = state.games?.[id];
-  const wasPlayed = prev && prev.scoreWhite!==null && prev.scoreWhite!==undefined;
+  // Un seul menu rempli : on le DIT, au lieu de ne rien faire en silence.
+  if (sw === '' || sb === '') { showToast(t('score_incomplet'), false); return; }
+  const wasPlayed = dejaJoue;
   editingMatchId=null;
   renderMatches();
   // Les deux scores partent ENSEMBLE, comme pour les finales. En deux écritures, une
@@ -4589,10 +4602,24 @@ window.cancelScore = function() { editingMatchId=null; renderMatches(); };
 
 window.openFinalEdit = function(id) { editingFinalId=editingFinalId===id?null:id; renderFinals(); };
 window.submitFinalScore = async function(id) {
-  const s1=parseFloat(document.getElementById('fs1-'+id)?.value);
-  const s2=parseFloat(document.getElementById('fs2-'+id)?.value);
-  if(isNaN(s1)||isNaN(s2)) return;
+  const el1 = document.getElementById('fs1-'+id), el2 = document.getElementById('fs2-'+id);
+  if (!el1 || !el2) return;              // carte fermée : rien à valider
   const game=state.finals?.[id]; if(!game) return;
+  // Même règle que pour les matchs de poule : « — » des deux côtés veut dire « pas de
+  // résultat ». Sur un match de finale DÉJÀ JOUÉ, ça efface le score — et le vainqueur
+  // avec, donc le joueur reporté au tour suivant est retiré, ce dont resetFinalScore
+  // s'occupe. On n'y ANNULE pas un match : un tableau doit désigner un vainqueur pour
+  // avancer, un forfait s'y saisit donc comme un 1-0.
+  if (el1.value === '' && el2.value === '') {
+    const joue = game.score1 !== null && game.score1 !== undefined;
+    if (joue) { await window.resetFinalScore(id); return; }
+    showToast(t('score_incomplet'), false);
+    return;
+  }
+  const s1=parseFloat(el1.value);
+  const s2=parseFloat(el2.value);
+  // Un seul menu rempli : on le dit, au lieu de ne rien faire en silence.
+  if(isNaN(s1)||isNaN(s2)) { showToast(t('score_incomplet'), false); return; }
   // La couleur est obligatoire : sans elle, ce match ne pourrait pas alimenter le détail
   // Blancs/Noirs, et l'information serait définitivement perdue.
   const couleurP1 = document.getElementById('fc-'+id)?.value;
@@ -5535,6 +5562,59 @@ function isMatchLate(game, isFinal) {
   return ABCT_DATES.isMatchLate(game, isFinal, state?.settings || {}, getFinals());
 }
 
+function roundWindowStart(game, isFinal) {
+  return ABCT_DATES.roundWindowStart(game, isFinal, state?.settings || {}, getFinals());
+}
+
+// Le fuseau d'affichage des dates, répété jusqu'ici dans quatre expressions identiques.
+function localeDates() {
+  return lang === 'fr' ? 'fr-CH' : lang === 'de' ? 'de-CH' : lang === 'it' ? 'it-CH' : 'en-GB';
+}
+
+// ── LE BANDEAU DE DATES D'UNE CARTE ──
+// Les dates vivaient dans la colonne du milieu, coincées entre les deux noms de joueurs :
+// une largeur d'une soixantaine de pixels, un libellé en 11px gris. Personne ne lit ça.
+// Or c'est l'information qui décide si un joueur joue cette semaine ou dans dix jours.
+// Elle passe donc en bandeau PLEINE LARGEUR, en tête de carte : la seule place où les
+// DEUX dates tiennent, avec un fond coloré qui accroche l'œil avant les noms.
+// Le milieu de la carte redevient un simple « vs », et les noms récupèrent la place.
+// En retard, le bandeau vire à l'orange et dit depuis quand — il remplace alors le petit
+// badge « ⏰ Retard » de la ligne du groupe : le dire deux fois sur la même carte n'ajoute
+// rien et dilue le signal.
+function bandeauDates(debut, fin, enRetard) {
+  if (!fin) return '';
+  const loc = localeDates();
+  const court = (d) => d.toLocaleDateString(loc, { day: 'numeric', month: 'short' });
+  // Les deux dates sont écrites en ENTIER, même quand le mois est le même. « Du 5 au
+  // 9 octobre » serait plus élégant en français, mais chaque langue place sa préposition
+  // et ses abréviations autrement, et l'allemand perd son point ordinal quand on n'écrit
+  // que le quantième. Deux dates complètes se traduisent sans piège.
+  const texte = enRetard
+    ? t('date_late_since').replace('{b}', court(fin))
+    : t('date_window').replace('{a}', debut ? court(debut) : court(fin)).replace('{b}', court(fin));
+  const fond = enRetard ? '#FFF3E0' : 'var(--gold-light)';
+  const encre = enRetard ? '#C2410C' : '#6B5A2E';
+  return `<div style="margin:2px 0 10px;padding:8px 10px;border-radius:9px;text-align:center;`
+       + `font-size:13.5px;font-weight:700;letter-spacing:0.2px;background:${fond};color:${encre}">${texte}</div>`;
+}
+
+// ── FENÊTRE D'UNE RONDE, EN UNE LIGNE LISIBLE ──
+// « 5 – 9 octobre » quand les deux dates tombent le même mois, « 29 oct. – 2 nov. »
+// sinon : on ne répète le mois que lorsqu'il change. Pas de tournure à traduire — un
+// tiret entre deux dates se lit dans les quatre langues, là où « du … au … » aurait
+// demandé une grammaire par langue et se serait cassé sur les mois qui changent.
+// Sans date d'ouverture calculable, on retombe sur l'échéance seule.
+function plageDates(debut, fin) {
+  if (!fin) return '';
+  const loc = localeDates();
+  const complet = (d) => d.toLocaleDateString(loc, { day: 'numeric', month: 'long' });
+  if (!debut) return complet(fin);
+  if (debut.getMonth() === fin.getMonth() && debut.getFullYear() === fin.getFullYear())
+    return debut.toLocaleDateString(loc, { day: 'numeric' }) + ' – ' + complet(fin);
+  const court = (d) => d.toLocaleDateString(loc, { day: 'numeric', month: 'short' });
+  return court(debut) + ' – ' + court(fin);
+}
+
 function generateWhatsAppMsg() {
   const s = state?.settings || {};
   const games = getGames();
@@ -5980,12 +6060,15 @@ function renderMatches(){
   pending.forEach(g => {
     if (typeof g.round === 'number' && g.round !== derniereRonde) {
       derniereRonde = g.round;
-      const due = matchDueDate(g, false);
-      const dueStr = due ? due.toLocaleDateString(lang==='fr'?'fr-CH':lang==='de'?'de-CH':lang==='it'?'it-CH':'en-GB',{day:'numeric',month:'long'}) : '';
+      // ⚠️ PAS DE DATES ICI. Chaque carte porte son propre bandeau « À jouer du … au … »,
+      // en pleine largeur et en couleur : les répéter sur le séparateur faisait apparaître
+      // cinq fois la même phrase sur un seul écran — le séparateur, puis les quatre cartes
+      // de la ronde. Une information répétée cesse d'être lue. Le séparateur redevient ce
+      // qu'il doit être : un repère qui dit où l'on est dans le calendrier.
       const enRetard = isMatchLate(g, false);
       htmlPending += `<div style="display:flex;align-items:center;gap:10px;margin:${htmlPending?'18px':'4px'} 0 10px">
         <div style="flex:1;height:1px;background:${enRetard?'#E67E22':'var(--gold)'};opacity:0.5"></div>
-        <div style="font-size:12px;font-weight:800;color:${enRetard?'#E67E22':'var(--gold)'};letter-spacing:0.5px;white-space:nowrap">${t('round_short').toUpperCase()} ${g.round}${dueStr?` <span style="font-weight:500;color:#999">· ${dueStr}</span>`:''}</div>
+        <div style="font-size:12px;font-weight:800;color:${enRetard?'#E67E22':'var(--gold)'};letter-spacing:0.5px;white-space:nowrap">${t('round_short').toUpperCase()} ${g.round}</div>
         <div style="flex:1;height:1px;background:${enRetard?'#E67E22':'var(--gold)'};opacity:0.5"></div>
       </div>`;
     }
@@ -6028,9 +6111,9 @@ function matchCardHTML(g){
   const opts=(val)=>['1','0.5','0'].map(s=>`<option value="${s}" ${played&&parseFloat(val)===parseFloat(s)?'selected':''}>${s}</option>`).join('');
   const late = !played && isMatchLate(g, false);
   const due = matchDueDate(g, false);
-  const dueStr = due ? due.toLocaleDateString(lang==='fr'?'fr-CH':lang==='de'?'de-CH':lang==='it'?'it-CH':'en-GB',{day:'numeric',month:'short'}) : null;
   return `<div class="match-card" style="${late?'border-left:3px solid #E67E22;':''}">
-    <div class="match-grp">${esc(nomGroupe(g.group))}${typeof g.round==='number'?` <span style="font-weight:600;color:#aaa">· ${t('round_short')} ${g.round}</span>`:''}${late?` <span style="font-size:13px;font-weight:700;color:#E67E22;background:#FFF3E0;padding:2px 6px;border-radius:5px;margin-left:4px">${t("late_badge")}</span>`:''}${annule?` <span style="font-size:13px;font-weight:700;color:var(--gray);background:#EFEFEF;padding:2px 6px;border-radius:5px;margin-left:4px">${t("match_voided")}</span>`:''}</div>
+    <div class="match-grp">${esc(nomGroupe(g.group))}${typeof g.round==='number'?` <span style="font-weight:600;color:#aaa">· ${t('round_short')} ${g.round}</span>`:''}${annule?` <span style="font-size:13px;font-weight:700;color:var(--gray);background:#EFEFEF;padding:2px 6px;border-radius:5px;margin-left:4px">${t("match_voided")}</span>`:''}</div>
+    ${!played&&!annule?bandeauDates(roundWindowStart(g,false), due, late):''}
     <div class="match-players">
       <div class="match-player"><div class="match-player-name">${esc(g.playerWhite)}</div><div class="match-player-color" style="display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px;margin-top:4px;background:#F5F5F0;color:#555;border:1px solid #ddd">${t('whites')}</div></div>
       ${annule&&!isEditing?`<div style="text-align:center;${isAdmin?'cursor:pointer':''}" ${isAdmin?`onclick="openScoreEdit('${g.id}')"`:''}>
@@ -6039,10 +6122,7 @@ function matchCardHTML(g){
       </div>`:played&&!isEditing?`<div style="text-align:center;cursor:pointer" onclick="openScoreEdit('${g.id}')">
         <div class="match-score">${g.scoreWhite} — ${g.scoreBlack}</div>
         <div style="font-size:11px;color:#ccc;margin-top:-2px">${t("modify")}</div>
-      </div>`:(dueStr?`<div style="text-align:center">
-        <div style="font-size:16px;font-weight:800;color:${late?'#E67E22':'var(--dark)'};white-space:nowrap">${dueStr}</div>
-        <div style="font-size:11px;color:#aaa;margin-top:-2px;white-space:nowrap">${t('due_by')}</div>
-      </div>`:`<div class="match-vs">vs</div>`)}
+      </div>`:`<div class="match-vs">vs</div>`}
       <div class="match-player"><div class="match-player-name">${esc(g.playerBlack)}</div><div class="match-player-color" style="display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px;margin-top:4px;background:#2c2c2c;color:#fff">${t('blacks')}</div></div>
     </div>
     ${!played&&!isEditing&&!annule?`<button class="btn btn-gold" style="margin-top:10px;font-size:13px;padding:9px" onclick="openScoreEdit('${g.id}')">${t('enter_score')}</button>`:''}
@@ -6052,8 +6132,9 @@ function matchCardHTML(g){
       <select class="score-select" id="sb-${g.id}" onchange="autoScore('${g.id}','black')"><option value="">—</option>${opts(g.scoreBlack)}</select>
       <button class="btn btn-green btn-confirm" onclick="submitScore('${g.id}')">✓</button>
       <button class="btn btn-confirm" style="background:#f2f2f2;color:var(--gray);padding:10px 10px;width:auto" onclick="cancelScore()" title="${esc(t('cancel'))}">✕</button>
-      ${played||annule?`<button class="btn btn-confirm" style="background:#fee;color:var(--red);padding:10px 10px;width:auto" onclick="resetScore('${g.id}')" title="${esc(t('reset_match'))}">✕</button>`:''}
-    </div>`:''}
+      ${played||annule?`<button class="btn btn-confirm" style="background:#fee;color:var(--red);padding:10px 10px;width:auto" onclick="resetScore('${g.id}')" title="${esc(t('reset_match'))}" aria-label="${esc(t('reset_match'))}">🗑️</button>`:''}
+    </div>
+    ${played||annule?`<div style="font-size:11px;color:#aaa;text-align:center;margin-top:4px">${t('score_hint_effacer')}</div>`:''}`:''}
   </div>`;
 }
 
@@ -6284,6 +6365,8 @@ function renderFinals(){
       .filter(f=>!(f.winner && f.player1 && !f.player2))
       .sort((a,b)=>a.matchNum-b.matchNum);
     if(!rg.length) return;
+    // Même raison qu'en poules : chaque carte porte son bandeau de dates, l'en-tête de
+    // tour n'a pas à le répéter au-dessus.
     html+=`<div class="section-title">${esc(nomTour(round))}</div>`;
     html+=rg.map(f=>finalCardHTML(f)).join('');
   });
@@ -6302,7 +6385,6 @@ function finalCardHTML(f){
   const isPresential = f.round==='Demis'||f.round==='Finale'||f.round==='3ème place';
   const lateFinal = !played && !isPresential && f.player1 && f.player2 && isMatchLate(f, true);
   const dueF = !played && f.player1 && f.player2 ? matchDueDate(f, true) : null;
-  const dueStrF = dueF ? dueF.toLocaleDateString(lang==='fr'?'fr-CH':lang==='de'?'de-CH':lang==='it'?'it-CH':'en-GB',{day:'numeric',month:'short'}) : null;
   const opts=(val)=>['1','0'].map(s=>`<option value="${s}" ${played&&parseFloat(val)===parseFloat(s)?'selected':''}>${s}</option>`).join('');
   const canPlay=f.player1&&f.player2&&!f.winner;
   // ── ÉTIQUETTE DU MENU DE COULEUR ──
@@ -6319,8 +6401,7 @@ function finalCardHTML(f){
   const etiquetteCouleur = t('color_of').replace('{n}', () => esc(f.player1 || '?'));
   return `<div class="final-card ${f.winner?'winner':''}" style="${lateFinal?'border-left:3px solid #E67E22;':''}">
     ${isPresential?`<div style="font-size:12px;color:#888;text-align:center;margin-bottom:6px;font-weight:500">${t("presential")} · ${f.round==='Demis'?(state?.settings?.semisFormat||'20min + 10s/coup'):(state?.settings?.finalFormat||'30min + 10s/coup')}</div>`:''}
-    ${dueStrF?`<div style="font-size:11px;color:#999;text-align:center;margin-bottom:6px">${t('due_by')} ${dueStrF}</div>`:''}
-    ${lateFinal?`<div style="font-size:13px;color:#E67E22;font-weight:700;margin-bottom:6px;padding:4px 8px;background:#FFF3E0;border-radius:6px;text-align:center">${t("late_match")}</div>`:''}
+    ${!played&&f.player1&&f.player2?bandeauDates(roundWindowStart(f,true), dueF, lateFinal):''}
     ${(f.player1&&f.player2&&!f.winner&&(f.rank1||f.rank2))?`<div style="font-size:11px;color:#888;text-align:center;margin-bottom:5px">⚪ ${(f.rank1!==null&&f.rank1!==undefined&&(f.rank2===null||f.rank2===undefined||f.rank1<=f.rank2))?esc(f.player1):esc(f.player2)} ${t("color_choice")}</div>`:''}
     <div class="match-players">
       <div class="match-player"><div class="match-player-name" style="color:${f.winner===f.player1?'var(--green)':'var(--dark)'}">${f.player1?esc(f.player1):'?'}</div></div>
@@ -6344,8 +6425,9 @@ function finalCardHTML(f){
       <select class="score-select" id="fs2-${f.id}" onchange="autoFinalScore('${f.id}','p2')"><option value="">—</option>${opts(f.score2)}</select>
       <button class="btn btn-green btn-confirm" onclick="submitFinalScore('${f.id}')">✓</button>
       <button class="btn btn-confirm" style="background:#f2f2f2;color:var(--gray);padding:10px 10px;width:auto" onclick="cancelFinal()" title="${esc(t('cancel'))}">✕</button>
-      ${played?`<button class="btn btn-confirm" style="background:#fee;color:var(--red);padding:10px 10px;width:auto" onclick="resetFinalScore('${f.id}')" title="${esc(t('reset_match'))}">✕</button>`:''}
-    </div>`:''}
+      ${played?`<button class="btn btn-confirm" style="background:#fee;color:var(--red);padding:10px 10px;width:auto" onclick="resetFinalScore('${f.id}')" title="${esc(t('reset_match'))}" aria-label="${esc(t('reset_match'))}">🗑️</button>`:''}
+    </div>
+    ${played?`<div style="font-size:11px;color:#aaa;text-align:center;margin-top:4px">${t('score_hint_effacer')}</div>`:''}`:''}
   </div>`;
 }
 

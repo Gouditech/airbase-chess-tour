@@ -1639,7 +1639,7 @@ const T = {
     late_badge:"⏰ Retard",
     date_play:"À jouer entre le",date_play_seul:"À jouer",date_before:"avant le {b}",date_range:"{a} et {b}",date_late_label:"⏰ En retard",date_late_value:"depuis le {b}",pool_end_estimate:"Fin estimée des poules : {d}",finals_end_estimate:"Fin estimée des finales (si le rythme tient jusqu'au bout) : {d}",round_short:"Ronde",
     late_match:"⏰ Match en retard",
-    color_choice:"choisit sa couleur",color_of:"Couleur de {n}",color_pick:"— choisir la couleur —",color_skip_confirm:"Aucune couleur indiquée. Le match comptera dans les totaux, mais pas dans le détail Blancs/Noirs. Valider quand même ?",
+    color_choice:"choisit sa couleur",color_of:"Couleur de {n}",color_pick:"— choisir la couleur —",color_clear:"Retirer la couleur",color_skip_confirm:"Aucune couleur indiquée. Le match comptera dans les totaux, mais pas dans le détail Blancs/Noirs. Valider quand même ?",
     presential:"Présentiel",
     notif_disable_btn:"🔕 Désactiver les notifications",
     late_msg:"Certains matchs sont en retard, jouez rapidement !",
@@ -1809,7 +1809,7 @@ const T = {
     late_badge:"⏰ Verspätet",
     date_play:"Zu spielen zwischen dem",date_play_seul:"Zu spielen",date_before:"bis {b}",date_range:"{a} und {b}",date_late_label:"⏰ Überfällig",date_late_value:"seit dem {b}",pool_end_estimate:"Voraussichtliches Ende der Gruppenphase: {d}",finals_end_estimate:"Voraussichtliches Ende der Finalrunden (bei gleichbleibendem Rhythmus): {d}",round_short:"Runde",
     late_match:"⏰ Partie verspätet",
-    color_choice:"wählt die Farbe",color_of:"Farbe von {n}",color_pick:"— Farbe wählen —",color_skip_confirm:"Keine Farbe angegeben. Die Partie zählt in den Gesamtzahlen, aber nicht in der Aufschlüsselung Weiß/Schwarz. Trotzdem bestätigen?",
+    color_choice:"wählt die Farbe",color_of:"Farbe von {n}",color_pick:"— Farbe wählen —",color_clear:"Farbe entfernen",color_skip_confirm:"Keine Farbe angegeben. Die Partie zählt in den Gesamtzahlen, aber nicht in der Aufschlüsselung Weiß/Schwarz. Trotzdem bestätigen?",
     presential:"Präsenz",
     late_msg:"Einige Partien sind verspätet, spiel bitte bald!",
     pending_msg:"Einige Partien sind noch ausstehend, spiel bitte bald!",
@@ -1909,7 +1909,7 @@ const T = {
     late_badge:"⏰ Late",
     date_play:"To play between",date_play_seul:"To play",date_before:"before {b}",date_range:"{a} and {b}",date_late_label:"⏰ Overdue",date_late_value:"since {b}",pool_end_estimate:"Estimated end of the group stage: {d}",finals_end_estimate:"Estimated end of the final stages (if the pace holds): {d}",round_short:"Round",
     late_match:"⏰ Match overdue",
-    color_choice:"chooses color",color_of:"Colour of {n}",color_pick:"— select colour —",color_skip_confirm:"No colour given. The game will count in the totals, but not in the White/Black breakdown. Confirm anyway?",
+    color_choice:"chooses color",color_of:"Colour of {n}",color_pick:"— select colour —",color_clear:"Remove colour",color_skip_confirm:"No colour given. The game will count in the totals, but not in the White/Black breakdown. Confirm anyway?",
     presential:"In-person",
     late_msg:"Some matches are overdue, please play quickly!",
     pending_msg:"Some matches are still pending, please organize your games quickly!",
@@ -2041,7 +2041,7 @@ const T = {
     late_badge:"⏰ Ritardo",
     date_play:"Da giocare tra il",date_play_seul:"Da giocare",date_before:"entro il {b}",date_range:"{a} e {b}",date_late_label:"⏰ In ritardo",date_late_value:"dal {b}",pool_end_estimate:"Fine stimata dei gironi: {d}",finals_end_estimate:"Fine stimata delle finali (se il ritmo regge): {d}",round_short:"Turno",
     late_match:"⏰ Partita in ritardo",
-    color_choice:"sceglie il colore",color_of:"Colore di {n}",color_pick:"— scegliere il colore —",color_skip_confirm:"Nessun colore indicato. La partita conterà nei totali, ma non nel dettaglio Bianchi/Neri. Confermare lo stesso?",
+    color_choice:"sceglie il colore",color_of:"Colore di {n}",color_pick:"— scegliere il colore —",color_clear:"Rimuovere il colore",color_skip_confirm:"Nessun colore indicato. La partita conterà nei totali, ma non nel dettaglio Bianchi/Neri. Confermare lo stesso?",
     presential:"Presenza",
     late_msg:"Alcune partite sono in ritardo, giocare rapidamente!",
     pending_msg:"Alcune partite sono ancora in attesa, organizza le tue partite rapidamente!",
@@ -4674,6 +4674,21 @@ window.submitFinalScore = async function(id) {
 };
 window.cancelFinal = function() { editingFinalId=null; renderFinals(); };
 
+// ── RETIRER LA COULEUR ──
+// La case vide du menu est `hidden` : elle sert encore d'étiquette au menu refermé, mais
+// n'apparaît plus dans la feuille de sélection d'iOS, qui ne montre que le titre « Couleur
+// de X » et les deux couleurs. Elle n'est donc plus atteignable au doigt, et c'est ce
+// bouton qui ramène le menu à « pas de couleur ».
+// ⚠️ `hidden` empêche l'AFFICHAGE, pas la sélection par programme : `value = ''` retrouve
+// bien l'option et le menu refermé réaffiche son libellé.
+// On ne re-rend PAS la carte : `renderFinals()` la reconstruirait depuis la base, où la
+// couleur est encore enregistrée, et le menu reviendrait à sa valeur d'avant. Le retrait
+// ne devient définitif qu'au ✓, comme le score saisi à côté.
+window.retirerCouleurFinale = function(id) {
+  const menu = document.getElementById('fc-' + id);
+  if (menu) menu.value = '';
+};
+
 async function removePropagatedWinner(id, oldWinner, game) {
   const finals = state.finals || {};
   // Find the next match and remove oldWinner from it
@@ -6534,13 +6549,16 @@ function finalCardHTML(f){
     ${isEditing?`<div style="display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:9px;font-size:12px;color:var(--gray)">
       ${(f.player1&&f.player2&&!f.winner&&(f.rank1||f.rank2))?'':`<span>${etiquetteCouleur}</span>`}
       <select class="score-select" id="fc-${f.id}" style="width:auto;padding:7px 9px;font-size:13px">
-        <option value=""${f.colorP1?'':' selected'}>${t('color_pick')}</option>
+        <option value="" hidden${f.colorP1?'':' selected'}>${t('color_pick')}</option>
         <optgroup label="${etiquetteCouleur}">
           <option value="white"${f.colorP1==='white'?' selected':''}>${t('whites')}</option>
           <option value="black"${f.colorP1==='black'?' selected':''}>${t('blacks')}</option>
         </optgroup>
       </select>
     </div>
+    ${f.colorP1?`<div style="text-align:center;margin-top:6px">
+      <button onclick="retirerCouleurFinale('${f.id}')" style="background:none;border:none;color:var(--gray);font-size:12px;text-decoration:underline;cursor:pointer;padding:4px 8px">✕ ${esc(t('color_clear'))}</button>
+    </div>`:''}
     <div class="score-row">
       <select class="score-select" id="fs1-${f.id}" onchange="autoFinalScore('${f.id}','p1')"><option value="">—</option>${opts(f.score1)}</select>
       <span style="font-weight:700;color:#ccc">—</span>

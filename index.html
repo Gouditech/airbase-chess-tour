@@ -1035,23 +1035,39 @@ window.unsubscribeFromNotifications = async function unsubscribeFromNotification
   }
 }
 
+// ⚠️ CETTE FONCTION S'EXÉCUTE À CHAQUE RENDU (applyTranslations l'appelle), donc à chaque
+// arrivée de données. Un accès au stockage qui LÈVE — navigateur réglé sur « bloquer tous
+// les cookies », stratégie d'entreprise — faisait donc échouer `surDonneesChangees` AVANT
+// `renderPage` : le joueur se retrouvait devant une application plausible et entièrement
+// vide, figée sur le formulaire d'inscription. Et le filet de démarrage ne rattrapait rien,
+// `ABCT_DEMARRE` ayant déjà été posé quelques lignes plus haut.
+// Tous les accès au stockage de cette fonction sont donc protégés. Sans stockage lisible,
+// le bouton retombe sur « non abonné », ce qui est exact : sans stockage, il n'y a pas
+// d'abonnement mémorisé.
+function litLocal(cle) {
+  try { return localStorage.getItem(cle); } catch (e) { return null; }
+}
+function oublieLocal(cle) {
+  try { localStorage.removeItem(cle); } catch (e) {}
+}
+
 function updateNotifBtn() {
   const btn = document.getElementById('notif-toggle-btn');
   const testBtn = document.getElementById('notif-test-btn');
-  let on = localStorage.getItem('abct-notif') === 'on';
+  let on = litLocal('abct-notif') === 'on';
   // Sync: if browser revoked permission (ou une autorisation temporaire type Brave a expiré),
   // nettoyage complet — local ET Firebase, pas juste le drapeau "on".
   if (on && 'Notification' in window && Notification.permission !== 'granted') {
-    localStorage.removeItem('abct-notif');
-    const expiredSubId = localStorage.getItem('abct-notif-subid');
-    localStorage.removeItem('abct-notif-subid');
+    oublieLocal('abct-notif');
+    const expiredSubId = litLocal('abct-notif-subid');
+    oublieLocal('abct-notif-subid');
     if (expiredSubId) set(ref(db, SUB_PATH + '/' + expiredSubId), null).catch(()=>{});
     on = false;
     showMsg('notif-msg', t(cleNotifBloquee()), false, true);
   }
   // Abonné mais les deux catégories décochées : il ne reçoit rien. Le bouton doit
   // le montrer, sinon le vert ment.
-  const subIdBtn = localStorage.getItem('abct-notif-subid');
+  const subIdBtn = litLocal('abct-notif-subid');
   const prefsBtn = subIdBtn ? state?.[SUB_PATH]?.[subIdBtn]?.prefs : null;
   const sourdine = on && prefsBtn && prefsBtn.officiel === false && prefsBtn.match === false;
   if (btn) {
@@ -1605,7 +1621,7 @@ const T = {
     late_badge:"⏰ Retard",
     due_by:"📅 Échéance :",round_short:"Ronde",
     late_match:"⏰ Match en retard",
-    color_choice:"choisit sa couleur",color_pick:"— couleur —",color_required:"Choisis ta couleur avant de valider le score.",
+    color_choice:"choisit sa couleur",color_of:"Couleur de {n}",color_pick:"— choisir —",color_required:"Indique la couleur de {n} avant de valider le score.",
     presential:"Présentiel",
     notif_disable_btn:"🔕 Désactiver les notifications",
     late_msg:"Certains matchs sont en retard, jouez rapidement !",
@@ -1630,7 +1646,7 @@ const T = {
     pin_mismatch:"Les nouveaux PIN ne correspondent pas.",
     pin_short:"PIN trop court (min. 4 caractères).",
     pin_changed:"PIN modifié avec succès !",
-    nick_taken:"Ce pseudo est déjà pris.",edit_sync_pseudo:"⚠️ Ce joueur figure dans {n} édition(s) du palmarès sous le pseudo précédent.\n\nChanger son pseudo sans mettre le palmarès à jour coupera DÉFINITIVEMENT le lien avec son historique.\n\nMettre le palmarès à jour aussi ?",edit_sync_nom:"Ce joueur figure dans {n} édition(s) du palmarès sous le nom « {ancien} ».\n\nMettre le palmarès à jour avec le nouveau nom ?",edit_sync_done:"✅ Palmarès mis à jour ({n} entrées).",
+    nick_taken:"Ce pseudo est déjà pris.",edit_sync_pseudo:"⚠️ Ce joueur figure dans {n} édition(s) du palmarès sous le pseudo précédent.\n\nChanger son pseudo sans mettre le palmarès à jour coupera DÉFINITIVEMENT le lien avec son historique.\n\nMettre le palmarès à jour aussi ?",edit_sync_nom:"Ce joueur figure dans {n} édition(s) du palmarès sous le nom « {ancien} ».\n\nMettre le palmarès à jour avec le nouveau nom ?",edit_sync_done:"✅ Palmarès mis à jour ({n} entrées).",edit_sync_tournoi:"✅ Pseudo corrigé dans {m} match(s) de poule et {f} match(s) du tableau final.",edit_sync_fail:"⚠️ Rien n'a été modifié : l'enregistrement a échoué. La fiche et les matchs sont intacts — réessaie.",edit_sync_partiel:"⚠️ Correction incomplète : {n} écriture(s) ont échoué. La fiche a gardé l'ancien pseudo — réenregistre pour terminer.",
     groups_reset:"Groupes réinitialisés. Les joueurs sont conservés.",
     finals_reset:"Phases finales réinitialisées.",
     pin_section:"Modifier le PIN",
@@ -1775,7 +1791,7 @@ const T = {
     late_badge:"⏰ Verspätet",
     due_by:"📅 Fällig bis",round_short:"Runde",
     late_match:"⏰ Partie verspätet",
-    color_choice:"wählt die Farbe",color_pick:"— Farbe —",color_required:"Wähle deine Farbe, bevor du das Ergebnis bestätigst.",
+    color_choice:"wählt die Farbe",color_of:"Farbe von {n}",color_pick:"— wählen —",color_required:"Gib die Farbe von {n} an, bevor du das Ergebnis bestätigst.",
     presential:"Präsenz",
     late_msg:"Einige Partien sind verspätet, spiel bitte bald!",
     pending_msg:"Einige Partien sind noch ausstehend, spiel bitte bald!",
@@ -1802,7 +1818,7 @@ const T = {
     pin_mismatch:"Die neuen PINs stimmen nicht überein.",
     pin_short:"PIN zu kurz (min. 4 Zeichen).",
     pin_changed:"PIN erfolgreich geändert!",
-    nick_taken:"Dieser Spitzname ist bereits vergeben.",edit_sync_pseudo:"⚠️ Dieser Spieler erscheint in {n} Ausgabe(n) der Bestenliste unter dem bisherigen Pseudonym.\n\nDas Pseudonym zu ändern, ohne die Bestenliste anzupassen, trennt die Verbindung zu seiner Historie ENDGÜLTIG.\n\nBestenliste ebenfalls aktualisieren?",edit_sync_nom:"Dieser Spieler erscheint in {n} Ausgabe(n) der Bestenliste unter dem Namen « {ancien} ».\n\nBestenliste mit dem neuen Namen aktualisieren?",edit_sync_done:"✅ Bestenliste aktualisiert ({n} Einträge).",
+    nick_taken:"Dieser Spitzname ist bereits vergeben.",edit_sync_pseudo:"⚠️ Dieser Spieler erscheint in {n} Ausgabe(n) der Bestenliste unter dem bisherigen Pseudonym.\n\nDas Pseudonym zu ändern, ohne die Bestenliste anzupassen, trennt die Verbindung zu seiner Historie ENDGÜLTIG.\n\nBestenliste ebenfalls aktualisieren?",edit_sync_nom:"Dieser Spieler erscheint in {n} Ausgabe(n) der Bestenliste unter dem Namen « {ancien} ».\n\nBestenliste mit dem neuen Namen aktualisieren?",edit_sync_done:"✅ Bestenliste aktualisiert ({n} Einträge).",edit_sync_tournoi:"✅ Pseudonym in {m} Gruppenspiel(en) und {f} Spiel(en) des Finaltableaus korrigiert.",edit_sync_fail:"⚠️ Nichts wurde geändert: das Speichern ist fehlgeschlagen. Spielerkarte und Spiele sind unverändert — bitte erneut versuchen.",edit_sync_partiel:"⚠️ Korrektur unvollständig: {n} Schreibvorgang/-vorgänge fehlgeschlagen. Die Spielerkarte behält das alte Pseudonym — erneut speichern, um abzuschliessen.",
     groups_reset:"Gruppen zurückgesetzt. Spieler bleiben erhalten.",
     finals_reset:"Finalrunden zurückgesetzt.",
     saved_ok:"Gespeichert!",cancel:"Abbrechen",
@@ -1875,7 +1891,7 @@ const T = {
     late_badge:"⏰ Late",
     due_by:"📅 Due by",round_short:"Round",
     late_match:"⏰ Match overdue",
-    color_choice:"chooses color",color_pick:"— colour —",color_required:"Choose your colour before confirming the score.",
+    color_choice:"chooses color",color_of:"Colour of {n}",color_pick:"— select —",color_required:"Indicate the colour of {n} before confirming the score.",
     presential:"In-person",
     late_msg:"Some matches are overdue, please play quickly!",
     pending_msg:"Some matches are still pending, please organize your games quickly!",
@@ -1900,7 +1916,7 @@ const T = {
     pin_mismatch:"The new PINs don't match.",
     pin_short:"PIN too short (min. 4 characters).",
     pin_changed:"PIN changed successfully!",
-    nick_taken:"This nickname is already taken.",edit_sync_pseudo:"⚠️ This player appears in {n} edition(s) of the hall of fame under the previous nickname.\n\nChanging the nickname without updating the hall of fame will PERMANENTLY break the link to their history.\n\nUpdate the hall of fame too?",edit_sync_nom:"This player appears in {n} edition(s) of the hall of fame under the name « {ancien} ».\n\nUpdate the hall of fame with the new name?",edit_sync_done:"✅ Hall of fame updated ({n} entries).",
+    nick_taken:"This nickname is already taken.",edit_sync_pseudo:"⚠️ This player appears in {n} edition(s) of the hall of fame under the previous nickname.\n\nChanging the nickname without updating the hall of fame will PERMANENTLY break the link to their history.\n\nUpdate the hall of fame too?",edit_sync_nom:"This player appears in {n} edition(s) of the hall of fame under the name « {ancien} ».\n\nUpdate the hall of fame with the new name?",edit_sync_done:"✅ Hall of fame updated ({n} entries).",edit_sync_tournoi:"✅ Nickname corrected in {m} pool match(es) and {f} match(es) of the final bracket.",edit_sync_fail:"⚠️ Nothing was changed: saving failed. The player card and the matches are untouched — please try again.",edit_sync_partiel:"⚠️ Incomplete correction: {n} write(s) failed. The player card kept the old nickname — save again to finish.",
     groups_reset:"Groups reset. Players are kept.",
     finals_reset:"Final stage reset.",
     pin_section:"Change PIN",
@@ -2007,7 +2023,7 @@ const T = {
     late_badge:"⏰ Ritardo",
     due_by:"📅 Scadenza:",round_short:"Turno",
     late_match:"⏰ Partita in ritardo",
-    color_choice:"sceglie il colore",color_pick:"— colore —",color_required:"Scegli il tuo colore prima di confermare il risultato.",
+    color_choice:"sceglie il colore",color_of:"Colore di {n}",color_pick:"— scegli —",color_required:"Indica il colore di {n} prima di confermare il risultato.",
     presential:"Presenza",
     late_msg:"Alcune partite sono in ritardo, giocare rapidamente!",
     pending_msg:"Alcune partite sono ancora in attesa, organizza le tue partite rapidamente!",
@@ -2032,7 +2048,7 @@ const T = {
     pin_mismatch:"I nuovi PIN non corrispondono.",
     pin_short:"PIN troppo corto (min. 4 caratteri).",
     pin_changed:"PIN modificato con successo!",
-    nick_taken:"Questo soprannome è già utilizzato.",edit_sync_pseudo:"⚠️ Questo giocatore compare in {n} edizione/i dell'albo d'oro con il nickname precedente.\n\nCambiare il nickname senza aggiornare l'albo d'oro interromperà DEFINITIVAMENTE il legame con il suo storico.\n\nAggiornare anche l'albo d'oro?",edit_sync_nom:"Questo giocatore compare in {n} edizione/i dell'albo d'oro con il nome « {ancien} ».\n\nAggiornare l'albo d'oro con il nuovo nome?",edit_sync_done:"✅ Albo d'oro aggiornato ({n} voci).",
+    nick_taken:"Questo soprannome è già utilizzato.",edit_sync_pseudo:"⚠️ Questo giocatore compare in {n} edizione/i dell'albo d'oro con il nickname precedente.\n\nCambiare il nickname senza aggiornare l'albo d'oro interromperà DEFINITIVAMENTE il legame con il suo storico.\n\nAggiornare anche l'albo d'oro?",edit_sync_nom:"Questo giocatore compare in {n} edizione/i dell'albo d'oro con il nome « {ancien} ».\n\nAggiornare l'albo d'oro con il nuovo nome?",edit_sync_done:"✅ Albo d'oro aggiornato ({n} voci).",edit_sync_tournoi:"✅ Nickname corretto in {m} partita/e di girone e {f} partita/e del tabellone finale.",edit_sync_fail:"⚠️ Niente è stato modificato: il salvataggio non è riuscito. La scheda e le partite sono intatte — riprova.",edit_sync_partiel:"⚠️ Correzione incompleta: {n} scrittura/e non riuscita/e. La scheda ha mantenuto il vecchio nickname — salva di nuovo per completare.",
     groups_reset:"Gruppi azzerati. I giocatori sono conservati.",
     finals_reset:"Fasi finali azzerate.",
     pin_section:"Modificare il PIN",
@@ -2091,8 +2107,13 @@ const T = {
 // « bloquer tous les cookies », stratégie d'entreprise, certains modes privés. Cette
 // lecture-ci se trouve au niveau du script, hors de toute fonction : non protégée, elle
 // emportait TOUT ce qui suit — écouteurs Firebase compris. Le joueur restait figé sur
-// l'écran de chargement, sans message, sans rien à tenter. Les autres accès au stockage
-// du fichier sont protégés depuis longtemps ; celui-là, le seul fatal, ne l'était pas.
+// l'écran de chargement, sans message, sans rien à tenter.
+// ⚠️ Ce n'est PAS le seul accès fatal, contrairement à ce que disait ce commentaire.
+// `updateNotifBtn` en fait un à chaque rendu (applyTranslations l'appelle) : il est
+// protégé lui aussi, voir `litLocal` près de cette fonction. Une trentaine d'autres accès
+// du fichier restent nus, mais ils vivent dans des gestionnaires de clic ou des blocs déjà
+// sous `try` : au pire l'action échoue, le site continue de s'afficher. Avant d'en ajouter
+// un nouveau, se demander s'il s'exécute sur le chemin du rendu.
 const LANGUES = ['fr', 'de', 'en', 'it'];
 function lireLangue() {
   let v = null;
@@ -2384,7 +2405,22 @@ function showMsg(id, text, ok=true, persist=false) {
     if (r.bottom < 40 || r.top > h - 40) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 }
-function esc(s) { if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function esc(s) { if (s === null || s === undefined) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ══ CHAÎNE PLACÉE DANS UN onclick ══
+// Un attribut `onclick` traverse DEUX analyseurs : le navigateur décode d'abord les
+// entités HTML, puis lit le résultat comme du JavaScript. Il faut donc échapper pour les
+// deux étages, et dans le bon ordre — l'ANTISLASH en premier, sinon celui qu'on ajoute
+// pour protéger l'apostrophe se fait lui-même avaler.
+// `esc(...)` suivi de `.replace(/'/g,"\\'")`, le motif employé jusqu'ici, ne touche pas
+// à l'antislash : un pseudo tel que  a\');alert(1);//  refermait la chaîne et exécutait
+// ce qui suivait — chez tout visiteur affichant la ligne, sans aucune action de l'admin.
+// Un pseudo finissant par un antislash rendait par ailleurs le bouton muet, sans message.
+// Reproduit puis vérifié corrigé.
+function escJS(s) {
+  const brut = (s === null || s === undefined) ? '' : String(s);
+  return esc(brut.replace(/\\/g, '\\\\').replace(/'/g, "\\'"));
+}
 
 // ══ NOM DE GROUPE AFFICHÉ ══
 // Le nom stocké dans Firebase est toujours « Groupe N » : c'est une CLÉ, partagée par les
@@ -2760,7 +2796,7 @@ function lignePalmares(e, surligne, medailles = true) {
   // Le rang/médaille occupe une colonne plus large : une médaille rendue à 12px
   // était illisible, et les chiffres se serraient.
   const tailleRang = medaille ? (gagnant ? '22px' : '19px') : (gagnant ? '17px' : '15px');
-  return `<div onclick="voirJoueurPalmares('${esc(e.pseudo).replace(/'/g,"\\'")}')" style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:${gagnant||surligne?'10px':'8px'} 8px;${fond};margin-bottom:3px;border-bottom:1px solid #f2f2f2">
+  return `<div onclick="voirJoueurPalmares('${escJS(e.pseudo)}')" style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:${gagnant||surligne?'10px':'8px'} 8px;${fond};margin-bottom:3px;border-bottom:1px solid #f2f2f2">
     <span style="width:32px;text-align:center;font-weight:${gagnant?'800':'700'};font-size:${tailleRang};line-height:1">${medaille || e.rank}</span>
     <span style="flex:1;min-width:0;font-size:${gagnant?'15px':'14px'};font-weight:${gagnant||surligne?'700':'500'}">${affichage}</span>
     ${stats}
@@ -2833,7 +2869,7 @@ function renderLiveRanking() {
       ? esc(noms[f.player]) + ' <span style="color:#bbb;font-weight:400">(' + esc(f.player) + ')</span>'
       : esc(f.player);
     const qualifie = i < nbQualifies;
-    return `<tr onclick="voirJoueurPalmares('${esc(f.player).replace(/'/g,"\\'")}')" style="cursor:pointer;${surligne?'background:#E8F5E9':(qualifie?'background:#FFFDF5':'')}">
+    return `<tr onclick="voirJoueurPalmares('${escJS(f.player)}')" style="cursor:pointer;${surligne?'background:#E8F5E9':(qualifie?'background:#FFFDF5':'')}">
       <td><strong style="color:${qualifie?'var(--gold)':'var(--gray)'}">${i+1}</strong></td>
       <td${qualifie?' style="font-weight:600"':''}>${aff}</td>
       <td style="color:var(--gray)">${f.groupRank}</td>
@@ -2985,7 +3021,7 @@ function renderPalmares() {
             &nbsp;·&nbsp; <span style="font-size:13px">⬛</span> <strong style="color:var(--dark)">${a.vN}</strong>${t('palmares_v')} ${a.nN}${t('palmares_n')} ${a.dN}${t('palmares_d')}
           </div>` : '';
         const detail = a.aStats ? ` · ${a.pts} ${t('palmares_pts')} · ${a.v}${t('palmares_v')}` : '';
-        return `<div onclick="voirJoueurPalmares('${esc(a.pseudo).replace(/'/g,"\\'")}')" style="cursor:pointer;padding:6px 8px;${surligne?'background:#E8F5E9;border-radius:8px;':''}border-bottom:1px solid #f0f0f0">
+        return `<div onclick="voirJoueurPalmares('${escJS(a.pseudo)}')" style="cursor:pointer;padding:6px 8px;${surligne?'background:#E8F5E9;border-radius:8px;':''}border-bottom:1px solid #f0f0f0">
           <div style="display:flex;align-items:center;gap:10px">
             <span style="width:32px;text-align:center;font-weight:700;color:var(--gold);font-size:15px">${i+1}</span>
             <span style="flex:1;min-width:0;font-size:14px;font-weight:${surligne?'700':'500'}">${affichage}</span>
@@ -3090,7 +3126,7 @@ function renderPalmaresPlayerCard(recherche) {
           &nbsp;·&nbsp; <span style="font-size:13px">⬛</span> <strong style="color:var(--dark)">${s.vN||0}</strong>${t('palmares_v')} ${s.nN||0}${t('palmares_n')} ${s.dN||0}${t('palmares_d')}` : ''}
       </div>` : '';
     return `<div style="border-bottom:1px solid #eee">
-      <div onclick="ouvrirEditionJoueur('${esc(String(p.id||'')).replace(/'/g,"\\'")}')" style="display:flex;align-items:center;gap:8px;padding:7px 0;font-size:13px;cursor:${aStats?'pointer':'default'}">
+      <div onclick="ouvrirEditionJoueur('${escJS(p.id)}')" style="display:flex;align-items:center;gap:8px;padding:7px 0;font-size:13px;cursor:${aStats?'pointer':'default'}">
         <span style="width:28px;text-align:center;font-weight:700;font-size:${medaille?'17px':'13px'}">${medaille || p.rang}</span>
         <span style="flex:1;min-width:0">${esc(p.edition)}${p.annee ? ' <span style="color:#bbb">(' + esc(String(p.annee)) + ')</span>' : ''}</span>
         <span style="color:var(--gray);font-size:12px;white-space:nowrap">${p.rang}${t('palmares_of')}${p.total}</span>
@@ -3697,14 +3733,18 @@ window.saveSettings = async function() {
 // Rien n'exigeait d'être admin pour déclencher ça : chaque ligne de joueur de la page
 // d'accueil portait le gestionnaire, et la « vérification » consistait à retaper un pseudo
 // affiché juste au-dessus et pré-rempli en indication du champ.
-// Le verrou vaut aussi pour l'admin. Pour corriger une identité en cours de tournoi, il
-// faut repasser explicitement le tournoi en phase d'inscription — un geste conscient,
-// pas un clic de travers.
+// L'ADMIN, LUI, N'EST JAMAIS BLOQUÉ : c'est lui qui corrige une faute de frappe ou une
+// identité en cours de tournoi, et il connaît les conséquences. Le verrou ne vise que les
+// boutons ouverts à tous. Conséquence assumée : un renommage admin après le tirage laisse
+// bel et bien l'ancien pseudo dans les matchs déjà créés. C'est son affaire, pas celle du
+// code — l'alternative était de lui imposer un aller-retour par la phase d'inscription.
 // `silencieux` : pour les endroits où le geste n'était PAS une demande de modification.
 // Sur la page d'accueil, chaque ligne de joueur porte le gestionnaire, et l'invitation à
 // modifier est déjà masquée hors inscriptions : une tape de travers ne doit pas déclencher
 // une alerte. Les boutons explicites (✕, crayon, enregistrer), eux, méritent une réponse.
 function listeJoueursFigee(silencieux) {
+  // Sortie de l'admin AVANT toute autre condition : voir l'encadré ci-dessus.
+  if (isAdmin) return false;
   const etape = state?.settings?.status;
   // Données pas encore arrivées de Firebase : on ignore dans quelle phase on est. On
   // bloque — c'est le sens prudent — mais sans affirmer que les inscriptions sont
@@ -4050,6 +4090,102 @@ window.fermerModifJoueur = function() {
   joueurAVerifier = null;
 };
 
+// ══ OÙ VIT UN PSEUDO, EN DEHORS DE LA FICHE DU JOUEUR ══
+// `games` et `finals` désignent les joueurs par leur PSEUDO, jamais par leur identifiant.
+// Corriger la fiche sans corriger les matchs fabriquait un fantôme : l'ancien pseudo
+// restait dans tous les matchs et continuait d'être classé, le nouveau apparaissait à
+// part avec zéro match, et le joueur renommé pouvait se retrouver hors du tableau final.
+// Cette fonction recense TOUT ce qu'il faut réécrire. Les matchs et le tableau sont les
+// seuls endroits concernés :
+//   • le NOM et le secteur ne sont stockés que dans la fiche — rien à propager ;
+//   • les abonnements aux notifications ne portent aucun pseudo ;
+//   • `notifications/` est le journal des messages DÉJÀ envoyés : on ne réécrit pas
+//     l'historique de ce qui est parti sur les téléphones ;
+//   • le palmarès est traité à part, sur question, parce qu'il s'agit d'éditions PASSÉES.
+// Comparaison insensible à la casse et aux espaces : l'inscription interdit déjà deux
+// pseudos identiques à la casse près, donc aucun risque de confondre deux joueurs.
+function champsRenommage(ancien, nouveau) {
+  const champs = {};
+  let matchs = 0, finales = 0;
+  // Sortie anticipée : comparaison EXACTE, pas insensible à la casse. « Chloe » → « CHLOE »
+  // est un vrai renommage — les matchs portent encore l'ancienne graphie et doivent être
+  // repris. (Première version : la sortie comparait en minuscules et abandonnait ici,
+  //  laissant la fiche en CHLOE et les quatre matchs en Chloe.)
+  const ancienNet = String(ancien || '').trim();
+  const nouveauNet = String(nouveau || '').trim();
+  if (!ancienNet || !nouveauNet || ancienNet === nouveauNet) return { champs, matchs, finales };
+  const q = ancienNet.toLowerCase();
+  const memeJoueur = (v) => !!v && String(v).trim().toLowerCase() === q;
+  Object.entries(state?.games || {}).forEach(([gid, g]) => {
+    let touche = false;
+    if (memeJoueur(g?.playerWhite)) { champs['games/' + gid + '/playerWhite'] = nouveau; touche = true; }
+    if (memeJoueur(g?.playerBlack)) { champs['games/' + gid + '/playerBlack'] = nouveau; touche = true; }
+    if (touche) matchs++;
+  });
+  Object.entries(state?.finals || {}).forEach(([fid, f]) => {
+    let touche = false;
+    if (memeJoueur(f?.player1)) { champs['finals/' + fid + '/player1'] = nouveau; touche = true; }
+    if (memeJoueur(f?.player2)) { champs['finals/' + fid + '/player2'] = nouveau; touche = true; }
+    if (memeJoueur(f?.winner))  { champs['finals/' + fid + '/winner']  = nouveau; touche = true; }
+    if (touche) finales++;
+  });
+  return { champs, matchs, finales };
+}
+
+// ══ APPLIQUER LE RENOMMAGE : D'ABORD EN BLOC, SINON CHEMIN PAR CHEMIN ══
+// Une mise à jour multi-chemins posée à la RACINE est la bonne façon de faire : Firebase
+// l'applique en bloc, tout ou rien, et un renommage à moitié appliqué est pire que pas de
+// renommage du tout. Mais rien, dans la documentation Firebase, ne dit à quel niveau les
+// RÈGLES évaluent une telle écriture : à la racine, ou à chacun des chemins cités. Si
+// c'est à la racine et que l'écriture n'y est pas accordée, tout est refusé en bloc.
+// On ne parie donc pas là-dessus : on essaie, et en cas de refus on repasse par la forme
+// que le site pratique déjà tous les jours et qui passe à coup sûr — une mise à jour par
+// match (`games/<id>`, `finals/<id>`), exactement comme la saisie d'un score.
+//
+// ⚠️ ORDRE DU REPLI : LES MATCHS D'ABORD, LA FICHE EN DERNIER. C'est ce qui le rend
+// reprenable. Si une écriture échoue en cours de route, la fiche porte ENCORE l'ancien
+// pseudo : il suffit de réenregistrer pour repartir du même point, sauter les matchs déjà
+// corrigés (ils ne portent plus l'ancien pseudo) et terminer le travail. Dans l'ordre
+// inverse, la fiche renommée effacerait la seule trace de ce qu'il fallait chercher, et
+// les matchs restés en arrière seraient orphelins pour toujours.
+async function appliquerRenommage(champsTournoi, cheminFiche, champsFiche) {
+  const enBloc = Object.assign({}, champsTournoi);
+  Object.entries(champsFiche).forEach(([c, v]) => { enBloc[cheminFiche + '/' + c] = v; });
+  try {
+    await update(ref(db), enBloc);
+    return { ok: true, enBloc: true, echecs: 0 };
+  } catch (e) {
+    console.log('[ABCT] Écriture groupée refusée (' + (e && e.message) + ') — repli chemin par chemin');
+  }
+  // 'games/xxx/playerWhite' -> nœud 'games/xxx', champ 'playerWhite'.
+  const parNoeud = new Map();
+  Object.entries(champsTournoi).forEach(([chemin, valeur]) => {
+    const coupe = chemin.lastIndexOf('/');
+    const noeud = chemin.slice(0, coupe);
+    if (!parNoeud.has(noeud)) parNoeud.set(noeud, {});
+    parNoeud.get(noeud)[chemin.slice(coupe + 1)] = valeur;
+  });
+  let echecs = 0, faits = 0;
+  for (const [noeud, champs] of parNoeud) {
+    try { await update(ref(db, noeud), champs); faits++; }
+    catch (e) { echecs++; console.log('[ABCT] ' + noeud + ' non corrigé : ' + (e && e.message)); }
+  }
+  // La fiche seulement si TOUS les matchs sont passés : sinon on garde l'ancien pseudo
+  // comme point de reprise.
+  // `partiel` dit s'il y a eu du travail de fait — c'est lui qui choisit le message.
+  // Quand RIEN n'est passé, annoncer « correction incomplète, réenregistre pour terminer »
+  // serait faux : il n'y a rien à terminer, et ça donnerait à croire que la base est à
+  // moitié dans un état et à moitié dans l'autre alors qu'elle est intacte.
+  if (echecs) return { ok: false, partiel: faits > 0, echecs };
+  try {
+    await update(ref(db, cheminFiche), champsFiche);
+  } catch (e) {
+    console.log('[ABCT] Fiche non enregistrée : ' + (e && e.message));
+    return { ok: false, partiel: faits > 0, echecs: 1 };
+  }
+  return { ok: true, enBloc: false, echecs: 0 };
+}
+
 window.saveEditPlayer = async function(id) {
   // Dernier verrou avant écriture : la phase peut avoir changé pendant que le
   // formulaire était ouvert.
@@ -4068,10 +4204,29 @@ window.saveEditPlayer = async function(id) {
   const avant = players.find(p => p.id === id) || {};
   const ancienPseudo = (avant.nickname || '').trim();
 
+  const renom = champsRenommage(ancienPseudo, nick);
+  const applique = await appliquerRenommage(renom.champs, 'players/' + id,
+    { nickname: nick, name: name, sector: sector || '' });
+  if (!applique.ok) {
+    // On NE redessine PAS : le formulaire reste tel quel, avec ce que l'organisateur vient
+    // de taper. Un redessin le repeuplerait depuis la base — c'est-à-dire avec l'ANCIEN
+    // pseudo — et lui ferait tout retaper. Là, il lui suffit de recliquer sur ✓ : c'est
+    // exactement le geste qui reprend le travail là où il s'est arrêté.
+    showToast(applique.partiel
+      ? t('edit_sync_partiel').replace('{n}', applique.echecs)
+      : t('edit_sync_fail'), false);
+    return;
+  }
   editingPlayerId = null;
-  await set(ref(db,'players/'+id+'/nickname'), nick);
-  await set(ref(db,'players/'+id+'/name'), name);
-  await set(ref(db,'players/'+id+'/sector'), sector||'');
+  refreshPlayerLists();
+  // Un SEUL compte rendu à la fin. Deux notifications flottantes coup sur coup, la
+  // seconde efface la première : l'organisateur n'aurait vu que le palmarès et jamais
+  // le nombre de matchs repris. La zone d'affichage accepte les retours à la ligne.
+  const rapport = [];
+  if (renom.matchs || renom.finales) {
+    rapport.push(t('edit_sync_tournoi')
+      .replace('{m}', renom.matchs).replace('{f}', renom.finales));
+  }
 
   // ── PROPAGATION AU PALMARÈS ──
   // Ce chemin ne touchait PAS le palmarès, contrairement à la fenêtre de reconnaissance
@@ -4088,9 +4243,10 @@ window.saveEditPlayer = async function(id) {
       .replace(/\{ancien\}/g, histo.name || ancienPseudo);
     if (confirm(question)) {
       const n = await harmoniserPalmares(ancienPseudo, nick, name);
-      showMsg('actions-msg', t('edit_sync_done').replace(/\{n\}/g, n), true);
+      rapport.push(t('edit_sync_done').replace(/\{n\}/g, n));
     }
   }
+  if (rapport.length) showMsg('actions-msg', rapport.join('\n'), true);
 };
 
 window.cancelEditPlayer = function() {
@@ -4350,7 +4506,12 @@ window.submitFinalScore = async function(id) {
   // Blancs/Noirs, et l'information serait définitivement perdue.
   const couleurP1 = document.getElementById('fc-'+id)?.value;
   if (couleurP1 !== 'white' && couleurP1 !== 'black') {
-    showToast(t('color_required'), false);
+    // Le message nomme le joueur concerné. « Choisis ta couleur » supposait que celui qui
+    // saisit est l'un des deux joueurs : c'est faux dès que l'admin saisit pour eux, et
+    // même un joueur ne sait pas s'il est player1 ou player2 dans le tableau.
+    // showToast écrit en textContent : pas d'échappement à faire ici, et `replace` avec une
+    // fonction pour qu'un « $& » dans un pseudo ne soit pas pris pour un motif.
+    showToast(t('color_required').replace('{n}', () => game.player1 || '?'), false);
     return;
   }
   const wasPlayed = game.score1!==null && game.score1!==undefined;
@@ -5609,7 +5770,7 @@ function playerEditForm(p) {
     <div style="display:flex;gap:8px">
       <button onclick="saveEditPlayer('${p.id}')" style="flex:1;padding:8px;border:none;border-radius:8px;background:var(--green);color:#fff;font-weight:700;cursor:pointer;font-size:13px">✓ Enregistrer</button>
       <button onclick="cancelEditPlayer()" style="padding:8px 14px;border:none;border-radius:8px;background:#eee;color:#666;font-weight:600;cursor:pointer;font-size:13px">✕</button>
-      <button onclick="confirmUnregister('${p.id}','${esc(p.nickname).replace(/'/g,"\\'")}')" style="padding:8px 14px;border:none;border-radius:8px;background:var(--red);color:#fff;font-weight:700;cursor:pointer;font-size:13px">🗑️</button>
+      <button onclick="confirmUnregister('${escJS(p.id)}','${escJS(p.nickname)}')" style="padding:8px 14px;border:none;border-radius:8px;background:var(--red);color:#fff;font-weight:700;cursor:pointer;font-size:13px">🗑️</button>
     </div>
   </div>`;
 }
@@ -6044,6 +6205,18 @@ function finalCardHTML(f){
   const dueStrF = dueF ? dueF.toLocaleDateString(lang==='fr'?'fr-CH':lang==='de'?'de-CH':lang==='it'?'it-CH':'en-GB',{day:'numeric',month:'short'}) : null;
   const opts=(val)=>['1','0'].map(s=>`<option value="${s}" ${played&&parseFloat(val)===parseFloat(s)?'selected':''}>${s}</option>`).join('');
   const canPlay=f.player1&&f.player2&&!f.winner;
+  // ── ÉTIQUETTE DU MENU DE COULEUR ──
+  // Le nom seul, posé à gauche d'un menu « — couleur — », ne disait pas ce qu'on attendait :
+  // celui qui saisit le score n'est pas forcément l'un des deux joueurs (l'admin saisit
+  // souvent pour eux), et même un joueur ne sait pas s'il est player1 ou player2 dans le
+  // tableau. La phrase nomme donc le joueur. Le menu reste attaché à player1 : c'est ce que
+  // la base stocke (colorP1) et ce dont dépendent l'affichage Blancs/Noirs de la carte et le
+  // détail par couleur du palmarès. Attention, ce n'est PAS forcément le joueur nommé juste
+  // au-dessus par color_choice : celui-là est le mieux classé des deux, à qui revient le
+  // CHOIX de la couleur. Les deux lignes disent deux choses différentes.
+  // `replace` reçoit une FONCTION : un pseudo contenant « $& » ou « $' » serait sinon
+  // réinterprété comme motif de remplacement.
+  const etiquetteCouleur = t('color_of').replace('{n}', () => esc(f.player1 || '?'));
   return `<div class="final-card ${f.winner?'winner':''}" style="${lateFinal?'border-left:3px solid #E67E22;':''}">
     ${isPresential?`<div style="font-size:12px;color:#888;text-align:center;margin-bottom:6px;font-weight:500">${t("presential")} · ${f.round==='Demis'?(state?.settings?.semisFormat||'20min + 10s/coup'):(state?.settings?.finalFormat||'30min + 10s/coup')}</div>`:''}
     ${dueStrF?`<div style="font-size:11px;color:#999;text-align:center;margin-bottom:6px">${t('due_by')} ${dueStrF}</div>`:''}
@@ -6057,8 +6230,8 @@ function finalCardHTML(f){
     ${f.winner?`<div style="text-align:center;margin-top:8px;font-size:12px;color:var(--green);font-weight:700">${t('winner')}: ${esc(f.winner)}</div>`:''}
     ${canPlay&&!played&&!isEditing?`<button class="btn btn-gold" style="margin-top:10px;font-size:13px;padding:9px" onclick="openFinalEdit('${f.id}')">${t('enter_score')}</button>`:''}
     ${played&&!isEditing&&(f.colorP1==='white'||f.colorP1==='black')?`<div style="font-size:11px;color:var(--gray);text-align:center;margin-top:4px">${f.colorP1==='white'?'⬜':'⬛'} ${esc(f.player1||'')} &nbsp;·&nbsp; ${f.colorP1==='white'?'⬛':'⬜'} ${esc(f.player2||'')}</div>`:''}
-    ${isEditing?`<div style="display:flex;align-items:center;gap:6px;justify-content:center;margin-top:8px;font-size:11px;color:var(--gray)">
-      <span>${esc(f.player1||'')}</span>
+    ${isEditing?`<div style="display:flex;align-items:center;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:8px;font-size:11px;color:var(--gray)">
+      <span>${etiquetteCouleur}</span>
       <select class="score-select" id="fc-${f.id}" style="width:auto;padding:6px 8px;font-size:12px">
         <option value=""${f.colorP1?'':' selected'}>${t('color_pick')}</option>
         <option value="white"${f.colorP1==='white'?' selected':''}>${t('whites')}</option>

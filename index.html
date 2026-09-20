@@ -4628,9 +4628,35 @@ window.submitFinalScore = async function(id) {
   // avec, donc le joueur reporté au tour suivant est retiré, ce dont resetFinalScore
   // s'occupe. On n'y ANNULE pas un match : un tableau doit désigner un vainqueur pour
   // avancer, un forfait s'y saisit donc comme un 1-0.
+  // ── LA COULEUR SE RÈGLE AVANT LA PARTIE, LE SCORE APRÈS ──
+  // Elle était liée au score : le ✓ exigeait les deux menus de score remplis, donc on ne
+  // pouvait ni poser ni retirer une couleur sur un match pas encore joué. C'est pourtant
+  // l'ordre réel des choses — les deux joueurs conviennent de la couleur, puis jouent, puis
+  // saisissent le résultat. Le bouton « Retirer la couleur » était de ce fait inutilisable
+  // là où il sert le plus : sur un match à venir.
+  // Quand les deux scores sont vides et que le match n'est pas joué, mais que la couleur a
+  // CHANGÉ, on écrit la couleur seule. `couleurP1` est donc calculée ici, avant tout le
+  // reste, et non plus au milieu de la fonction.
+  const brut = document.getElementById('fc-'+id)?.value;
+  const couleurP1 = (brut === 'white' || brut === 'black') ? brut : null;
+  const couleurEnBase = (game.colorP1 === 'white' || game.colorP1 === 'black') ? game.colorP1 : null;
+  // Même règle que pour les matchs de poule : « — » des deux côtés veut dire « pas de
+  // résultat ». Sur un match de finale DÉJÀ JOUÉ, ça efface le score — et le vainqueur
+  // avec, donc le joueur reporté au tour suivant est retiré, ce dont resetFinalScore
+  // s'occupe. On n'y ANNULE pas un match : un tableau doit désigner un vainqueur pour
+  // avancer, un forfait s'y saisit donc comme un 1-0.
   if (el1.value === '' && el2.value === '') {
     const joue = game.score1 !== null && game.score1 !== undefined;
     if (joue) { await window.resetFinalScore(id); return; }
+    if (couleurP1 !== couleurEnBase) {
+      // Aucun avertissement ici : sans score, retirer la couleur ne coûte encore rien au
+      // détail Blancs/Noirs. L'avertissement se pose au moment où un RÉSULTAT serait
+      // enregistré sans couleur, plus bas.
+      editingFinalId = null;
+      renderFinals();
+      await update(ref(db,'finals/'+id), { colorP1: couleurP1 });
+      return;
+    }
     showToast(t('score_incomplet'), false);
     return;
   }
@@ -4648,8 +4674,6 @@ window.submitFinalScore = async function(id) {
   // impasse : qui avait posé la mauvaise couleur ne pouvait pas la retirer sans en poser
   // une autre — donc sans mentir sur la partie jouée.
   // Le barrage devient un avertissement qui dit la conséquence, et qu'on peut franchir.
-  const brut = document.getElementById('fc-'+id)?.value;
-  const couleurP1 = (brut === 'white' || brut === 'black') ? brut : null;
   if (couleurP1 === null && !confirm(t('color_skip_confirm'))) return;
   const wasPlayed = game.score1!==null && game.score1!==undefined;
   const oldWinner=game.winner;

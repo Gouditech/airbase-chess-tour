@@ -597,9 +597,9 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
     <div style="font-size:17px;font-weight:800;margin-bottom:14px" id="known-title">👋 On se connaît ?</div>
     <div style="font-size:13px;line-height:1.65;color:#444" id="known-body"></div>
     <div style="margin-top:18px;display:flex;flex-direction:column;gap:8px">
-      <button class="btn btn-gold" style="font-size:13px" onclick="knownChoix('garder')" id="known-keep"></button>
-      <button class="btn btn-gray" style="font-size:13px" onclick="knownChoix('changer')" id="known-update"></button>
-      <button class="btn btn-sm" style="width:auto;margin:6px auto 0;font-size:12px;background:#FDECEA;color:var(--red)" onclick="knownChoix('annuler')" id="known-cancel"></button>
+      <button class="btn btn-gold" style="font-size:13px" onclick="knownChoix('a')" id="known-keep"></button>
+      <button class="btn btn-gray" style="font-size:13px" onclick="knownChoix('b')" id="known-update"></button>
+      <button class="btn btn-sm" style="width:auto;margin:6px auto 0;font-size:12px;background:#FDECEA;color:var(--red)" onclick="knownChoix('c')" id="known-cancel"></button>
     </div>
   </div>
 </div>
@@ -1646,7 +1646,7 @@ const T = {
     pin_mismatch:"Les nouveaux PIN ne correspondent pas.",
     pin_short:"PIN trop court (min. 4 caractères).",
     pin_changed:"PIN modifié avec succès !",
-    nick_taken:"Ce pseudo est déjà pris.",edit_sync_pseudo:"⚠️ Ce joueur figure dans {n} édition(s) du palmarès sous le pseudo précédent.\n\nChanger son pseudo sans mettre le palmarès à jour coupera DÉFINITIVEMENT le lien avec son historique.\n\nMettre le palmarès à jour aussi ?",edit_sync_nom:"Ce joueur figure dans {n} édition(s) du palmarès sous le nom « {ancien} ».\n\nMettre le palmarès à jour avec le nouveau nom ?",edit_sync_done:"✅ Palmarès mis à jour ({n} entrées).",match_voided:"Non joué",confirm_void_match:"Marquer ce match comme NON JOUÉ (-:-) ?\n\nIl n'aura plus d'échéance, ne sera plus signalé en retard et ne comptera pas au classement.\n\nÀ utiliser quand un joueur a abandonné le tournoi.",reset_match:"Réinitialiser",save_edit:"✓ Enregistrer",confirm_unregister:"Se désinscrire du tournoi ? ({n})",edit_sync_tournoi:"✅ Pseudo corrigé dans {m} match(s) de poule et {f} match(s) du tableau final.",edit_sync_fail:"⚠️ Rien n'a été modifié : l'enregistrement a échoué. La fiche et les matchs sont intacts — réessaie.",edit_sync_partiel:"⚠️ Correction incomplète : {n} écriture(s) ont échoué. La fiche a gardé l'ancien pseudo — réenregistre pour terminer.",
+    nick_taken:"Ce pseudo est déjà pris.",edit_sync_pseudo:"⚠️ Ce joueur figure dans {n} édition(s) du palmarès sous le pseudo précédent.\n\nChanger son pseudo sans mettre le palmarès à jour coupera DÉFINITIVEMENT le lien avec son historique.\n\nMettre le palmarès à jour aussi ?",edit_sync_nom:"Ce joueur figure dans {n} édition(s) du palmarès sous le nom « {ancien} ».\n\nMettre le palmarès à jour avec le nouveau nom ?",edit_sync_done:"✅ Palmarès mis à jour ({n} entrées).",edit_sync_title:"✏️ Et le palmarès ?",edit_sync_yes:"✅ Oui, mettre le palmarès à jour",edit_sync_no:"➡️ Non, laisser le palmarès tel quel",edit_sync_back:"✕ Annuler — ne rien modifier",match_voided:"Non joué",confirm_void_match:"Marquer ce match comme NON JOUÉ (-:-) ?\n\nIl n'aura plus d'échéance, ne sera plus signalé en retard et ne comptera pas au classement.\n\nÀ utiliser quand un joueur a abandonné le tournoi.",reset_match:"Réinitialiser",save_edit:"✓ Enregistrer",confirm_unregister:"Se désinscrire du tournoi ? ({n})",edit_sync_tournoi:"✅ Pseudo corrigé dans {m} match(s) de poule et {f} match(s) du tableau final.",edit_sync_fail:"⚠️ Rien n'a été modifié : l'enregistrement a échoué. La fiche et les matchs sont intacts — réessaie.",edit_sync_partiel:"⚠️ Correction incomplète : {n} écriture(s) ont échoué. La fiche a gardé l'ancien pseudo — réenregistre pour terminer.",
     groups_reset:"Groupes réinitialisés. Les joueurs sont conservés.",
     finals_reset:"Phases finales réinitialisées.",
     pin_section:"Modifier le PIN",
@@ -1818,7 +1818,7 @@ const T = {
     pin_mismatch:"Die neuen PINs stimmen nicht überein.",
     pin_short:"PIN zu kurz (min. 4 Zeichen).",
     pin_changed:"PIN erfolgreich geändert!",
-    nick_taken:"Dieser Spitzname ist bereits vergeben.",edit_sync_pseudo:"⚠️ Dieser Spieler erscheint in {n} Ausgabe(n) der Bestenliste unter dem bisherigen Pseudonym.\n\nDas Pseudonym zu ändern, ohne die Bestenliste anzupassen, trennt die Verbindung zu seiner Historie ENDGÜLTIG.\n\nBestenliste ebenfalls aktualisieren?",edit_sync_nom:"Dieser Spieler erscheint in {n} Ausgabe(n) der Bestenliste unter dem Namen « {ancien} ».\n\nBestenliste mit dem neuen Namen aktualisieren?",edit_sync_done:"✅ Bestenliste aktualisiert ({n} Einträge).",match_voided:"Nicht gespielt",confirm_void_match:"Diese Partie als NICHT GESPIELT (-:-) markieren?\n\nSie hat dann keine Frist mehr, wird nicht mehr als verspätet gemeldet und zählt nicht für die Tabelle.\n\nZu verwenden, wenn ein Spieler das Turnier aufgegeben hat.",reset_match:"Zurücksetzen",save_edit:"✓ Speichern",confirm_unregister:"Vom Turnier abmelden? ({n})",edit_sync_tournoi:"✅ Pseudonym in {m} Gruppenspiel(en) und {f} Spiel(en) des Finaltableaus korrigiert.",edit_sync_fail:"⚠️ Nichts wurde geändert: das Speichern ist fehlgeschlagen. Spielerkarte und Spiele sind unverändert — bitte erneut versuchen.",edit_sync_partiel:"⚠️ Korrektur unvollständig: {n} Schreibvorgang/-vorgänge fehlgeschlagen. Die Spielerkarte behält das alte Pseudonym — erneut speichern, um abzuschliessen.",
+    nick_taken:"Dieser Spitzname ist bereits vergeben.",edit_sync_pseudo:"⚠️ Dieser Spieler erscheint in {n} Ausgabe(n) der Bestenliste unter dem bisherigen Pseudonym.\n\nDas Pseudonym zu ändern, ohne die Bestenliste anzupassen, trennt die Verbindung zu seiner Historie ENDGÜLTIG.\n\nBestenliste ebenfalls aktualisieren?",edit_sync_nom:"Dieser Spieler erscheint in {n} Ausgabe(n) der Bestenliste unter dem Namen « {ancien} ».\n\nBestenliste mit dem neuen Namen aktualisieren?",edit_sync_done:"✅ Bestenliste aktualisiert ({n} Einträge).",edit_sync_title:"✏️ Und die Bestenliste?",edit_sync_yes:"✅ Ja, Bestenliste aktualisieren",edit_sync_no:"➡️ Nein, Bestenliste unverändert lassen",edit_sync_back:"✕ Abbrechen — nichts ändern",match_voided:"Nicht gespielt",confirm_void_match:"Diese Partie als NICHT GESPIELT (-:-) markieren?\n\nSie hat dann keine Frist mehr, wird nicht mehr als verspätet gemeldet und zählt nicht für die Tabelle.\n\nZu verwenden, wenn ein Spieler das Turnier aufgegeben hat.",reset_match:"Zurücksetzen",save_edit:"✓ Speichern",confirm_unregister:"Vom Turnier abmelden? ({n})",edit_sync_tournoi:"✅ Pseudonym in {m} Gruppenspiel(en) und {f} Spiel(en) des Finaltableaus korrigiert.",edit_sync_fail:"⚠️ Nichts wurde geändert: das Speichern ist fehlgeschlagen. Spielerkarte und Spiele sind unverändert — bitte erneut versuchen.",edit_sync_partiel:"⚠️ Korrektur unvollständig: {n} Schreibvorgang/-vorgänge fehlgeschlagen. Die Spielerkarte behält das alte Pseudonym — erneut speichern, um abzuschliessen.",
     groups_reset:"Gruppen zurückgesetzt. Spieler bleiben erhalten.",
     finals_reset:"Finalrunden zurückgesetzt.",
     saved_ok:"Gespeichert!",cancel:"Abbrechen",
@@ -1916,7 +1916,7 @@ const T = {
     pin_mismatch:"The new PINs don't match.",
     pin_short:"PIN too short (min. 4 characters).",
     pin_changed:"PIN changed successfully!",
-    nick_taken:"This nickname is already taken.",edit_sync_pseudo:"⚠️ This player appears in {n} edition(s) of the hall of fame under the previous nickname.\n\nChanging the nickname without updating the hall of fame will PERMANENTLY break the link to their history.\n\nUpdate the hall of fame too?",edit_sync_nom:"This player appears in {n} edition(s) of the hall of fame under the name « {ancien} ».\n\nUpdate the hall of fame with the new name?",edit_sync_done:"✅ Hall of fame updated ({n} entries).",match_voided:"Not played",confirm_void_match:"Mark this match as NOT PLAYED (-:-)?\n\nIt will have no deadline, will no longer be flagged as overdue, and will not count towards the standings.\n\nUse this when a player has withdrawn from the tournament.",reset_match:"Reset",save_edit:"✓ Save",confirm_unregister:"Withdraw from the tournament? ({n})",edit_sync_tournoi:"✅ Nickname corrected in {m} pool match(es) and {f} match(es) of the final bracket.",edit_sync_fail:"⚠️ Nothing was changed: saving failed. The player card and the matches are untouched — please try again.",edit_sync_partiel:"⚠️ Incomplete correction: {n} write(s) failed. The player card kept the old nickname — save again to finish.",
+    nick_taken:"This nickname is already taken.",edit_sync_pseudo:"⚠️ This player appears in {n} edition(s) of the hall of fame under the previous nickname.\n\nChanging the nickname without updating the hall of fame will PERMANENTLY break the link to their history.\n\nUpdate the hall of fame too?",edit_sync_nom:"This player appears in {n} edition(s) of the hall of fame under the name « {ancien} ».\n\nUpdate the hall of fame with the new name?",edit_sync_done:"✅ Hall of fame updated ({n} entries).",edit_sync_title:"✏️ What about the hall of fame?",edit_sync_yes:"✅ Yes, update the hall of fame",edit_sync_no:"➡️ No, leave the hall of fame as it is",edit_sync_back:"✕ Cancel — change nothing",match_voided:"Not played",confirm_void_match:"Mark this match as NOT PLAYED (-:-)?\n\nIt will have no deadline, will no longer be flagged as overdue, and will not count towards the standings.\n\nUse this when a player has withdrawn from the tournament.",reset_match:"Reset",save_edit:"✓ Save",confirm_unregister:"Withdraw from the tournament? ({n})",edit_sync_tournoi:"✅ Nickname corrected in {m} pool match(es) and {f} match(es) of the final bracket.",edit_sync_fail:"⚠️ Nothing was changed: saving failed. The player card and the matches are untouched — please try again.",edit_sync_partiel:"⚠️ Incomplete correction: {n} write(s) failed. The player card kept the old nickname — save again to finish.",
     groups_reset:"Groups reset. Players are kept.",
     finals_reset:"Final stage reset.",
     pin_section:"Change PIN",
@@ -2048,7 +2048,7 @@ const T = {
     pin_mismatch:"I nuovi PIN non corrispondono.",
     pin_short:"PIN troppo corto (min. 4 caratteri).",
     pin_changed:"PIN modificato con successo!",
-    nick_taken:"Questo soprannome è già utilizzato.",edit_sync_pseudo:"⚠️ Questo giocatore compare in {n} edizione/i dell'albo d'oro con il nickname precedente.\n\nCambiare il nickname senza aggiornare l'albo d'oro interromperà DEFINITIVAMENTE il legame con il suo storico.\n\nAggiornare anche l'albo d'oro?",edit_sync_nom:"Questo giocatore compare in {n} edizione/i dell'albo d'oro con il nome « {ancien} ».\n\nAggiornare l'albo d'oro con il nuovo nome?",edit_sync_done:"✅ Albo d'oro aggiornato ({n} voci).",match_voided:"Non giocata",confirm_void_match:"Segnare questa partita come NON GIOCATA (-:-)?\n\nNon avrà più una scadenza, non sarà più segnalata in ritardo e non conterà per la classifica.\n\nDa usare quando un giocatore si è ritirato dal torneo.",reset_match:"Reimposta",save_edit:"✓ Salva",confirm_unregister:"Ritirarsi dal torneo? ({n})",edit_sync_tournoi:"✅ Nickname corretto in {m} partita/e di girone e {f} partita/e del tabellone finale.",edit_sync_fail:"⚠️ Niente è stato modificato: il salvataggio non è riuscito. La scheda e le partite sono intatte — riprova.",edit_sync_partiel:"⚠️ Correzione incompleta: {n} scrittura/e non riuscita/e. La scheda ha mantenuto il vecchio nickname — salva di nuovo per completare.",
+    nick_taken:"Questo soprannome è già utilizzato.",edit_sync_pseudo:"⚠️ Questo giocatore compare in {n} edizione/i dell'albo d'oro con il nickname precedente.\n\nCambiare il nickname senza aggiornare l'albo d'oro interromperà DEFINITIVAMENTE il legame con il suo storico.\n\nAggiornare anche l'albo d'oro?",edit_sync_nom:"Questo giocatore compare in {n} edizione/i dell'albo d'oro con il nome « {ancien} ».\n\nAggiornare l'albo d'oro con il nuovo nome?",edit_sync_done:"✅ Albo d'oro aggiornato ({n} voci).",edit_sync_title:"✏️ E l'albo d'oro?",edit_sync_yes:"✅ Sì, aggiornare l'albo d'oro",edit_sync_no:"➡️ No, lasciare l'albo d'oro com'è",edit_sync_back:"✕ Annullare — non modificare nulla",match_voided:"Non giocata",confirm_void_match:"Segnare questa partita come NON GIOCATA (-:-)?\n\nNon avrà più una scadenza, non sarà più segnalata in ritardo e non conterà per la classifica.\n\nDa usare quando un giocatore si è ritirato dal torneo.",reset_match:"Reimposta",save_edit:"✓ Salva",confirm_unregister:"Ritirarsi dal torneo? ({n})",edit_sync_tournoi:"✅ Nickname corretto in {m} partita/e di girone e {f} partita/e del tabellone finale.",edit_sync_fail:"⚠️ Niente è stato modificato: il salvataggio non è riuscito. La scheda e le partite sono intatte — riprova.",edit_sync_partiel:"⚠️ Correzione incompleta: {n} scrittura/e non riuscita/e. La scheda ha mantenuto il vecchio nickname — salva di nuovo per completare.",
     groups_reset:"Gruppi azzerati. I giocatori sono conservati.",
     finals_reset:"Fasi finali azzerate.",
     pin_section:"Modificare il PIN",
@@ -3072,28 +3072,50 @@ function renderPalmaresPlayerCard(recherche) {
   // avec les flèches ▲▼.
   const editions = Object.entries(palmares).sort((a,b) => (b[1].order||0) - (a[1].order||0));
   const parcours = [];
+  const enCours = classementEnCours().filter(j => j.m > 0);
+
+  // ── UN SEUL JOUEUR DANS LA FICHE, PAS TOUS CEUX QUI « CONTIENNENT » LA RECHERCHE ──
+  // Le texte tapé sert à TROUVER le joueur ; une fois trouvé, la fiche ne doit contenir
+  // que lui. La comparaison était « contient », si bien que la fiche de Goudi8 ramassait
+  // le tournoi en cours joué par Goudi81 : deux joueurs différents fondus en un, les
+  // points de l'un ajoutés à l'historique de l'autre. Tout pseudo contenu dans un autre
+  // produisait la même confusion, renommage ou pas.
+  // On résout donc la recherche en UN pseudo — d'abord une correspondance exacte, sinon
+  // la première qui contient le texte — puis tout le reste se fait par égalité stricte.
+  const candidats = [];
+  editions.forEach(([, ed]) => Object.values(ed.entries || {}).forEach(e => { if (e?.pseudo) candidats.push(e); }));
+  enCours.forEach(j => { if (j?.pseudo) candidats.push(j); });
+  const estQ = (c) => String(c.pseudo).trim().toLowerCase() === q;
+  const contientQ = (c) => String(c.pseudo).toLowerCase().includes(q) || (c.name && String(c.name).toLowerCase().includes(q));
+  const choisi = candidats.find(estQ) || candidats.find(contientQ);
+  const cible = choisi ? String(choisi.pseudo).trim().toLowerCase() : null;
+  const cEstLui = (p) => !!p && String(p).trim().toLowerCase() === cible;
+
+  // `acte` : ce classement est-il DÉFINITIF ? Un tournoi en cours a déjà des points, mais
+  // son rang peut encore changer à chaque match : il ne doit donner ni trophée, ni
+  // médaille, ni podium, ni meilleur rang tant qu'il n'est pas terminé. Même règle que
+  // statsCumulees et que la liste de l'édition en cours — les trois vues du même
+  // classement ne doivent pas se contredire.
+  const tournoiFini = state?.settings?.status === 'finished';
   // On retient le nom ET le pseudo : chercher un pseudo pour ne voir qu'un nom
   // ne permet pas de savoir si on est tombé sur le bon joueur.
   let nom = null, pseudo = null;
   editions.forEach(([id, ed]) => {
     const entries = Object.values(ed.entries || {});
-    const e = entries.find(x => x?.pseudo && (
-      x.pseudo.toLowerCase().includes(q) || (x.name && x.name.toLowerCase().includes(q))
-    ));
+    const e = entries.find(x => cEstLui(x?.pseudo));
     if (e) {
       if (!nom) nom = e.name || null;
       if (!pseudo) pseudo = e.pseudo;
-      parcours.push({ id, edition: ed.name || '', annee: ed.year || '', rang: e.rank, total: entries.length,
+      parcours.push({ id, edition: ed.name || '', annee: ed.year || '', rang: e.rank, total: entries.length, acte: true,
         st: { pts:e.pts, m:e.m, v:e.v, vB:e.vB, nB:e.nB, dB:e.dB, vN:e.vN, nN:e.nN, dN:e.dN } });
     }
   });
   // Inclut aussi le tournoi en cours s'il a démarré.
-  const enCours = classementEnCours().filter(j => j.m > 0);
-  const moi = enCours.find(j => j.pseudo.toLowerCase().includes(q) || (j.name && j.name.toLowerCase().includes(q)));
+  const moi = enCours.find(j => cEstLui(j.pseudo));
   if (moi) {
     if (!nom) nom = moi.name || null;
     if (!pseudo) pseudo = moi.pseudo;
-    parcours.push({ id: 'current', edition: state?.settings?.name || '', annee: t('palmares_ongoing'), rang: moi.rank, total: enCours.length,
+    parcours.push({ id: 'current', edition: state?.settings?.name || '', annee: t('palmares_ongoing'), rang: moi.rank, total: enCours.length, acte: tournoiFini,
       st: { pts:moi.pts, m:moi.m, v:moi.v, vB:moi.vB, nB:moi.nB, dB:moi.dB, vN:moi.vN, nN:moi.nN, dN:moi.dN } });
   }
   // Titre : "Nom (pseudo)" si les deux existent, sinon le pseudo seul.
@@ -3107,14 +3129,18 @@ function renderPalmaresPlayerCard(recherche) {
     return;
   }
 
-  const victoires = parcours.filter(p => p.rang === 1).length;
-  const podiums = parcours.filter(p => p.rang <= 3).length;
-  const meilleur = Math.min(...parcours.map(p => p.rang));
+  // Seuls les classements définitifs comptent (voir `acte` plus haut).
+  const classables = parcours.filter(p => p.acte);
+  const victoires = classables.filter(p => p.rang === 1).length;
+  const podiums = classables.filter(p => p.rang <= 3).length;
+  // Math.min() d'un tableau vide vaut Infinity : un joueur qui ne dispute que le tournoi
+  // en cours n'a pas encore de meilleur rang, et la ligne n'est alors pas affichée.
+  const meilleur = classables.length ? Math.min(...classables.map(p => p.rang)) : null;
 
   // Chaque édition est cliquable : elle déplie ses propres statistiques, sans
   // quitter la fiche. Un second clic replie et revient au total.
   const lignes = parcours.map(p => {
-    const medaille = p.rang === 1 ? '🏆' : p.rang === 2 ? '🥈' : p.rang === 3 ? '🥉' : '';
+    const medaille = !p.acte ? '' : p.rang === 1 ? '🏆' : p.rang === 2 ? '🥈' : p.rang === 3 ? '🥉' : '';
     const ouverte = editionsOuvertes.has(p.id);
     const s = p.st || {};
     const aStats = (s.m || s.pts || s.vB !== undefined);
@@ -3137,8 +3163,7 @@ function renderPalmaresPlayerCard(recherche) {
   }).join('');
 
   // Bilan par couleur, repris du classement cumulé (qui agrège éditions + tournoi en cours).
-  const cumul = statsCumulees().find(a =>
-    a.pseudo.toLowerCase() === q || a.pseudo.toLowerCase().includes(q) || (a.name && a.name.toLowerCase().includes(q)));
+  const cumul = statsCumulees().find(a => cEstLui(a.pseudo));
   const bilan = (cumul && cumul.aCouleurs) ? `<div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(0,0,0,0.08);font-size:13px;color:var(--gray);line-height:1.7">
       <div>⬜ ${t('palmares_white')} : <b>${cumul.vB}</b>${t('palmares_v')} · ${cumul.nB}${t('palmares_n')} · ${cumul.dB}${t('palmares_d')}</div>
       <div>⬛ ${t('palmares_black')} : <b>${cumul.vN}</b>${t('palmares_v')} · ${cumul.nN}${t('palmares_n')} · ${cumul.dN}${t('palmares_d')}</div>
@@ -3154,7 +3179,7 @@ function renderPalmaresPlayerCard(recherche) {
       ${parcours.length} ${t(parcours.length > 1 ? 'palmares_editions' : 'palmares_edition')}
       ${victoires ? ' · 🏆 ' + victoires : ''}
       ${podiums ? ' · ' + podiums + ' ' + t(podiums > 1 ? 'palmares_podiums' : 'palmares_podium') : ''}
-      · ${t('palmares_best')} ${meilleur}
+      ${meilleur !== null ? ' · ' + t('palmares_best') + ' ' + meilleur : ''}
     </div>
     ${lignes}
     ${bilan}
@@ -3769,24 +3794,39 @@ window.confirmUnregister = function(id, nickname) {
 // Une promesse plutôt qu'un confirm() : trois issues au lieu de deux, et un texte
 // lisible où chaque bouton dit exactement ce qu'il fait.
 let knownResolve = null;
-function demanderReconnaissance(pseudo, ancienNom, nouveauNom, nbEditions) {
+
+// ── FENÊTRE À TROIS ISSUES ──
+// Généralisée depuis la reconnaissance d'un ancien participant. Un `confirm()` n'offre
+// que deux issues, et ça ne suffit pas dès qu'une question a trois réponses : oui, non,
+// et « laisse-moi revenir en arrière ». Avec deux boutons seulement, « Annuler » doit
+// porter à la fois « non » et « reviens en arrière », et personne ne sait lequel il
+// obtient. Les trois boutons disent chacun exactement ce qu'ils font.
+// Renvoie 'a' (bouton principal), 'b' (secondaire) ou 'c' (retour en arrière).
+function demanderTroisChoix(titre, corpsHTML, libelleA, libelleB, libelleC) {
   return new Promise(resolve => {
     knownResolve = resolve;
-    const rempl = s => String(s)
-      .replace(/\{pseudo\}/g, esc(pseudo))
-      .replace(/\{ancien\}/g, esc(ancienNom))
-      .replace(/\{nouveau\}/g, esc(nouveauNom))
-      .replace(/\{n\}/g, nbEditions);
-    document.getElementById('known-title').textContent = t('known_title');
-    // Deux formulations : une seule édition -> on la nomme ; plusieurs -> tournure
-    // générale. Le site fait déjà ce choix ailleurs (palmares_edition / _editions).
-    document.getElementById('known-body').innerHTML = rempl(t(nbEditions > 1 ? 'known_body_n' : 'known_body_1'));
-    document.getElementById('known-keep').textContent = rempl(t('known_keep'));
-    document.getElementById('known-update').textContent = rempl(t('known_update'));
-    document.getElementById('known-cancel').textContent = t('known_cancel');
-    const m = document.getElementById('known-modal');
-    m.style.display = 'flex';
+    document.getElementById('known-title').textContent = titre;
+    document.getElementById('known-body').innerHTML = corpsHTML;
+    document.getElementById('known-keep').textContent = libelleA;
+    document.getElementById('known-update').textContent = libelleB;
+    document.getElementById('known-cancel').textContent = libelleC;
+    document.getElementById('known-modal').style.display = 'flex';
   });
+}
+
+async function demanderReconnaissance(pseudo, ancienNom, nouveauNom, nbEditions) {
+  const rempl = s => String(s)
+    .replace(/\{pseudo\}/g, esc(pseudo))
+    .replace(/\{ancien\}/g, esc(ancienNom))
+    .replace(/\{nouveau\}/g, esc(nouveauNom))
+    .replace(/\{n\}/g, nbEditions);
+  // Deux formulations : une seule édition -> on la nomme ; plusieurs -> tournure
+  // générale. Le site fait déjà ce choix ailleurs (palmares_edition / _editions).
+  const r = await demanderTroisChoix(
+    t('known_title'),
+    rempl(t(nbEditions > 1 ? 'known_body_n' : 'known_body_1')),
+    rempl(t('known_keep')), rempl(t('known_update')), t('known_cancel'));
+  return r === 'a' ? 'garder' : r === 'b' ? 'changer' : 'annuler';
 }
 // ── EXPLICATION DU CLASSEMENT, UNE SEULE FOIS PAR APPAREIL ──
 // L'explication existait deja, mais tout en bas de la liste : personne ne la lisait.
@@ -3842,6 +3882,27 @@ function trouverDansPalmares(pseudo) {
 // Les deux champs sont écrits séparément et seulement s'ils changent : une entrée dont
 // le nom est déjà bon ne voit pas son nom réécrit, et l'échec d'une écriture n'empêche
 // pas les autres.
+// Les chemins du palmarès à réécrire, sans rien écrire : ils rejoignent l'écriture
+// groupée du renommage, pour que la fiche, les matchs, le tableau et l'historique
+// partent ensemble — tout, ou rien. `harmoniserPalmares` (plus bas) reste utilisée par
+// le parcours d'INSCRIPTION, qui n'a ni matchs ni tableau à reprendre.
+function champsPalmares(ancienPseudo, nouveauPseudo, nouveauNom) {
+  const q = String(ancienPseudo || '').trim().toLowerCase();
+  const champs = {};
+  let entrees = 0;
+  if (!q) return { champs, entrees };
+  Object.entries(state?.palmares || {}).forEach(([idEd, ed]) => {
+    Object.entries(ed.entries || {}).forEach(([idEn, e]) => {
+      if (!e?.pseudo || e.pseudo.trim().toLowerCase() !== q) return;
+      const base = 'palmares/' + idEd + '/entries/' + idEn + '/';
+      if (e.pseudo !== nouveauPseudo) champs[base + 'pseudo'] = nouveauPseudo;
+      if (e.name !== nouveauNom) champs[base + 'name'] = nouveauNom;
+      entrees++;
+    });
+  });
+  return { champs, entrees };
+}
+
 async function harmoniserPalmares(ancienPseudo, nouveauPseudo, nouveauNom) {
   const q = ancienPseudo.trim().toLowerCase();
   let n = 0;
@@ -4204,8 +4265,29 @@ window.saveEditPlayer = async function(id) {
   const avant = players.find(p => p.id === id) || {};
   const ancienPseudo = (avant.nickname || '').trim();
 
+  // ── LE PALMARÈS SE DEMANDE AVANT D'ÉCRIRE, PAS APRÈS ──
+  // La question arrivait APRÈS l'enregistrement : « Annuler » ne revenait donc en arrière
+  // sur rien du tout — le renommage était déjà écrit, et le bouton ne décidait en réalité
+  // que du sort du palmarès. Deux boutons pour trois réponses, et le plus important des
+  // trois (« laisse tomber, je me suis trompé ») n'existait pas.
+  // Posée ici, avant toute écriture, la fenêtre offre les trois vraies issues.
+  const histo = trouverDansPalmares(ancienPseudo);
+  const pseudoChange = ancienPseudo.toLowerCase() !== nick.toLowerCase();
+  const nomDiffere = !!(histo && histo.name && histo.name.trim() !== name.trim());
+  let champsPalm = {}, nbPalm = 0;
+  if (histo && (pseudoChange || nomDiffere)) {
+    const corps = esc(t(pseudoChange ? 'edit_sync_pseudo' : 'edit_sync_nom')
+      .replace(/\{n\}/g, histo.editions)
+      .replace(/\{ancien\}/g, histo.name || ancienPseudo)).replace(/\n/g, '<br>');
+    const rep = await demanderTroisChoix(t('edit_sync_title'), corps,
+      t('edit_sync_yes'), t('edit_sync_no'), t('edit_sync_back'));
+    // Retour en arrière : RIEN n'est écrit, et le formulaire reste ouvert avec la saisie.
+    if (rep === 'c') return;
+    if (rep === 'a') { const r = champsPalmares(ancienPseudo, nick, name); champsPalm = r.champs; nbPalm = r.entrees; }
+  }
+
   const renom = champsRenommage(ancienPseudo, nick);
-  const applique = await appliquerRenommage(renom.champs, 'players/' + id,
+  const applique = await appliquerRenommage(Object.assign({}, renom.champs, champsPalm), 'players/' + id,
     { nickname: nick, name: name, sector: sector || '' });
   if (!applique.ok) {
     // On NE redessine PAS : le formulaire reste tel quel, avec ce que l'organisateur vient
@@ -4228,24 +4310,7 @@ window.saveEditPlayer = async function(id) {
       .replace('{m}', renom.matchs).replace('{f}', renom.finales));
   }
 
-  // ── PROPAGATION AU PALMARÈS ──
-  // Ce chemin ne touchait PAS le palmarès, contrairement à la fenêtre de reconnaissance
-  // à l'inscription. Un nom corrigé ici restait donc différent dans l'historique, et un
-  // pseudo corrigé coupait le lien sans prévenir.
-  // On demande plutôt que de propager en silence : l'admin modifie souvent la fiche de
-  // QUELQU'UN D'AUTRE, et réécrire un historique sans le dire va contre la ligne du site.
-  const histo = trouverDansPalmares(ancienPseudo);
-  const pseudoChange = ancienPseudo.toLowerCase() !== nick.toLowerCase();
-  const nomDiffere = !!(histo && histo.name && histo.name.trim() !== name.trim());
-  if (histo && (pseudoChange || nomDiffere)) {
-    const question = t(pseudoChange ? 'edit_sync_pseudo' : 'edit_sync_nom')
-      .replace(/\{n\}/g, histo.editions)
-      .replace(/\{ancien\}/g, histo.name || ancienPseudo);
-    if (confirm(question)) {
-      const n = await harmoniserPalmares(ancienPseudo, nick, name);
-      rapport.push(t('edit_sync_done').replace(/\{n\}/g, n));
-    }
-  }
+  if (nbPalm) rapport.push(t('edit_sync_done').replace(/\{n\}/g, nbPalm));
   if (rapport.length) showMsg('actions-msg', rapport.join('\n'), true);
 };
 
@@ -4474,9 +4539,13 @@ window.autoScore = function(id, side) {
   const self = side === 'white' ? 'sw-'+id : 'sb-'+id;
   const selfVal = document.getElementById(self)?.value;
   const oppEl = document.getElementById(opponent);
-  if (!oppEl || selfVal === '') return;
-  const map = {'1':'0', '0.5':'0.5', '0':'1'};
-  oppEl.value = map[selfVal] || '';
+  if (!oppEl) return;
+  // « — » se reflète comme les autres valeurs. Avant, choisir « — » sortait d'ici sans
+  // rien faire et laissait l'autre menu sur son ancienne valeur : pour annuler un match
+  // il fallait penser à remettre les DEUX à « — », alors que tous les autres choix se
+  // complètent tout seuls. Un match qui ne se joue pas ne se joue pour personne.
+  const map = {'1':'0', '0.5':'0.5', '0':'1', '':''};
+  oppEl.value = map[selfVal] !== undefined ? map[selfVal] : '';
 };
 
 window.submitScore = async function(id) {

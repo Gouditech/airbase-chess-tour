@@ -116,7 +116,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
 .match-card{background:#fff;border-radius:12px;box-shadow:0 1px 5px rgba(0,0,0,0.07);padding:12px;margin-bottom:10px}
 .match-grp{font-size:11px;font-weight:700;color:var(--gold);margin-bottom:6px;text-transform:uppercase}
 .match-players{display:flex;align-items:center;gap:8px}
-.match-player{flex:1;text-align:center}
+.match-player{flex:1;min-width:0;text-align:center}
 .match-player-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .match-player-color{font-size:11px;color:#aaa;margin-top:2px}
 .match-score{font-size:22px;font-weight:800;color:var(--dark);min-width:48px;text-align:center;cursor:pointer}
@@ -1619,7 +1619,7 @@ const T = {
 <p>Arbitrage : En cas de litige, l'organisateur tranche. Fair-play attendu de tous.</p>`,
     modify:"modifier",
     late_badge:"⏰ Retard",
-    date_window:"À jouer du {a} au {b}",date_late_since:"⏰ En retard depuis le {b}",pool_end_estimate:"Fin estimée des poules : {d}",finals_end_estimate:"Fin estimée des finales (si le rythme tient jusqu'au bout) : {d}",round_short:"Ronde",
+    date_play:"À jouer entre le",date_play_seul:"À jouer",date_before:"avant le {b}",date_range:"{a} et {b}",date_late_label:"⏰ En retard",date_late_value:"depuis le {b}",pool_end_estimate:"Fin estimée des poules : {d}",finals_end_estimate:"Fin estimée des finales (si le rythme tient jusqu'au bout) : {d}",round_short:"Ronde",
     late_match:"⏰ Match en retard",
     color_choice:"choisit sa couleur",color_of:"Couleur de {n}",color_pick:"— choisir —",color_required:"Indique la couleur de {n} avant de valider le score.",
     presential:"Présentiel",
@@ -1789,7 +1789,7 @@ const T = {
     
     modify:"ändern",
     late_badge:"⏰ Verspätet",
-    date_window:"Zu spielen vom {a} bis {b}",date_late_since:"⏰ Überfällig seit dem {b}",pool_end_estimate:"Voraussichtliches Ende der Gruppenphase: {d}",finals_end_estimate:"Voraussichtliches Ende der Finalrunden (bei gleichbleibendem Rhythmus): {d}",round_short:"Runde",
+    date_play:"Zu spielen zwischen dem",date_play_seul:"Zu spielen",date_before:"bis {b}",date_range:"{a} und {b}",date_late_label:"⏰ Überfällig",date_late_value:"seit dem {b}",pool_end_estimate:"Voraussichtliches Ende der Gruppenphase: {d}",finals_end_estimate:"Voraussichtliches Ende der Finalrunden (bei gleichbleibendem Rhythmus): {d}",round_short:"Runde",
     late_match:"⏰ Partie verspätet",
     color_choice:"wählt die Farbe",color_of:"Farbe von {n}",color_pick:"— wählen —",color_required:"Gib die Farbe von {n} an, bevor du das Ergebnis bestätigst.",
     presential:"Präsenz",
@@ -1889,7 +1889,7 @@ const T = {
 <p>Arbiter: In case of dispute, the organizer decides. Fair play expected from all.</p>`,
     modify:"edit",
     late_badge:"⏰ Late",
-    date_window:"Play between {a} and {b}",date_late_since:"⏰ Overdue since {b}",pool_end_estimate:"Estimated end of the group stage: {d}",finals_end_estimate:"Estimated end of the final stages (if the pace holds): {d}",round_short:"Round",
+    date_play:"To play between",date_play_seul:"To play",date_before:"before {b}",date_range:"{a} and {b}",date_late_label:"⏰ Overdue",date_late_value:"since {b}",pool_end_estimate:"Estimated end of the group stage: {d}",finals_end_estimate:"Estimated end of the final stages (if the pace holds): {d}",round_short:"Round",
     late_match:"⏰ Match overdue",
     color_choice:"chooses color",color_of:"Colour of {n}",color_pick:"— select —",color_required:"Indicate the colour of {n} before confirming the score.",
     presential:"In-person",
@@ -2021,7 +2021,7 @@ const T = {
 <p>Arbitraggio: In caso di controversia, decide l'organizzatore. Fair play atteso da tutti.</p>`,
     modify:"modificare",
     late_badge:"⏰ Ritardo",
-    date_window:"Da giocare dal {a} al {b}",date_late_since:"⏰ In ritardo dal {b}",pool_end_estimate:"Fine stimata dei gironi: {d}",finals_end_estimate:"Fine stimata delle finali (se il ritmo regge): {d}",round_short:"Turno",
+    date_play:"Da giocare tra il",date_play_seul:"Da giocare",date_before:"entro il {b}",date_range:"{a} e {b}",date_late_label:"⏰ In ritardo",date_late_value:"dal {b}",pool_end_estimate:"Fine stimata dei gironi: {d}",finals_end_estimate:"Fine stimata delle finali (se il ritmo regge): {d}",round_short:"Turno",
     late_match:"⏰ Partita in ritardo",
     color_choice:"sceglie il colore",color_of:"Colore di {n}",color_pick:"— scegli —",color_required:"Indica il colore di {n} prima di confermare il risultato.",
     presential:"Presenza",
@@ -5597,18 +5597,30 @@ function bandeauDates(debut, fin, enRetard) {
   // 9 octobre » serait plus élégant en français, mais chaque langue place sa préposition
   // et ses abréviations autrement, et l'allemand perd son point ordinal quand on n'écrit
   // que le quantième. Deux dates complètes se traduisent sans piège.
-  const texte = enRetard
-    ? t('date_late_since').replace('{b}', court(fin))
-    : t('date_window').replace('{a}', debut ? court(debut) : court(fin)).replace('{b}', court(fin));
-  // PAS DE FOND. Un aplat doré sur chaque carte donnait quatre pavés de couleur empilés
-  // par écran : lourd, et inutile — c'est le texte qui porte l'information, pas la boîte.
-  // Le gras et la pleine largeur suffisent à le faire lire avant les noms des joueurs.
-  // L'encre reste sombre par défaut (c'est l'information principale de la carte) et passe
-  // à l'orange en retard, seul cas où la couleur dit quelque chose que le texte ne dit pas
-  // déjà d'un coup d'œil.
+  // DEUX NIVEAUX, PAS UN SEUL. Le libellé en petit gris, les dates en gras dessous :
+  // c'est la hiérarchie que la carte employait déjà pour l'échéance, et elle rend les
+  // dates nettement plus visibles qu'une seule ligne où le libellé leur dispute la place.
+  // PAS DE FOND : un aplat doré sur chaque carte donnait quatre pavés de couleur empilés
+  // par écran, lourds et inutiles — c'est le texte qui porte l'information, pas la boîte.
+  // L'encre passe à l'orange en retard, seul cas où la couleur dit quelque chose que le
+  // texte ne dit pas déjà d'un coup d'œil.
+  // Le libellé annonce la forme de la valeur qui suit : « entre le » devant une plage,
+  // « à jouer » seul devant une date unique (mode dégradé, voir plus bas).
+  const libelle = enRetard ? t('date_late_label') : (debut ? t('date_play') : t('date_play_seul'));
+  // Sans date d'ouverture calculable — match-dates.js resté en arrière, ou réglages
+  // incomplets — on n'invente pas une plage « du 9 oct. au 9 oct. » : on annonce la seule
+  // date qu'on connaît, l'échéance.
+  const valeur = enRetard
+    ? t('date_late_value').replace('{b}', court(fin))
+    : debut
+      ? t('date_range').replace('{a}', court(debut)).replace('{b}', court(fin))
+      : t('date_before').replace('{b}', court(fin));
   const encre = enRetard ? '#E67E22' : 'var(--dark)';
-  return `<div style="margin:2px 0 9px;text-align:center;`
-       + `font-size:13.5px;font-weight:700;letter-spacing:0.2px;color:${encre}">${texte}</div>`;
+  const encreLib = enRetard ? '#E67E22' : '#aaa';
+  return `<div style="margin:4px 0 10px;text-align:center">`
+       + `<div style="font-size:11px;color:${encreLib};margin-bottom:-2px">${libelle}</div>`
+       + `<div style="font-size:16px;font-weight:800;color:${encre}">${valeur}</div>`
+       + `</div>`;
 }
 
 // ── FENÊTRE D'UNE RONDE, EN UNE LIGNE LISIBLE ──

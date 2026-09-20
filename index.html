@@ -5563,6 +5563,14 @@ function isMatchLate(game, isFinal) {
 }
 
 function roundWindowStart(game, isFinal) {
+  // ⚠️ FILET APPRIS À LA DURE, le 20 septembre. index.html et match-dates.js se livrent
+  // ensemble ; quand un seul des deux est chargé, l'appel à une fonction qui n'existe pas
+  // encore lève une exception EN PLEIN RENDU. renderMatches meurt alors APRÈS avoir écrit
+  // « À jouer (30) » et AVANT de poser les cartes : le compteur s'affiche, la liste reste
+  // vide, et rien à l'écran ne dit pourquoi. Une date d'ouverture absente coûte une
+  // mention ; une liste de matchs vide coûte le tournoi.
+  // Toute fonction ajoutée plus tard à match-dates.js doit être appelée de la même façon.
+  if (typeof ABCT_DATES.roundWindowStart !== 'function') return null;
   return ABCT_DATES.roundWindowStart(game, isFinal, state?.settings || {}, getFinals());
 }
 
@@ -5592,10 +5600,15 @@ function bandeauDates(debut, fin, enRetard) {
   const texte = enRetard
     ? t('date_late_since').replace('{b}', court(fin))
     : t('date_window').replace('{a}', debut ? court(debut) : court(fin)).replace('{b}', court(fin));
-  const fond = enRetard ? '#FFF3E0' : 'var(--gold-light)';
-  const encre = enRetard ? '#C2410C' : '#6B5A2E';
-  return `<div style="margin:2px 0 10px;padding:8px 10px;border-radius:9px;text-align:center;`
-       + `font-size:13.5px;font-weight:700;letter-spacing:0.2px;background:${fond};color:${encre}">${texte}</div>`;
+  // PAS DE FOND. Un aplat doré sur chaque carte donnait quatre pavés de couleur empilés
+  // par écran : lourd, et inutile — c'est le texte qui porte l'information, pas la boîte.
+  // Le gras et la pleine largeur suffisent à le faire lire avant les noms des joueurs.
+  // L'encre reste sombre par défaut (c'est l'information principale de la carte) et passe
+  // à l'orange en retard, seul cas où la couleur dit quelque chose que le texte ne dit pas
+  // déjà d'un coup d'œil.
+  const encre = enRetard ? '#E67E22' : 'var(--dark)';
+  return `<div style="margin:2px 0 9px;text-align:center;`
+       + `font-size:13.5px;font-weight:700;letter-spacing:0.2px;color:${encre}">${texte}</div>`;
 }
 
 // ── FENÊTRE D'UNE RONDE, EN UNE LIGNE LISIBLE ──

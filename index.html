@@ -1621,7 +1621,7 @@ const T = {
     late_badge:"⏰ Retard",
     date_play:"À jouer entre le",date_play_seul:"À jouer",date_before:"avant le {b}",date_range:"{a} et {b}",date_late_label:"⏰ En retard",date_late_value:"depuis le {b}",pool_end_estimate:"Fin estimée des poules : {d}",finals_end_estimate:"Fin estimée des finales (si le rythme tient jusqu'au bout) : {d}",round_short:"Ronde",
     late_match:"⏰ Match en retard",
-    color_choice:"choisit sa couleur",color_of:"Couleur de {n}",color_pick:"— choisir —",color_required:"Indique la couleur de {n} avant de valider le score.",
+    color_choice:"choisit sa couleur",color_of:"Couleur de {n}",color_required:"Indique la couleur de {n} avant de valider le score.",
     presential:"Présentiel",
     notif_disable_btn:"🔕 Désactiver les notifications",
     late_msg:"Certains matchs sont en retard, jouez rapidement !",
@@ -1791,7 +1791,7 @@ const T = {
     late_badge:"⏰ Verspätet",
     date_play:"Zu spielen zwischen dem",date_play_seul:"Zu spielen",date_before:"bis {b}",date_range:"{a} und {b}",date_late_label:"⏰ Überfällig",date_late_value:"seit dem {b}",pool_end_estimate:"Voraussichtliches Ende der Gruppenphase: {d}",finals_end_estimate:"Voraussichtliches Ende der Finalrunden (bei gleichbleibendem Rhythmus): {d}",round_short:"Runde",
     late_match:"⏰ Partie verspätet",
-    color_choice:"wählt die Farbe",color_of:"Farbe von {n}",color_pick:"— wählen —",color_required:"Gib die Farbe von {n} an, bevor du das Ergebnis bestätigst.",
+    color_choice:"wählt die Farbe",color_of:"Farbe von {n}",color_required:"Gib die Farbe von {n} an, bevor du das Ergebnis bestätigst.",
     presential:"Präsenz",
     late_msg:"Einige Partien sind verspätet, spiel bitte bald!",
     pending_msg:"Einige Partien sind noch ausstehend, spiel bitte bald!",
@@ -1891,7 +1891,7 @@ const T = {
     late_badge:"⏰ Late",
     date_play:"To play between",date_play_seul:"To play",date_before:"before {b}",date_range:"{a} and {b}",date_late_label:"⏰ Overdue",date_late_value:"since {b}",pool_end_estimate:"Estimated end of the group stage: {d}",finals_end_estimate:"Estimated end of the final stages (if the pace holds): {d}",round_short:"Round",
     late_match:"⏰ Match overdue",
-    color_choice:"chooses color",color_of:"Colour of {n}",color_pick:"— select —",color_required:"Indicate the colour of {n} before confirming the score.",
+    color_choice:"chooses color",color_of:"Colour of {n}",color_required:"Indicate the colour of {n} before confirming the score.",
     presential:"In-person",
     late_msg:"Some matches are overdue, please play quickly!",
     pending_msg:"Some matches are still pending, please organize your games quickly!",
@@ -2023,7 +2023,7 @@ const T = {
     late_badge:"⏰ Ritardo",
     date_play:"Da giocare tra il",date_play_seul:"Da giocare",date_before:"entro il {b}",date_range:"{a} e {b}",date_late_label:"⏰ In ritardo",date_late_value:"dal {b}",pool_end_estimate:"Fine stimata dei gironi: {d}",finals_end_estimate:"Fine stimata delle finali (se il ritmo regge): {d}",round_short:"Turno",
     late_match:"⏰ Partita in ritardo",
-    color_choice:"sceglie il colore",color_of:"Colore di {n}",color_pick:"— scegli —",color_required:"Indica il colore di {n} prima di confermare il risultato.",
+    color_choice:"sceglie il colore",color_of:"Colore di {n}",color_required:"Indica il colore di {n} prima di confermare il risultato.",
     presential:"Presenza",
     late_msg:"Alcune partite sono in ritardo, giocare rapidamente!",
     pending_msg:"Alcune partite sono ancora in attesa, organizza le tue partite rapidamente!",
@@ -5610,35 +5610,38 @@ function bandeauDates(debut, fin, enRetard) {
   // Sans date d'ouverture calculable — match-dates.js resté en arrière, ou réglages
   // incomplets — on n'invente pas une plage « du 9 oct. au 9 oct. » : on annonce la seule
   // date qu'on connaît, l'échéance.
-  const valeur = enRetard
-    ? t('date_late_value').replace('{b}', court(fin))
-    : debut
-      ? t('date_range').replace('{a}', court(debut)).replace('{b}', court(fin))
-      : t('date_before').replace('{b}', court(fin));
+  // TOUTE LA LIGNE EN GRAS, liant compris. Une version a été rendue avec le « et » allégé,
+  // selon la règle typographique qui veut qu'un séparateur de plage s'efface devant ses
+  // bornes — et la capture l'a démentie ici : sur une chaîne de trois éléments, le petit
+  // gris creuse un trou optique au milieu de la ligne, qui paraît abîmée plutôt que
+  // structurée. La règle vaut pour les plages longues ; celle-ci ne l'est pas, et la
+  // hiérarchie est déjà portée par le libellé au-dessus. Un troisième niveau à l'intérieur
+  // de la valeur était un étage de trop.
+  // Deux niveaux, donc : libellé discret, valeur en gras. Pas de fond — c'est le texte qui
+  // porte l'information, pas la boîte. L'encre passe à l'orange en retard.
   const encre = enRetard ? '#E67E22' : 'var(--dark)';
   const encreLib = enRetard ? '#E67E22' : '#aaa';
-  return `<div style="margin:4px 0 10px;text-align:center">`
-       + `<div style="font-size:11px;color:${encreLib};margin-bottom:-2px">${libelle}</div>`
+  const valeur = enRetard
+    ? t('date_late_value').replace('{b}', () => court(fin))
+    : debut
+      ? t('date_range').replace('{a}', () => court(debut)).replace('{b}', () => court(fin))
+      : t('date_before').replace('{b}', () => court(fin));
+  // ── LES TROIS ÉCARTS, MESURÉS ET NON DEVINÉS ──
+  // groupe → libellé : 8 px   |   libellé → date : 4 px   |   date → joueurs : 11 px
+  // L'écart INTERNE doit rester le plus petit des trois, sinon le libellé se détache de sa
+  // date et vient se coller au titre de groupe : il flotte entre les deux et on ne sait
+  // plus à quoi il se rapporte. C'est pourquoi desserrer l'intérieur oblige à desserrer le
+  // haut d'autant — les deux marges bougent ensemble ou pas du tout.
+  // Le `margin-bottom:-2px` d'une version précédente était pire que serré : il était
+  // NÉGATIF. Les deux boîtes de texte se chevauchaient de 2 px et le jambage du « j » de
+  // « jouer » descendait dans la ligne des chiffres. `line-height:normal` collait déjà les
+  // deux lignes ; la marge négative n'avait rien à rattraper.
+  return `<div style="margin:8px 0 10px;text-align:center">`
+       + `<div style="font-size:11px;color:${encreLib};margin-bottom:4px">${libelle}</div>`
        + `<div style="font-size:16px;font-weight:800;color:${encre}">${valeur}</div>`
        + `</div>`;
 }
 
-// ── FENÊTRE D'UNE RONDE, EN UNE LIGNE LISIBLE ──
-// « 5 – 9 octobre » quand les deux dates tombent le même mois, « 29 oct. – 2 nov. »
-// sinon : on ne répète le mois que lorsqu'il change. Pas de tournure à traduire — un
-// tiret entre deux dates se lit dans les quatre langues, là où « du … au … » aurait
-// demandé une grammaire par langue et se serait cassé sur les mois qui changent.
-// Sans date d'ouverture calculable, on retombe sur l'échéance seule.
-function plageDates(debut, fin) {
-  if (!fin) return '';
-  const loc = localeDates();
-  const complet = (d) => d.toLocaleDateString(loc, { day: 'numeric', month: 'long' });
-  if (!debut) return complet(fin);
-  if (debut.getMonth() === fin.getMonth() && debut.getFullYear() === fin.getFullYear())
-    return debut.toLocaleDateString(loc, { day: 'numeric' }) + ' – ' + complet(fin);
-  const court = (d) => d.toLocaleDateString(loc, { day: 'numeric', month: 'short' });
-  return court(debut) + ' – ' + court(fin);
-}
 
 function generateWhatsAppMsg() {
   const s = state?.settings || {};
@@ -6423,6 +6426,33 @@ function finalCardHTML(f){
   // CHOIX de la couleur. Les deux lignes disent deux choses différentes.
   // `replace` reçoit une FONCTION : un pseudo contenant « $& » ou « $' » serait sinon
   // réinterprété comme motif de remplacement.
+  // ── ET LE MÊME NOM JUSQU'À L'INTÉRIEUR DU MENU ──
+  // Cette étiquette-ci disparaît au moment précis où l'on en a besoin : sur iPhone, toucher
+  // un <select> ouvre une feuille native qui recouvre toute la page. On lisait « Couleur de
+  // X », on touchait, et on se retrouvait devant « Blancs / Noirs » sans plus savoir de QUI
+  // il s'agissait — alors que celui qui saisit n'est souvent ni l'un ni l'autre des joueurs.
+  // Cette feuille est un contrôle du système : on n'en choisit ni la forme ni les couleurs,
+  // on n'écrit que le texte des options. D'où les deux mesures, plus bas :
+  //  • la case vide porte le nom, encadré de tirets cadratins. Les tirets disent « ceci est
+  //    l'absence de choix » ; sans eux, une phrase à l'impératif posée sur une ligne tapable
+  //    se fait toucher par obéissance, et efface la couleur au lieu de la poser.
+  //  • l'<optgroup> pose un vrai titre, lui NON tapable. WebKit l'affiche en tête de section ;
+  //    un navigateur qui l'ignore ne perd rien, les deux options restent où elles sont.
+  // La même chaîne sert aux deux, en texte et en attribut : esc() couvre &, <, > ET le
+  // guillemet double, donc elle est sûre dans label="…" comme dans le corps de l'option.
+  // ⚠️ Cette explication est un commentaire JS, PAS un <!-- --> dans le gabarit : un
+  // commentaire HTML placé là serait recopié dans le DOM à chaque rendu de chaque carte.
+  // ── LE NOM UNE FOIS, JAMAIS DEUX ──
+  // Conséquence directe : tant qu'aucune couleur n'est posée, le menu fermé AFFICHE la case
+  // vide, donc « — Couleur de X — ». L'étiquette de gauche répétait alors exactement la même
+  // phrase à dix pixels d'elle, et poussait le menu à 210 px sur un écran de 360. L'étiquette
+  // ne s'affiche donc que lorsqu'une couleur EST posée — c'est-à-dire quand le menu fermé
+  // montre « Blancs » ou « Noirs » et ne dit plus de qui. Dans les deux états le nom est
+  // présent une fois, et la feuille iOS le porte toujours puisque la case vide y figure
+  // quoi qu'il arrive.
+  // On ne peut pas se reposer sur la ligne « ⚪ … choisit sa couleur » juste au-dessus pour
+  // combler le trou : elle nomme le MIEUX CLASSÉ, pas player1. Les deux coïncident souvent,
+  // et c'est bien le piège.
   const etiquetteCouleur = t('color_of').replace('{n}', () => esc(f.player1 || '?'));
   return `<div class="final-card ${f.winner?'winner':''}" style="${lateFinal?'border-left:3px solid #E67E22;':''}">
     ${isPresential?`<div style="font-size:12px;color:#888;text-align:center;margin-bottom:6px;font-weight:500">${t("presential")} · ${f.round==='Demis'?(state?.settings?.semisFormat||'20min + 10s/coup'):(state?.settings?.finalFormat||'30min + 10s/coup')}</div>`:''}
@@ -6437,11 +6467,13 @@ function finalCardHTML(f){
     ${canPlay&&!played&&!isEditing?`<button class="btn btn-gold" style="margin-top:10px;font-size:13px;padding:9px" onclick="openFinalEdit('${f.id}')">${t('enter_score')}</button>`:''}
     ${played&&!isEditing&&(f.colorP1==='white'||f.colorP1==='black')?`<div style="font-size:11px;color:var(--gray);text-align:center;margin-top:4px">${f.colorP1==='white'?'⬜':'⬛'} ${esc(f.player1||'')} &nbsp;·&nbsp; ${f.colorP1==='white'?'⬛':'⬜'} ${esc(f.player2||'')}</div>`:''}
     ${isEditing?`<div style="display:flex;align-items:center;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:8px;font-size:11px;color:var(--gray)">
-      <span>${etiquetteCouleur}</span>
+      ${f.colorP1?`<span>${etiquetteCouleur}</span>`:''}
       <select class="score-select" id="fc-${f.id}" style="width:auto;padding:6px 8px;font-size:12px">
-        <option value=""${f.colorP1?'':' selected'}>${t('color_pick')}</option>
-        <option value="white"${f.colorP1==='white'?' selected':''}>${t('whites')}</option>
-        <option value="black"${f.colorP1==='black'?' selected':''}>${t('blacks')}</option>
+        <option value=""${f.colorP1?'':' selected'}>— ${etiquetteCouleur} —</option>
+        <optgroup label="${etiquetteCouleur}">
+          <option value="white"${f.colorP1==='white'?' selected':''}>${t('whites')}</option>
+          <option value="black"${f.colorP1==='black'?' selected':''}>${t('blacks')}</option>
+        </optgroup>
       </select>
     </div>
     <div class="score-row">

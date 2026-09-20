@@ -40,6 +40,16 @@
     var s = settings || {};
     if (!game) return null;
 
+    // ── MATCH ANNULÉ (« -:- ») ──
+    // Quand un joueur abandonne le tournoi, l'organisateur marque ses matchs restants
+    // comme non joués. Ils n'ont plus d'échéance : ni date affichée sur la carte, ni
+    // retard possible. Le verrou est posé ICI, dans le fichier partagé, et non dans
+    // chacun des appelants : le site ET l'alerte quotidienne de Netlify passent tous
+    // les deux par cette fonction, ils héritent donc de la règle sans pouvoir diverger.
+    // Sans ça, le serveur aurait signalé tous les jours, indéfiniment, un match que
+    // personne ne jouera jamais.
+    if (game.annule) return null;
+
     if (isFinal) {
       var startDate = s.finalsStartDate;
       var interval = s.finalsInterval || 4;

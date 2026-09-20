@@ -113,14 +113,20 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
   background:
     linear-gradient(to bottom,transparent 43%,#C8102E 43% 57%,transparent 57%),
     linear-gradient(to right,transparent 41%,#C8102E 41% 59%,transparent 59%)}
-.match-card{background:#fff;border-radius:12px;box-shadow:0 1px 5px rgba(0,0,0,0.07);padding:14px;margin-bottom:12px}
+.match-card{background:#fff;border-radius:12px;box-shadow:0 1px 5px rgba(0,0,0,0.07);padding:13px;margin-bottom:11px}
 .match-grp{font-size:12px;font-weight:700;color:var(--gold);margin-bottom:6px;text-transform:uppercase}
 .match-players{display:flex;align-items:center;gap:8px}
 .match-player{flex:1;min-width:0;text-align:center}
 /* ── LE PSEUDO PASSE À LA LIGNE, IL NE SE COUPE PLUS ──
-   Le pseudo est ce que le joueur cherche des yeux sur la carte : il passe de 13 à 16 px,
-   la plus grande taille qui tienne sur un écran de 360 px avec les pseudos réels du
-   tournoi. À 17 px, « Guillaume110110 » et un autre ne rentrent plus.
+   Le pseudo est ce que le joueur cherche des yeux sur la carte : il est passé de 13 à 16 px,
+   puis redescendu à 15 — l'ensemble était devenu trop gros une fois à l'écran. Le plafond
+   reste 16 : à 17 px, « Guillaume110110 » et un autre ne tiennent plus sur 360 px.
+   ⚠️ TOUTE L'ÉCHELLE DE LA CARTE SE DÉPLACE ENSEMBLE, jamais une taille seule : groupe et
+   libellé de date 12, pseudo et dates 15, pastilles 12, vs 13, bouton 14. Les métadonnées
+   sont restées à 12 en redescendant, au lieu de suivre à 11 : elles étaient précisément ce
+   qu'on ne lisait pas avant. Ce que ce fichier promet, et que verif-echelle.js mesure à
+   l'écran : le pseudo au moins aussi gros que la date, le libellé plus petit que sa date,
+   et rien sous 12 px sur une carte.
    Cette règle portait `white-space:nowrap;overflow:hidden;text-overflow:ellipsis` : un nom
    trop long n'élargissait pas la carte, il était COUPÉ — « Guillaume1… ». Le champ
    d'inscription accepte 25 caractères, donc la troncature ne demandait pas d'agrandir quoi
@@ -129,10 +135,10 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
    pseudo du tournoi ne passe sur deux lignes, et sur un très vieil écran de 320 px le plus
    long en prend deux — lisible, plutôt qu'amputé. La carte grandit, elle ne ment pas.
    `line-height:1.2` évite que deux lignes se touchent. */
-.match-player-name{font-size:16px;font-weight:700;overflow-wrap:anywhere;line-height:1.2}
+.match-player-name{font-size:15px;font-weight:700;overflow-wrap:anywhere;line-height:1.2}
 .match-player-color{font-size:12px;color:#aaa;margin-top:2px}
-.match-score{font-size:22px;font-weight:800;color:var(--dark);min-width:48px;text-align:center;cursor:pointer}
-.match-vs{font-size:14px;color:#ccc;font-weight:700;min-width:24px;text-align:center}
+.match-score{font-size:20px;font-weight:800;color:var(--dark);min-width:48px;text-align:center;cursor:pointer}
+.match-vs{font-size:13px;color:#ccc;font-weight:700;min-width:24px;text-align:center}
 .score-row{display:flex;gap:8px;margin-top:10px;align-items:center}
 .score-select{flex:1;text-align:center}
 .btn-confirm{padding:10px 16px;width:auto;font-size:13px}
@@ -150,7 +156,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
 .seed-name{flex:1;font-size:13px;font-weight:500}
 .seed-btn{border:none;background:none;font-size:18px;cursor:pointer;padding:2px 6px;color:#999;line-height:1}
 .seed-btn:disabled{color:#DDD;cursor:default}
-.final-card{background:#fff;border-radius:12px;box-shadow:0 1px 5px rgba(0,0,0,0.07);padding:14px;margin-bottom:12px;border-left:4px solid var(--gold)}
+.final-card{background:#fff;border-radius:12px;box-shadow:0 1px 5px rgba(0,0,0,0.07);padding:13px;margin-bottom:11px;border-left:4px solid var(--gold)}
 .final-card.winner{border-left-color:var(--green)}
 #loading{position:fixed;inset:0;background:var(--dark);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .4s}
 #loading img{width:90px;height:90px;object-fit:contain}
@@ -5650,7 +5656,7 @@ function bandeauDates(debut, fin, enRetard) {
   // deux lignes ; la marge négative n'avait rien à rattraper.
   return `<div style="margin:8px 0 10px;text-align:center">`
        + `<div style="font-size:12px;color:${encreLib};margin-bottom:4px">${libelle}</div>`
-       + `<div style="font-size:16px;font-weight:800;color:${encre}">${valeur}</div>`
+       + `<div style="font-size:15px;font-weight:800;color:${encre}">${valeur}</div>`
        + `</div>`;
 }
 
@@ -6165,7 +6171,7 @@ function matchCardHTML(g){
       </div>`:`<div class="match-vs">vs</div>`}
       <div class="match-player"><div class="match-player-name">${esc(g.playerBlack)}</div><div class="match-player-color" style="display:inline-block;font-size:12px;font-weight:700;padding:3px 9px;border-radius:8px;margin-top:5px;background:#2c2c2c;color:#fff">${t('blacks')}</div></div>
     </div>
-    ${!played&&!isEditing&&!annule?`<button class="btn btn-gold" style="margin-top:12px;font-size:15px;padding:12px" onclick="openScoreEdit('${g.id}')">${t('enter_score')}</button>`:''}
+    ${!played&&!isEditing&&!annule?`<button class="btn btn-gold" style="margin-top:11px;font-size:14px;padding:11px" onclick="openScoreEdit('${g.id}')">${t('enter_score')}</button>`:''}
     ${isEditing?`<div class="score-row">
       <select class="score-select" id="sw-${g.id}" onchange="autoScore('${g.id}','white')"><option value="">—</option>${opts(g.scoreWhite)}</select>
       <span style="font-weight:700;color:#ccc">—</span>
@@ -6488,19 +6494,19 @@ function finalCardHTML(f){
   //    séparateur « RONDE 1 » ET « GROUPE 2 · RONDE 1 » sur chaque carte.
   return `<div class="final-card ${f.winner?'winner':''}" style="${lateFinal?'border-left:3px solid #E67E22;':''}">
     <div class="match-grp">${esc(nomTour(f.round))}</div>
-    ${isPresential?`<div style="font-size:13px;color:#888;text-align:center;margin-bottom:8px;font-weight:500">${t("presential")} · ${f.round==='Demis'?(state?.settings?.semisFormat||'20min + 10s/coup'):(state?.settings?.finalFormat||'30min + 10s/coup')}</div>`:''}
+    ${isPresential?`<div style="font-size:12px;color:#888;text-align:center;margin-bottom:7px;font-weight:500">${t("presential")} · ${f.round==='Demis'?(state?.settings?.semisFormat||'20min + 10s/coup'):(state?.settings?.finalFormat||'30min + 10s/coup')}</div>`:''}
     ${!played&&f.player1&&f.player2?bandeauDates(roundWindowStart(f,true), dueF, lateFinal):''}
     <div class="match-players">
       <div class="match-player"><div class="match-player-name" style="color:${f.winner===f.player1?'var(--green)':'var(--dark)'}">${f.player1?esc(f.player1):'?'}</div>${f.colorP1==='white'||f.colorP1==='black'?`<div class="match-player-color" style="display:inline-block;font-size:12px;font-weight:700;padding:3px 9px;border-radius:8px;margin-top:5px;${f.colorP1==='white'?'background:#F5F5F0;color:#555;border:1px solid #ddd':'background:#2c2c2c;color:#fff'}">${f.colorP1==='white'?t('whites'):t('blacks')}</div>`:''}</div>
       ${played&&!isEditing?`<div class="match-score" onclick="openFinalEdit('${f.id}')" style="cursor:pointer" title="${esc(t('modify'))}">${f.score1} — ${f.score2}</div>`:`<div class="match-vs">vs</div>`}
       <div class="match-player"><div class="match-player-name" style="color:${f.winner===f.player2?'var(--green)':'var(--dark)'}">${f.player2?esc(f.player2):'?'}</div>${f.colorP1==='white'||f.colorP1==='black'?`<div class="match-player-color" style="display:inline-block;font-size:12px;font-weight:700;padding:3px 9px;border-radius:8px;margin-top:5px;${f.colorP1==='black'?'background:#F5F5F0;color:#555;border:1px solid #ddd':'background:#2c2c2c;color:#fff'}">${f.colorP1==='black'?t('whites'):t('blacks')}</div>`:''}</div>
     </div>
-    ${(f.player1&&f.player2&&!f.winner&&(f.rank1||f.rank2))?`<div style="font-size:13px;color:#777;text-align:center;margin-top:10px">⚪ <strong style="font-weight:700;color:var(--dark)">${(f.rank1!==null&&f.rank1!==undefined&&(f.rank2===null||f.rank2===undefined||f.rank1<=f.rank2))?esc(f.player1):esc(f.player2)}</strong> ${t("color_choice")}</div>`:''}
-    ${f.winner?`<div style="text-align:center;margin-top:10px;font-size:14px;color:var(--green);font-weight:700">${t('winner')}: ${esc(f.winner)}</div>`:''}
-    ${canPlay&&!played&&!isEditing?`<button class="btn btn-gold" style="margin-top:12px;font-size:15px;padding:12px" onclick="openFinalEdit('${f.id}')">${t('enter_score')}</button>`:''}
-    ${isEditing?`<div style="display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px;font-size:13px;color:var(--gray)">
+    ${(f.player1&&f.player2&&!f.winner&&(f.rank1||f.rank2))?`<div style="font-size:12px;color:#777;text-align:center;margin-top:9px">⚪ <strong style="font-weight:700;color:var(--dark)">${(f.rank1!==null&&f.rank1!==undefined&&(f.rank2===null||f.rank2===undefined||f.rank1<=f.rank2))?esc(f.player1):esc(f.player2)}</strong> ${t("color_choice")}</div>`:''}
+    ${f.winner?`<div style="text-align:center;margin-top:9px;font-size:13px;color:var(--green);font-weight:700">${t('winner')}: ${esc(f.winner)}</div>`:''}
+    ${canPlay&&!played&&!isEditing?`<button class="btn btn-gold" style="margin-top:11px;font-size:14px;padding:11px" onclick="openFinalEdit('${f.id}')">${t('enter_score')}</button>`:''}
+    ${isEditing?`<div style="display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:9px;font-size:12px;color:var(--gray)">
       ${(f.player1&&f.player2&&!f.winner&&(f.rank1||f.rank2))?'':`<span>${etiquetteCouleur}</span>`}
-      <select class="score-select" id="fc-${f.id}" style="width:auto;padding:8px 10px;font-size:14px">
+      <select class="score-select" id="fc-${f.id}" style="width:auto;padding:7px 9px;font-size:13px">
         <option value=""${f.colorP1?'':' selected'}>${t('color_pick')}</option>
         <optgroup label="${etiquetteCouleur}">
           <option value="white"${f.colorP1==='white'?' selected':''}>${t('whites')}</option>

@@ -131,11 +131,18 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
    trop long n'élargissait pas la carte, il était COUPÉ — « Guillaume1… ». Le champ
    d'inscription accepte 25 caractères, donc la troncature ne demandait pas d'agrandir quoi
    que ce soit pour se produire, elle attendait juste un pseudo assez long.
-   `overflow-wrap:anywhere` renvoie à la ligne au lieu de cacher : sur 360 et 390 px aucun
-   pseudo du tournoi ne passe sur deux lignes, et sur un très vieil écran de 320 px le plus
-   long en prend deux — lisible, plutôt qu'amputé. La carte grandit, elle ne ment pas.
+   `overflow-wrap` renvoie à la ligne au lieu de cacher : sur 360 et 390 px aucun pseudo du
+   tournoi ne passe sur deux lignes, et sur un très vieil écran de 320 px le plus long en
+   prend deux — lisible, plutôt qu'amputé. La carte grandit, elle ne ment pas.
+   ⚠️ DEUX DÉCLARATIONS, ET L'ORDRE COMPTE. `anywhere` n'existe que depuis Safari 15.4
+   (mars 2022) : un iPhone plus ancien l'ignore, retombe sur `normal`, et un pseudo sans
+   espace ne se coupe NULLE PART — il déborde de sa colonne et la page entière gagne un
+   défilement horizontal. Mesuré : 2 pseudos du tournoi débordent, et la page défile.
+   `break-word`, écrit avant, est compris partout et suffit ici ; les navigateurs récents
+   écrasent la première par la seconde. L'organisateur est sur Android, mais ses joueurs
+   ne le sont pas forcément — et ce sont eux qui lisent ces cartes.
    `line-height:1.2` évite que deux lignes se touchent. */
-.match-player-name{font-size:15px;font-weight:700;overflow-wrap:anywhere;line-height:1.2}
+.match-player-name{font-size:15px;font-weight:700;overflow-wrap:break-word;overflow-wrap:anywhere;line-height:1.2}
 .match-player-color{font-size:12px;color:#aaa;margin-top:2px}
 .match-score{font-size:20px;font-weight:800;color:var(--dark);min-width:48px;text-align:center;cursor:pointer}
 .match-vs{font-size:13px;color:#ccc;font-weight:700;min-width:24px;text-align:center}
@@ -1372,7 +1379,7 @@ window.toggleSubsDetail = function() {
 
 window.deleteSubscription = async function(subId) {
   if (!isAdmin) return;
-  if (!confirm('Retirer cet abonnement ? Cette personne ne recevra plus rien tant qu\'elle ne se réabonne pas.')) return;
+  if (!confirm(t('confirm_del_sub'))) return;
   await set(ref(db, SUB_PATH + '/' + subId), null);
   renderSubsDetail();
 }
@@ -1609,7 +1616,7 @@ const T = {
     send_notif_btn:"📤 Envoyer à tous les abonnés",
     reset_subs_btn:"↺ Réinitialiser tous les abonnements",
     copy_whatsapp_btn:"📋 Copier le message",
-    maint_title:"Maintenance en cours",maint_btn:"🔧 Mode maintenance",
+    maint_title:"Maintenance en cours",maint_btn:"🔧 Mode maintenance",maint_btn_stop:"✅ Désactiver maintenance",confirm_del_sub:"Retirer cet abonnement ? Cette personne ne recevra plus rien tant qu'elle ne se réabonne pas.",
     maint_text:"Le site est temporairement indisponible.<br>Revenez dans quelques instants.",
     maint_admin_access:"Accès administrateur",
     maint_login_btn:"Connexion admin",
@@ -1744,7 +1751,7 @@ const T = {
     send_notif_btn:"📤 An alle Abonnenten senden",
     reset_subs_btn:"↺ Alle Abonnements zurücksetzen",
     copy_whatsapp_btn:"📋 Nachricht kopieren",
-    maint_title:"Wartung läuft",maint_btn:"🔧 Wartungsmodus",
+    maint_title:"Wartung läuft",maint_btn:"🔧 Wartungsmodus",maint_btn_stop:"✅ Wartungsmodus beenden",confirm_del_sub:"Dieses Abonnement entfernen? Diese Person erhält nichts mehr, bis sie sich erneut anmeldet.",
     maint_text:"Die Website ist vorübergehend nicht verfügbar.<br>Bitte versuche es in Kürze erneut.",
     maint_admin_access:"Administratorzugang",
     maint_login_btn:"Admin-Anmeldung",
@@ -1878,7 +1885,7 @@ const T = {
     send_notif_btn:"📤 Send to all subscribers",
     reset_subs_btn:"↺ Reset all subscriptions",
     copy_whatsapp_btn:"📋 Copy message",
-    maint_title:"Maintenance in progress",maint_btn:"🔧 Maintenance mode",
+    maint_title:"Maintenance in progress",maint_btn:"🔧 Maintenance mode",maint_btn_stop:"✅ Turn off maintenance",confirm_del_sub:"Remove this subscription? This person will receive nothing until they subscribe again.",
     maint_text:"The site is temporarily unavailable.<br>Please check back shortly.",
     maint_admin_access:"Administrator access",
     maint_login_btn:"Admin login",
@@ -2012,7 +2019,7 @@ const T = {
     send_notif_btn:"📤 Inviare a tutti gli iscritti",
     reset_subs_btn:"↺ Azzerare tutti gli abbonamenti",
     copy_whatsapp_btn:"📋 Copiare il messaggio",
-    maint_title:"Manutenzione in corso",maint_btn:"🔧 Modalità manutenzione",
+    maint_title:"Manutenzione in corso",maint_btn:"🔧 Modalità manutenzione",maint_btn_stop:"✅ Disattivare manutenzione",confirm_del_sub:"Rimuovere questo abbonamento? Questa persona non riceverà più nulla finché non si riabbona.",
     maint_text:"Il sito è temporaneamente non disponibile.<br>Riprova tra qualche istante.",
     maint_admin_access:"Accesso amministratore",
     maint_login_btn:"Accesso admin",
@@ -2272,7 +2279,12 @@ function applyTranslations() {
   setT('notif-disable-btn', 'notif_disable_btn');
   setT('change-pin-btn', 'change_pin_btn');
   setT('check-late-btn', 'check_late_btn');
-  setT('maint-btn', 'maint_btn');
+  // ⚠️ PAS de setT ici : ce bouton a DEUX textes selon l'état de la maintenance, et setT
+  // écrirait toujours celui de l'état éteint. Au changement de langue, maintenance ALLUMÉE,
+  // le bouton affichait donc « 🔧 Wartungsmodus » — traduit, mais annonçant le mauvais
+  // état, et invitant à allumer ce qui l'était déjà. Un seul endroit écrit ce bouton, et il
+  // connaît l'état.
+  updateMaintenanceBtn();
   setT('open-reg-btn', 'open_reg_btn');
   setT('start-pools-btn', 'start_pools_btn');
   setT('finish-btn', 'finish_btn');
@@ -4700,11 +4712,17 @@ window.cancelFinal = function() { editingFinalId=null; renderFinals(); };
 
 // ── RETIRER LA COULEUR ──
 // La case vide du menu est `hidden` : elle sert encore d'étiquette au menu refermé, mais
-// n'apparaît plus dans la feuille de sélection d'iOS, qui ne montre que le titre « Couleur
-// de X » et les deux couleurs. Elle n'est donc plus atteignable au doigt, et c'est ce
-// bouton qui ramène le menu à « pas de couleur ».
+// n'apparaît plus dans la feuille de sélection du navigateur, qui ne montre que le titre
+// « Couleur de X » et les deux couleurs. Elle n'est donc plus atteignable au doigt, et
+// c'est ce bouton qui ramène le menu à « pas de couleur ».
 // ⚠️ `hidden` empêche l'AFFICHAGE, pas la sélection par programme : `value = ''` retrouve
 // bien l'option et le menu refermé réaffiche son libellé.
+// Le moteur pose `display:none` sur une option masquée — mesuré dans Chromium, et
+// l'organisateur est sur ANDROID, donc sur ce même moteur : la feuille ne la montre pas.
+// (Une première version de ce commentaire parlait d'iOS et de Safari : supposition fausse,
+// faite sur la seule foi d'une capture d'écran.) Sur iOS, non vérifié — si la case y
+// réapparaissait, le repli est de la renommer « — aucune — », qui au moins ne répète pas
+// le titre juste en dessous.
 // On ne re-rend PAS la carte : `renderFinals()` la reconstruirait depuis la base, où la
 // couleur est encore enregistrée, et le menu reviendrait à sa valeur d'avant. Le retrait
 // ne devient définitif qu'au ✓, comme le score saisi à côté.
@@ -5567,7 +5585,14 @@ async function triggerAutoResultNotif(gameId, isFinal) {
 function updateMaintenanceBtn() {
   const btn = document.getElementById('maint-btn');
   if (btn) {
-    btn.textContent = maintenanceMode ? '✅ Désactiver maintenance' : '🔧 Mode maintenance';
+    // ⚠️ DEUX FONCTIONS ÉCRIVAIENT DANS CE BOUTON, ET LA DERNIÈRE GAGNAIT.
+    // applyTranslations le traduit — setT('maint-btn', 'maint_btn') — puis celle-ci lui
+    // reposait deux chaînes françaises en dur. Au changement de langue, le bouton passait
+    // donc bien en allemand, puis redevenait français dès que l'écoute Firebase de
+    // /maintenance se déclenchait : une seconde plus tard, le temps d'un aller-retour.
+    // Le symptôme ressemblait à une traduction manquante ; c'était un écrasement.
+    // Les deux états ont leur clé, et le bouton se traduit d'où qu'on l'écrive.
+    btn.textContent = maintenanceMode ? t('maint_btn_stop') : t('maint_btn');
     btn.style.background = maintenanceMode ? 'var(--green)' : '#444';
   }
 };
@@ -6522,16 +6547,21 @@ function finalCardHTML(f){
   // l'étiquette de gauche devient un filet : elle n'apparaît que si cette ligne est absente,
   // c'est-à-dire quand les deux rangs manquent. Jamais les deux à la fois.
   //
-  // ── ET LE NOM DANS LA FEUILLE DE SÉLECTION D'iOS ──
-  // Sur iPhone, toucher un <select> ouvre une feuille native qui recouvre toute la page :
+  // ── ET LE NOM DANS LA FEUILLE DE SÉLECTION DU NAVIGATEUR ──
+  // Sur téléphone, toucher un <select> ouvre une feuille native qui recouvre toute la page :
   // ce qui est écrit sur la carte disparaît au moment précis de choisir. Cette feuille est
   // un contrôle du système, on n'écrit que le texte des options — d'où l'<optgroup>, dont le
-  // libellé s'affiche en titre de section NON tapable. Confirmé sur l'appareil : la capture
-  // de l'organisateur montre « Couleur de Petitfrerot » en tête de la feuille, au-dessus de
-  // Blancs et Noirs.
-  // La case vide, elle, reste courte (« — choisir — ») : lui faire porter la phrase entière
-  // la faisait répéter le titre juste en dessous, et le menu fermé affichait cette même
-  // phrase sur la carte, à dix pixels de l'étiquette de gauche.
+  // libellé s'affiche en titre de section NON tapable.
+  // ⚠️ VÉRIFIÉ SUR ANDROID, l'appareil de l'organisateur : sa capture montre « Couleur de
+  // Petitfrerot » en tête de la feuille, au-dessus de Blancs et Noirs. Une première version
+  // de ce commentaire parlait d'iPhone et de Safari — c'était une supposition sur la foi
+  // d'une capture d'écran, et elle était fausse. Le comportement sur iOS reste donc NON
+  // vérifié : des joueurs du tournoi peuvent en avoir. Si un titre de section manquait chez
+  // l'un d'eux, la carte continue de nommer le joueur juste au-dessus du menu, rien ne
+  // casse — mais c'est là qu'il faudrait regarder.
+  // La case vide, elle, reste courte (« — choisir la couleur — ») : lui faire porter la
+  // phrase entière la faisait répéter le titre juste en dessous, et le menu fermé affichait
+  // cette même phrase sur la carte, à dix pixels de l'étiquette de gauche.
   // esc() couvre &, <, > ET le guillemet double : la chaîne est sûre dans label="…" comme
   // dans un corps de texte.
   // ⚠️ Cette explication est un commentaire JS, PAS un <!-- --> dans le gabarit : un

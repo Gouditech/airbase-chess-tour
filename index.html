@@ -6411,9 +6411,23 @@ function renderFinals(){
       .filter(f=>!(f.winner && f.player1 && !f.player2))
       .sort((a,b)=>a.matchNum-b.matchNum);
     if(!rg.length) return;
-    // Même raison qu'en poules : chaque carte porte son bandeau de dates, l'en-tête de
-    // tour n'a pas à le répéter au-dessus.
-    html+=`<div class="section-title">${esc(nomTour(round))}</div>`;
+    // ── LE MÊME SÉPARATEUR QU'EN POULES ──
+    // C'était un titre aligné à gauche, en gris : le rappel doré du tour, lui aussi à
+    // gauche, tombait dix pixels en dessous, à la même abscisse — deux étiquettes empilées
+    // dans le même coin, d'où l'impression de doublon. Le libellé passe donc au MILIEU,
+    // entre deux filets, exactement comme « ——— RONDE 2 ——— » côté poules. La même forme
+    // pour la même fonction, et les deux repères ne se superposent plus.
+    // Il reste GRIS, pas doré : le doré est la couleur des cartes et du rappel de tour ;
+    // deux dorés à dix pixels d'écart, c'est justement ce qu'on cherche à défaire.
+    // Même raison qu'en poules : chaque carte porte son bandeau de dates, le séparateur
+    // n'a pas à les répéter au-dessus.
+    // ⚠️ `.section-title` sert aussi à « À JOUER (24) » et « Matchs joués » sur l'écran des
+    // matchs : on écrit donc ce séparateur en style en ligne ICI, sans toucher à la classe.
+    html+=`<div style="display:flex;align-items:center;gap:10px;margin:${html?'18px':'4px'} 0 10px">
+      <div style="flex:1;height:1px;background:#AAA;opacity:0.5"></div>
+      <div style="font-size:12px;font-weight:800;color:#AAA;letter-spacing:0.5px;text-transform:uppercase;white-space:nowrap">${esc(nomTour(round))}</div>
+      <div style="flex:1;height:1px;background:#AAA;opacity:0.5"></div>
+    </div>`;
     html+=rg.map(f=>finalCardHTML(f)).join('');
   });
   // Le tableau d'abord, la SAISIE ensuite — c'est l'action la plus frequente et elle

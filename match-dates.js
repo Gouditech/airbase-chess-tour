@@ -94,6 +94,27 @@
     return d;
   }
 
+  // ── OUVERTURE DE LA RONDE ──
+  // Une ronde n'est pas qu'une date limite : elle a une fenêtre. La ronde 1 s'ouvre le
+  // jour du départ du tournoi, la ronde 2 quand la 1 se ferme, et ainsi de suite ; les
+  // tours de finale suivent la même règle depuis `finalsStartDate`.
+  // L'échéance vaut départ + (position + 1) x intervalle, donc l'ouverture vaut
+  // simplement échéance - intervalle. Une seule soustraction, valable pour les poules
+  // comme pour les finales, et qui redonne exactement la date de départ réglée par
+  // l'organisateur pour la première ronde — aucune date n'est inventée.
+  // ⚠️ Rien n'INTERDIT de jouer plus tôt, et c'est voulu : deux joueurs disponibles ont
+  // tout intérêt à prendre de l'avance. Cette fenêtre décrit le rythme prévu, elle ne le
+  // rend pas obligatoire — d'où un affichage qui la présente et ne l'impose pas.
+  function roundWindowStart(game, isFinal, settings, allFinals) {
+    var due = matchDueDate(game, isFinal, settings, allFinals);
+    if (!due) return null;
+    var s = settings || {};
+    var interval = isFinal ? (s.finalsInterval || 4) : (s.poolInterval || 4);
+    var d = new Date(due.getTime());
+    d.setDate(d.getDate() - interval);
+    return d;
+  }
+
   // Un match est "en retard" dès le lendemain de son échéance : la date calculée EST la
   // date limite (le match doit être terminé et le score saisi avant la fin de ce jour-là).
   // ⚠️ Ne pas rajouter d'intervalle de grâce ici : historiquement l'échéance marquait le
@@ -131,6 +152,7 @@
   var api = {
     FINALS_ROUND_SEQUENCE: FINALS_ROUND_SEQUENCE,
     matchDueDate: matchDueDate,
+    roundWindowStart: roundWindowStart,
     parseDateLocale: parseDateLocale,
     isMatchLate: isMatchLate
   };

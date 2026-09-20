@@ -113,14 +113,26 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
   background:
     linear-gradient(to bottom,transparent 43%,#C8102E 43% 57%,transparent 57%),
     linear-gradient(to right,transparent 41%,#C8102E 41% 59%,transparent 59%)}
-.match-card{background:#fff;border-radius:12px;box-shadow:0 1px 5px rgba(0,0,0,0.07);padding:12px;margin-bottom:10px}
-.match-grp{font-size:11px;font-weight:700;color:var(--gold);margin-bottom:6px;text-transform:uppercase}
+.match-card{background:#fff;border-radius:12px;box-shadow:0 1px 5px rgba(0,0,0,0.07);padding:14px;margin-bottom:12px}
+.match-grp{font-size:12px;font-weight:700;color:var(--gold);margin-bottom:6px;text-transform:uppercase}
 .match-players{display:flex;align-items:center;gap:8px}
 .match-player{flex:1;min-width:0;text-align:center}
-.match-player-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.match-player-color{font-size:11px;color:#aaa;margin-top:2px}
+/* ── LE PSEUDO PASSE À LA LIGNE, IL NE SE COUPE PLUS ──
+   Le pseudo est ce que le joueur cherche des yeux sur la carte : il passe de 13 à 16 px,
+   la plus grande taille qui tienne sur un écran de 360 px avec les pseudos réels du
+   tournoi. À 17 px, « Guillaume110110 » et un autre ne rentrent plus.
+   Cette règle portait `white-space:nowrap;overflow:hidden;text-overflow:ellipsis` : un nom
+   trop long n'élargissait pas la carte, il était COUPÉ — « Guillaume1… ». Le champ
+   d'inscription accepte 25 caractères, donc la troncature ne demandait pas d'agrandir quoi
+   que ce soit pour se produire, elle attendait juste un pseudo assez long.
+   `overflow-wrap:anywhere` renvoie à la ligne au lieu de cacher : sur 360 et 390 px aucun
+   pseudo du tournoi ne passe sur deux lignes, et sur un très vieil écran de 320 px le plus
+   long en prend deux — lisible, plutôt qu'amputé. La carte grandit, elle ne ment pas.
+   `line-height:1.2` évite que deux lignes se touchent. */
+.match-player-name{font-size:16px;font-weight:700;overflow-wrap:anywhere;line-height:1.2}
+.match-player-color{font-size:12px;color:#aaa;margin-top:2px}
 .match-score{font-size:22px;font-weight:800;color:var(--dark);min-width:48px;text-align:center;cursor:pointer}
-.match-vs{font-size:13px;color:#ccc;font-weight:700;min-width:24px;text-align:center}
+.match-vs{font-size:14px;color:#ccc;font-weight:700;min-width:24px;text-align:center}
 .score-row{display:flex;gap:8px;margin-top:10px;align-items:center}
 .score-select{flex:1;text-align:center}
 .btn-confirm{padding:10px 16px;width:auto;font-size:13px}
@@ -138,7 +150,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
 .seed-name{flex:1;font-size:13px;font-weight:500}
 .seed-btn{border:none;background:none;font-size:18px;cursor:pointer;padding:2px 6px;color:#999;line-height:1}
 .seed-btn:disabled{color:#DDD;cursor:default}
-.final-card{background:#fff;border-radius:12px;box-shadow:0 1px 5px rgba(0,0,0,0.07);padding:12px;margin-bottom:10px;border-left:4px solid var(--gold)}
+.final-card{background:#fff;border-radius:12px;box-shadow:0 1px 5px rgba(0,0,0,0.07);padding:14px;margin-bottom:12px;border-left:4px solid var(--gold)}
 .final-card.winner{border-left-color:var(--green)}
 #loading{position:fixed;inset:0;background:var(--dark);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .4s}
 #loading img{width:90px;height:90px;object-fit:contain}
@@ -1621,7 +1633,7 @@ const T = {
     late_badge:"⏰ Retard",
     date_play:"À jouer entre le",date_play_seul:"À jouer",date_before:"avant le {b}",date_range:"{a} et {b}",date_late_label:"⏰ En retard",date_late_value:"depuis le {b}",pool_end_estimate:"Fin estimée des poules : {d}",finals_end_estimate:"Fin estimée des finales (si le rythme tient jusqu'au bout) : {d}",round_short:"Ronde",
     late_match:"⏰ Match en retard",
-    color_choice:"choisit sa couleur",color_of:"Couleur de {n}",color_required:"Indique la couleur de {n} avant de valider le score.",
+    color_choice:"choisit sa couleur",color_of:"Couleur de {n}",color_pick:"— choisir —",color_required:"Indique la couleur de {n} avant de valider le score.",
     presential:"Présentiel",
     notif_disable_btn:"🔕 Désactiver les notifications",
     late_msg:"Certains matchs sont en retard, jouez rapidement !",
@@ -1791,7 +1803,7 @@ const T = {
     late_badge:"⏰ Verspätet",
     date_play:"Zu spielen zwischen dem",date_play_seul:"Zu spielen",date_before:"bis {b}",date_range:"{a} und {b}",date_late_label:"⏰ Überfällig",date_late_value:"seit dem {b}",pool_end_estimate:"Voraussichtliches Ende der Gruppenphase: {d}",finals_end_estimate:"Voraussichtliches Ende der Finalrunden (bei gleichbleibendem Rhythmus): {d}",round_short:"Runde",
     late_match:"⏰ Partie verspätet",
-    color_choice:"wählt die Farbe",color_of:"Farbe von {n}",color_required:"Gib die Farbe von {n} an, bevor du das Ergebnis bestätigst.",
+    color_choice:"wählt die Farbe",color_of:"Farbe von {n}",color_pick:"— wählen —",color_required:"Gib die Farbe von {n} an, bevor du das Ergebnis bestätigst.",
     presential:"Präsenz",
     late_msg:"Einige Partien sind verspätet, spiel bitte bald!",
     pending_msg:"Einige Partien sind noch ausstehend, spiel bitte bald!",
@@ -1891,7 +1903,7 @@ const T = {
     late_badge:"⏰ Late",
     date_play:"To play between",date_play_seul:"To play",date_before:"before {b}",date_range:"{a} and {b}",date_late_label:"⏰ Overdue",date_late_value:"since {b}",pool_end_estimate:"Estimated end of the group stage: {d}",finals_end_estimate:"Estimated end of the final stages (if the pace holds): {d}",round_short:"Round",
     late_match:"⏰ Match overdue",
-    color_choice:"chooses color",color_of:"Colour of {n}",color_required:"Indicate the colour of {n} before confirming the score.",
+    color_choice:"chooses color",color_of:"Colour of {n}",color_pick:"— select —",color_required:"Indicate the colour of {n} before confirming the score.",
     presential:"In-person",
     late_msg:"Some matches are overdue, please play quickly!",
     pending_msg:"Some matches are still pending, please organize your games quickly!",
@@ -2023,7 +2035,7 @@ const T = {
     late_badge:"⏰ Ritardo",
     date_play:"Da giocare tra il",date_play_seul:"Da giocare",date_before:"entro il {b}",date_range:"{a} e {b}",date_late_label:"⏰ In ritardo",date_late_value:"dal {b}",pool_end_estimate:"Fine stimata dei gironi: {d}",finals_end_estimate:"Fine stimata delle finali (se il ritmo regge): {d}",round_short:"Turno",
     late_match:"⏰ Partita in ritardo",
-    color_choice:"sceglie il colore",color_of:"Colore di {n}",color_required:"Indica il colore di {n} prima di confermare il risultato.",
+    color_choice:"sceglie il colore",color_of:"Colore di {n}",color_pick:"— scegli —",color_required:"Indica il colore di {n} prima di confermare il risultato.",
     presential:"Presenza",
     late_msg:"Alcune partite sono in ritardo, giocare rapidamente!",
     pending_msg:"Alcune partite sono ancora in attesa, organizza le tue partite rapidamente!",
@@ -5637,7 +5649,7 @@ function bandeauDates(debut, fin, enRetard) {
   // « jouer » descendait dans la ligne des chiffres. `line-height:normal` collait déjà les
   // deux lignes ; la marge négative n'avait rien à rattraper.
   return `<div style="margin:8px 0 10px;text-align:center">`
-       + `<div style="font-size:11px;color:${encreLib};margin-bottom:4px">${libelle}</div>`
+       + `<div style="font-size:12px;color:${encreLib};margin-bottom:4px">${libelle}</div>`
        + `<div style="font-size:16px;font-weight:800;color:${encre}">${valeur}</div>`
        + `</div>`;
 }
@@ -6143,7 +6155,7 @@ function matchCardHTML(g){
     <div class="match-grp">${esc(nomGroupe(g.group))}${typeof g.round==='number'?` <span style="font-weight:600;color:#aaa">· ${t('round_short')} ${g.round}</span>`:''}${annule?` <span style="font-size:13px;font-weight:700;color:var(--gray);background:#EFEFEF;padding:2px 6px;border-radius:5px;margin-left:4px">${t("match_voided")}</span>`:''}</div>
     ${!played&&!annule?bandeauDates(roundWindowStart(g,false), due, late):''}
     <div class="match-players">
-      <div class="match-player"><div class="match-player-name">${esc(g.playerWhite)}</div><div class="match-player-color" style="display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px;margin-top:4px;background:#F5F5F0;color:#555;border:1px solid #ddd">${t('whites')}</div></div>
+      <div class="match-player"><div class="match-player-name">${esc(g.playerWhite)}</div><div class="match-player-color" style="display:inline-block;font-size:12px;font-weight:700;padding:3px 9px;border-radius:8px;margin-top:5px;background:#F5F5F0;color:#555;border:1px solid #ddd">${t('whites')}</div></div>
       ${annule&&!isEditing?`<div style="text-align:center;${isAdmin?'cursor:pointer':''}" ${isAdmin?`onclick="openScoreEdit('${g.id}')"`:''}>
         <div class="match-score" style="color:var(--gray)">-:-</div>
         ${isAdmin?`<div style="font-size:11px;color:#ccc;margin-top:-2px">${t('modify')}</div>`:''}
@@ -6151,9 +6163,9 @@ function matchCardHTML(g){
         <div class="match-score">${g.scoreWhite} — ${g.scoreBlack}</div>
         <div style="font-size:11px;color:#ccc;margin-top:-2px">${t("modify")}</div>
       </div>`:`<div class="match-vs">vs</div>`}
-      <div class="match-player"><div class="match-player-name">${esc(g.playerBlack)}</div><div class="match-player-color" style="display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px;margin-top:4px;background:#2c2c2c;color:#fff">${t('blacks')}</div></div>
+      <div class="match-player"><div class="match-player-name">${esc(g.playerBlack)}</div><div class="match-player-color" style="display:inline-block;font-size:12px;font-weight:700;padding:3px 9px;border-radius:8px;margin-top:5px;background:#2c2c2c;color:#fff">${t('blacks')}</div></div>
     </div>
-    ${!played&&!isEditing&&!annule?`<button class="btn btn-gold" style="margin-top:10px;font-size:13px;padding:9px" onclick="openScoreEdit('${g.id}')">${t('enter_score')}</button>`:''}
+    ${!played&&!isEditing&&!annule?`<button class="btn btn-gold" style="margin-top:12px;font-size:15px;padding:12px" onclick="openScoreEdit('${g.id}')">${t('enter_score')}</button>`:''}
     ${isEditing?`<div class="score-row">
       <select class="score-select" id="sw-${g.id}" onchange="autoScore('${g.id}','white')"><option value="">—</option>${opts(g.scoreWhite)}</select>
       <span style="font-weight:700;color:#ccc">—</span>
@@ -6415,61 +6427,60 @@ function finalCardHTML(f){
   const dueF = !played && f.player1 && f.player2 ? matchDueDate(f, true) : null;
   const opts=(val)=>['1','0'].map(s=>`<option value="${s}" ${played&&parseFloat(val)===parseFloat(s)?'selected':''}>${s}</option>`).join('');
   const canPlay=f.player1&&f.player2&&!f.winner;
-  // ── ÉTIQUETTE DU MENU DE COULEUR ──
-  // Le nom seul, posé à gauche d'un menu « — couleur — », ne disait pas ce qu'on attendait :
-  // celui qui saisit le score n'est pas forcément l'un des deux joueurs (l'admin saisit
-  // souvent pour eux), et même un joueur ne sait pas s'il est player1 ou player2 dans le
-  // tableau. La phrase nomme donc le joueur. Le menu reste attaché à player1 : c'est ce que
-  // la base stocke (colorP1) et ce dont dépendent l'affichage Blancs/Noirs de la carte et le
-  // détail par couleur du palmarès. Attention, ce n'est PAS forcément le joueur nommé juste
-  // au-dessus par color_choice : celui-là est le mieux classé des deux, à qui revient le
-  // CHOIX de la couleur. Les deux lignes disent deux choses différentes.
+  // ── QUI EST NOMMÉ, ET OÙ ──
+  // Le menu de couleur est attaché à player1 : c'est ce que la base stocke (colorP1) et ce
+  // dont dépendent l'affichage Blancs/Noirs de la carte comme le détail par couleur du
+  // palmarès. Il faut donc dire de QUI on règle la couleur : celui qui saisit le score n'est
+  // pas forcément l'un des deux joueurs (l'admin saisit souvent pour eux), et même un joueur
+  // ne sait pas s'il est player1 ou player2 dans le tableau.
   // `replace` reçoit une FONCTION : un pseudo contenant « $& » ou « $' » serait sinon
   // réinterprété comme motif de remplacement.
-  // ── ET LE MÊME NOM JUSQU'À L'INTÉRIEUR DU MENU ──
-  // Cette étiquette-ci disparaît au moment précis où l'on en a besoin : sur iPhone, toucher
-  // un <select> ouvre une feuille native qui recouvre toute la page. On lisait « Couleur de
-  // X », on touchait, et on se retrouvait devant « Blancs / Noirs » sans plus savoir de QUI
-  // il s'agissait — alors que celui qui saisit n'est souvent ni l'un ni l'autre des joueurs.
-  // Cette feuille est un contrôle du système : on n'en choisit ni la forme ni les couleurs,
-  // on n'écrit que le texte des options. D'où les deux mesures, plus bas :
-  //  • la case vide porte le nom, encadré de tirets cadratins. Les tirets disent « ceci est
-  //    l'absence de choix » ; sans eux, une phrase à l'impératif posée sur une ligne tapable
-  //    se fait toucher par obéissance, et efface la couleur au lieu de la poser.
-  //  • l'<optgroup> pose un vrai titre, lui NON tapable. WebKit l'affiche en tête de section ;
-  //    un navigateur qui l'ignore ne perd rien, les deux options restent où elles sont.
-  // La même chaîne sert aux deux, en texte et en attribut : esc() couvre &, <, > ET le
-  // guillemet double, donc elle est sûre dans label="…" comme dans le corps de l'option.
+  //
+  // ── LE NOM UNE SEULE FOIS SUR LA CARTE ──
+  // La ligne « ⚪ X choisit sa couleur », juste au-dessus, nomme le MIEUX CLASSÉ des deux,
+  // à qui revient le choix. Une étiquette « Couleur de Y » posée à gauche du menu nommerait
+  // player1. Longtemps, un commentaire à cet endroit avertissait que ce sont deux personnes
+  // différentes — et c'est FAUX dans le code tel qu'il est : le tableau range toujours le
+  // mieux classé en player1 (règle « mieux classé à gauche », vérifiée par regle.mjs), au
+  // premier tour comme après chaque propagation. Mesuré, pas supposé : 1040 cartes de finale
+  // sur 200 tournois joués jusqu'au bout, surprises comprises, zéro divergence et zéro rang
+  // manquant (banc-choisisseur.js, qui échoue si cela change un jour).
+  // Les deux phrases nommaient donc toujours la même personne, à deux lignes d'écart. On
+  // garde la seule qui apprend quelque chose — celle qui dit aussi POURQUOI c'est lui — et
+  // l'étiquette de gauche devient un filet : elle n'apparaît que si cette ligne est absente,
+  // c'est-à-dire quand les deux rangs manquent. Jamais les deux à la fois.
+  //
+  // ── ET LE NOM DANS LA FEUILLE DE SÉLECTION D'iOS ──
+  // Sur iPhone, toucher un <select> ouvre une feuille native qui recouvre toute la page :
+  // ce qui est écrit sur la carte disparaît au moment précis de choisir. Cette feuille est
+  // un contrôle du système, on n'écrit que le texte des options — d'où l'<optgroup>, dont le
+  // libellé s'affiche en titre de section NON tapable. Confirmé sur l'appareil : la capture
+  // de l'organisateur montre « Couleur de Petitfrerot » en tête de la feuille, au-dessus de
+  // Blancs et Noirs.
+  // La case vide, elle, reste courte (« — choisir — ») : lui faire porter la phrase entière
+  // la faisait répéter le titre juste en dessous, et le menu fermé affichait cette même
+  // phrase sur la carte, à dix pixels de l'étiquette de gauche.
+  // esc() couvre &, <, > ET le guillemet double : la chaîne est sûre dans label="…" comme
+  // dans un corps de texte.
   // ⚠️ Cette explication est un commentaire JS, PAS un <!-- --> dans le gabarit : un
   // commentaire HTML placé là serait recopié dans le DOM à chaque rendu de chaque carte.
-  // ── LE NOM UNE FOIS, JAMAIS DEUX ──
-  // Conséquence directe : tant qu'aucune couleur n'est posée, le menu fermé AFFICHE la case
-  // vide, donc « — Couleur de X — ». L'étiquette de gauche répétait alors exactement la même
-  // phrase à dix pixels d'elle, et poussait le menu à 210 px sur un écran de 360. L'étiquette
-  // ne s'affiche donc que lorsqu'une couleur EST posée — c'est-à-dire quand le menu fermé
-  // montre « Blancs » ou « Noirs » et ne dit plus de qui. Dans les deux états le nom est
-  // présent une fois, et la feuille iOS le porte toujours puisque la case vide y figure
-  // quoi qu'il arrive.
-  // On ne peut pas se reposer sur la ligne « ⚪ … choisit sa couleur » juste au-dessus pour
-  // combler le trou : elle nomme le MIEUX CLASSÉ, pas player1. Les deux coïncident souvent,
-  // et c'est bien le piège.
   const etiquetteCouleur = t('color_of').replace('{n}', () => esc(f.player1 || '?'));
   return `<div class="final-card ${f.winner?'winner':''}" style="${lateFinal?'border-left:3px solid #E67E22;':''}">
-    ${isPresential?`<div style="font-size:12px;color:#888;text-align:center;margin-bottom:6px;font-weight:500">${t("presential")} · ${f.round==='Demis'?(state?.settings?.semisFormat||'20min + 10s/coup'):(state?.settings?.finalFormat||'30min + 10s/coup')}</div>`:''}
+    ${isPresential?`<div style="font-size:13px;color:#888;text-align:center;margin-bottom:8px;font-weight:500">${t("presential")} · ${f.round==='Demis'?(state?.settings?.semisFormat||'20min + 10s/coup'):(state?.settings?.finalFormat||'30min + 10s/coup')}</div>`:''}
     ${!played&&f.player1&&f.player2?bandeauDates(roundWindowStart(f,true), dueF, lateFinal):''}
-    ${(f.player1&&f.player2&&!f.winner&&(f.rank1||f.rank2))?`<div style="font-size:11px;color:#888;text-align:center;margin-bottom:5px">⚪ ${(f.rank1!==null&&f.rank1!==undefined&&(f.rank2===null||f.rank2===undefined||f.rank1<=f.rank2))?esc(f.player1):esc(f.player2)} ${t("color_choice")}</div>`:''}
+    ${(f.player1&&f.player2&&!f.winner&&(f.rank1||f.rank2))?`<div style="font-size:13px;color:#777;text-align:center;margin-bottom:8px">⚪ <strong style="font-weight:700;color:var(--dark)">${(f.rank1!==null&&f.rank1!==undefined&&(f.rank2===null||f.rank2===undefined||f.rank1<=f.rank2))?esc(f.player1):esc(f.player2)}</strong> ${t("color_choice")}</div>`:''}
     <div class="match-players">
       <div class="match-player"><div class="match-player-name" style="color:${f.winner===f.player1?'var(--green)':'var(--dark)'}">${f.player1?esc(f.player1):'?'}</div></div>
       ${played&&!isEditing?`<div class="match-score" onclick="openFinalEdit('${f.id}')" style="cursor:pointer" title="${esc(t('modify'))}">${f.score1} — ${f.score2}</div>`:`<div class="match-vs">vs</div>`}
       <div class="match-player"><div class="match-player-name" style="color:${f.winner===f.player2?'var(--green)':'var(--dark)'}">${f.player2?esc(f.player2):'?'}</div></div>
     </div>
-    ${f.winner?`<div style="text-align:center;margin-top:8px;font-size:12px;color:var(--green);font-weight:700">${t('winner')}: ${esc(f.winner)}</div>`:''}
-    ${canPlay&&!played&&!isEditing?`<button class="btn btn-gold" style="margin-top:10px;font-size:13px;padding:9px" onclick="openFinalEdit('${f.id}')">${t('enter_score')}</button>`:''}
-    ${played&&!isEditing&&(f.colorP1==='white'||f.colorP1==='black')?`<div style="font-size:11px;color:var(--gray);text-align:center;margin-top:4px">${f.colorP1==='white'?'⬜':'⬛'} ${esc(f.player1||'')} &nbsp;·&nbsp; ${f.colorP1==='white'?'⬛':'⬜'} ${esc(f.player2||'')}</div>`:''}
-    ${isEditing?`<div style="display:flex;align-items:center;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:8px;font-size:11px;color:var(--gray)">
-      ${f.colorP1?`<span>${etiquetteCouleur}</span>`:''}
-      <select class="score-select" id="fc-${f.id}" style="width:auto;padding:6px 8px;font-size:12px">
-        <option value=""${f.colorP1?'':' selected'}>— ${etiquetteCouleur} —</option>
+    ${f.winner?`<div style="text-align:center;margin-top:10px;font-size:14px;color:var(--green);font-weight:700">${t('winner')}: ${esc(f.winner)}</div>`:''}
+    ${canPlay&&!played&&!isEditing?`<button class="btn btn-gold" style="margin-top:12px;font-size:15px;padding:12px" onclick="openFinalEdit('${f.id}')">${t('enter_score')}</button>`:''}
+    ${played&&!isEditing&&(f.colorP1==='white'||f.colorP1==='black')?`<div style="font-size:12px;color:var(--gray);text-align:center;margin-top:6px">${f.colorP1==='white'?'⬜':'⬛'} ${esc(f.player1||'')} &nbsp;·&nbsp; ${f.colorP1==='white'?'⬛':'⬜'} ${esc(f.player2||'')}</div>`:''}
+    ${isEditing?`<div style="display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px;font-size:13px;color:var(--gray)">
+      ${(f.player1&&f.player2&&!f.winner&&(f.rank1||f.rank2))?'':`<span>${etiquetteCouleur}</span>`}
+      <select class="score-select" id="fc-${f.id}" style="width:auto;padding:8px 10px;font-size:14px">
+        <option value=""${f.colorP1?'':' selected'}>${t('color_pick')}</option>
         <optgroup label="${etiquetteCouleur}">
           <option value="white"${f.colorP1==='white'?' selected':''}>${t('whites')}</option>
           <option value="black"${f.colorP1==='black'?' selected':''}>${t('blacks')}</option>

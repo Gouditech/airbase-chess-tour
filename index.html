@@ -6465,18 +6465,39 @@ function finalCardHTML(f){
   // ⚠️ Cette explication est un commentaire JS, PAS un <!-- --> dans le gabarit : un
   // commentaire HTML placé là serait recopié dans le DOM à chaque rendu de chaque carte.
   const etiquetteCouleur = t('color_of').replace('{n}', () => esc(f.player1 || '?'));
+  // ══ LE MÊME SQUELETTE QU'UNE CARTE DE POULE ══
+  // « Je trouve les fenêtres de match de finale beaucoup plus brouillonnes que celles des
+  // matchs de poule. » Les deux cartes disent la même chose — qui joue, quand, et un bouton
+  // pour saisir — mais ne la disaient pas dans le même ordre ni sous la même forme. D'où,
+  // dans l'ordre exact de la carte de poule :
+  //   dates → joueurs (nom + pastille de couleur) → l'action → le bouton
+  //  • Les PASTILLES sous les noms remplacent la ligne « ⬜ X · ⬛ Y » qui pendait en bas de
+  //    la carte une fois le match joué : même information, à l'endroit où l'œil la cherche,
+  //    et une ligne de moins.
+  //  • La ligne « ⚪ X choisit sa couleur » est DESCENDUE sous les joueurs. En haut, elle
+  //    s'intercalait entre la date et la ligne des joueurs, et son pseudo en gras tombait
+  //    juste au-dessus du même pseudo en gras : deux lignes de suite commençant par le même
+  //    mot. Sous les joueurs, elle légende le menu de couleur qu'elle annonce.
+  //  • L'EN-TÊTE DORÉ du tour, comme « GROUPE 2 · RONDE 1 » en poule. Il a été retiré une
+  //    première fois, à tort, sur l'argument suivant : le séparateur gris de section EST
+  //    déjà le tour, donc l'en-tête ne ferait que réécrire « QUARTS » dix pixels sous
+  //    « QUARTS ». Cet argument ne vaut que pour la PREMIÈRE carte de chaque section — la
+  //    seule sur laquelle on le juge quand on regarde une capture. Sur les suivantes, c'est
+  //    la seule indication du tour, et le titre gris est sorti de l'écran depuis longtemps
+  //    quand on défile au milieu des Quarts. La page des poules fait exactement pareil :
+  //    séparateur « RONDE 1 » ET « GROUPE 2 · RONDE 1 » sur chaque carte.
   return `<div class="final-card ${f.winner?'winner':''}" style="${lateFinal?'border-left:3px solid #E67E22;':''}">
+    <div class="match-grp">${esc(nomTour(f.round))}</div>
     ${isPresential?`<div style="font-size:13px;color:#888;text-align:center;margin-bottom:8px;font-weight:500">${t("presential")} · ${f.round==='Demis'?(state?.settings?.semisFormat||'20min + 10s/coup'):(state?.settings?.finalFormat||'30min + 10s/coup')}</div>`:''}
     ${!played&&f.player1&&f.player2?bandeauDates(roundWindowStart(f,true), dueF, lateFinal):''}
-    ${(f.player1&&f.player2&&!f.winner&&(f.rank1||f.rank2))?`<div style="font-size:13px;color:#777;text-align:center;margin-bottom:8px">⚪ <strong style="font-weight:700;color:var(--dark)">${(f.rank1!==null&&f.rank1!==undefined&&(f.rank2===null||f.rank2===undefined||f.rank1<=f.rank2))?esc(f.player1):esc(f.player2)}</strong> ${t("color_choice")}</div>`:''}
     <div class="match-players">
-      <div class="match-player"><div class="match-player-name" style="color:${f.winner===f.player1?'var(--green)':'var(--dark)'}">${f.player1?esc(f.player1):'?'}</div></div>
+      <div class="match-player"><div class="match-player-name" style="color:${f.winner===f.player1?'var(--green)':'var(--dark)'}">${f.player1?esc(f.player1):'?'}</div>${f.colorP1==='white'||f.colorP1==='black'?`<div class="match-player-color" style="display:inline-block;font-size:12px;font-weight:700;padding:3px 9px;border-radius:8px;margin-top:5px;${f.colorP1==='white'?'background:#F5F5F0;color:#555;border:1px solid #ddd':'background:#2c2c2c;color:#fff'}">${f.colorP1==='white'?t('whites'):t('blacks')}</div>`:''}</div>
       ${played&&!isEditing?`<div class="match-score" onclick="openFinalEdit('${f.id}')" style="cursor:pointer" title="${esc(t('modify'))}">${f.score1} — ${f.score2}</div>`:`<div class="match-vs">vs</div>`}
-      <div class="match-player"><div class="match-player-name" style="color:${f.winner===f.player2?'var(--green)':'var(--dark)'}">${f.player2?esc(f.player2):'?'}</div></div>
+      <div class="match-player"><div class="match-player-name" style="color:${f.winner===f.player2?'var(--green)':'var(--dark)'}">${f.player2?esc(f.player2):'?'}</div>${f.colorP1==='white'||f.colorP1==='black'?`<div class="match-player-color" style="display:inline-block;font-size:12px;font-weight:700;padding:3px 9px;border-radius:8px;margin-top:5px;${f.colorP1==='black'?'background:#F5F5F0;color:#555;border:1px solid #ddd':'background:#2c2c2c;color:#fff'}">${f.colorP1==='black'?t('whites'):t('blacks')}</div>`:''}</div>
     </div>
+    ${(f.player1&&f.player2&&!f.winner&&(f.rank1||f.rank2))?`<div style="font-size:13px;color:#777;text-align:center;margin-top:10px">⚪ <strong style="font-weight:700;color:var(--dark)">${(f.rank1!==null&&f.rank1!==undefined&&(f.rank2===null||f.rank2===undefined||f.rank1<=f.rank2))?esc(f.player1):esc(f.player2)}</strong> ${t("color_choice")}</div>`:''}
     ${f.winner?`<div style="text-align:center;margin-top:10px;font-size:14px;color:var(--green);font-weight:700">${t('winner')}: ${esc(f.winner)}</div>`:''}
     ${canPlay&&!played&&!isEditing?`<button class="btn btn-gold" style="margin-top:12px;font-size:15px;padding:12px" onclick="openFinalEdit('${f.id}')">${t('enter_score')}</button>`:''}
-    ${played&&!isEditing&&(f.colorP1==='white'||f.colorP1==='black')?`<div style="font-size:12px;color:var(--gray);text-align:center;margin-top:6px">${f.colorP1==='white'?'⬜':'⬛'} ${esc(f.player1||'')} &nbsp;·&nbsp; ${f.colorP1==='white'?'⬛':'⬜'} ${esc(f.player2||'')}</div>`:''}
     ${isEditing?`<div style="display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px;font-size:13px;color:var(--gray)">
       ${(f.player1&&f.player2&&!f.winner&&(f.rank1||f.rank2))?'':`<span>${etiquetteCouleur}</span>`}
       <select class="score-select" id="fc-${f.id}" style="width:auto;padding:8px 10px;font-size:14px">

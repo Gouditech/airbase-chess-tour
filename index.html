@@ -341,7 +341,11 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
     <button class="btn btn-gold" style="flex:1;padding:18px 4px;font-size:12px;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,0.08);line-height:1.4" onclick="toggleInfoSection('palmares')" id="info-palmares-btn">🏅<br>Palmarès</button>
     <button class="btn btn-gold" style="flex:1;padding:18px 4px;font-size:12px;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,0.08);line-height:1.4" onclick="toggleInfoSection('rules')" id="info-rules-btn">📜<br>Règlement</button>
   </div>
-  <div id="notif-invite-text" style="font-size:11px;color:var(--gray);text-align:center;margin-bottom:12px;line-height:1.5"></div>
+  <div id="wa-community" style="display:none;margin-bottom:14px"></div>
+  <!-- L'astuce vient APRÈS la carte communauté : la carte est une action qu'on fait ici,
+       l'astuce renvoie ailleurs (page Tournoi). Ce qui s'agit sur place passe devant.
+       Elle est aussi masquée pour qui est déjà abonné — voir renderInfo. -->
+  <div id="notif-invite-text" style="font-size:12px;color:var(--gray);text-align:center;margin-bottom:12px;line-height:1.5"></div>
   <div class="card" id="info-ranking-section" style="display:none">
     <h2 id="info-ranking-title">Classement en direct</h2>
     <div id="live-ranking-content"></div>
@@ -414,6 +418,15 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
         <button class="btn btn-gray" style="margin-top:8px" onclick="copyWhatsApp()" id="copy-whatsapp-btn">📋 Copier le message</button>
         <div id="whatsapp-msg-result"></div>
 
+      </div>
+
+      <div class="card" style="margin-top:0">
+        <h2 id="wa-comm-title">💬 Communauté WhatsApp</h2>
+        <p id="wa-comm-help" style="font-size:12px;color:var(--gray);line-height:1.6;margin:0 0 10px"></p>
+        <input id="wa-comm-input" type="url" inputmode="url" autocomplete="off" placeholder="https://chat.whatsapp.com/…"
+               style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:12px">
+        <button class="btn btn-gray" style="margin-top:8px" onclick="saveCommunauteWhatsApp()" id="wa-comm-save">💾 Enregistrer le lien</button>
+        <div id="wa-comm-result" style="font-size:12px;margin-top:6px"></div>
       </div>
 
       <div class="card" style="margin-top:0">
@@ -1076,6 +1089,30 @@ function oublieLocal(cle) {
   try { localStorage.removeItem(cle); } catch (e) {}
 }
 
+// ── LES NOTIFICATIONS MANQUENT-ELLES À CE VISITEUR ? ──
+// Deux endroits du site répondent à cette question : le bouton de la page Tournoi, qui
+// change de couleur, et l'astuce de la page Infos, qui n'apparaît que si le rappel a
+// encore un sens. Un seul calcul, donc — deux copies finiraient par diverger le jour où
+// l'une des deux serait corrigée seule.
+//
+// ⚠️ LECTURE SEULE, DÉLIBÉRÉMENT. updateNotifBtn fait davantage : quand le navigateur a
+// révoqué la permission, il NETTOIE — drapeaux locaux effacés, entrée supprimée dans
+// Firebase. Cette fonction-ci ne doit rien supprimer. Ouvrir l'onglet Infos n'est pas un
+// geste qui autorise à toucher à l'abonnement de quelqu'un, et renderInfo peut s'exécuter
+// à tout moment. Les deux doivent CONCLURE pareil, pas AGIR pareil.
+//
+// « En sourdine » — abonné mais les deux catégories décochées — compte comme manquant :
+// cette personne ne reçoit rien, le rappel reste donc exact pour elle. C'est la même
+// règle que le bouton orange de la page Tournoi.
+function notificationsManquantes() {
+  const on = litLocal('abct-notif') === 'on'
+    && (!('Notification' in window) || Notification.permission === 'granted');
+  if (!on) return true;
+  const subId = litLocal('abct-notif-subid');
+  const prefs = subId ? state?.[SUB_PATH]?.[subId]?.prefs : null;
+  return !!(prefs && prefs.officiel === false && prefs.match === false);
+}
+
 function updateNotifBtn() {
   const btn = document.getElementById('notif-toggle-btn');
   const testBtn = document.getElementById('notif-test-btn');
@@ -1616,7 +1653,7 @@ const T = {
     send_notif_btn:"📤 Envoyer à tous les abonnés",
     reset_subs_btn:"↺ Réinitialiser tous les abonnements",
     copy_whatsapp_btn:"📋 Copier le message",
-    maint_title:"Maintenance en cours",maint_btn:"🔧 Mode maintenance",maint_btn_stop:"✅ Désactiver maintenance",confirm_del_sub:"Retirer cet abonnement ? Cette personne ne recevra plus rien tant qu'elle ne se réabonne pas.",
+    maint_title:"Maintenance en cours",maint_btn:"🔧 Mode maintenance",maint_btn_stop:"✅ Désactiver maintenance",wa_comm_title:"💬 Communauté WhatsApp",wa_comm_text:"Pour discuter et convenir de tes matchs avec les autres joueurs.",wa_comm_btn:"Rejoindre la communauté",wa_comm_admin_help:"Lien d'invitation de la communauté, affiché dans l'onglet Infos. Laisse le champ vide pour n'afficher aucun bloc.",wa_comm_save:"💾 Enregistrer le lien",wa_comm_saved:"✓ Lien enregistré",wa_comm_cleared:"✓ Lien retiré",wa_comm_invalid:"Le lien doit commencer par https://chat.whatsapp.com/",confirm_del_sub:"Retirer cet abonnement ? Cette personne ne recevra plus rien tant qu'elle ne se réabonne pas.",
     maint_text:"Le site est temporairement indisponible.<br>Revenez dans quelques instants.",
     maint_admin_access:"Accès administrateur",
     maint_login_btn:"Connexion admin",
@@ -1751,7 +1788,7 @@ const T = {
     send_notif_btn:"📤 An alle Abonnenten senden",
     reset_subs_btn:"↺ Alle Abonnements zurücksetzen",
     copy_whatsapp_btn:"📋 Nachricht kopieren",
-    maint_title:"Wartung läuft",maint_btn:"🔧 Wartungsmodus",maint_btn_stop:"✅ Wartungsmodus beenden",confirm_del_sub:"Dieses Abonnement entfernen? Diese Person erhält nichts mehr, bis sie sich erneut anmeldet.",
+    maint_title:"Wartung läuft",maint_btn:"🔧 Wartungsmodus",maint_btn_stop:"✅ Wartungsmodus beenden",wa_comm_title:"💬 WhatsApp-Community",wa_comm_text:"Zum Austausch und zur Absprache deiner Partien mit den anderen Spielern.",wa_comm_btn:"Der Community beitreten",wa_comm_admin_help:"Einladungslink der Community, angezeigt im Tab Infos. Leer lassen, um keinen Block anzuzeigen.",wa_comm_save:"💾 Link speichern",wa_comm_saved:"✓ Link gespeichert",wa_comm_cleared:"✓ Link entfernt",wa_comm_invalid:"Der Link muss mit https://chat.whatsapp.com/ beginnen",confirm_del_sub:"Dieses Abonnement entfernen? Diese Person erhält nichts mehr, bis sie sich erneut anmeldet.",
     maint_text:"Die Website ist vorübergehend nicht verfügbar.<br>Bitte versuche es in Kürze erneut.",
     maint_admin_access:"Administratorzugang",
     maint_login_btn:"Admin-Anmeldung",
@@ -1885,7 +1922,7 @@ const T = {
     send_notif_btn:"📤 Send to all subscribers",
     reset_subs_btn:"↺ Reset all subscriptions",
     copy_whatsapp_btn:"📋 Copy message",
-    maint_title:"Maintenance in progress",maint_btn:"🔧 Maintenance mode",maint_btn_stop:"✅ Turn off maintenance",confirm_del_sub:"Remove this subscription? This person will receive nothing until they subscribe again.",
+    maint_title:"Maintenance in progress",maint_btn:"🔧 Maintenance mode",maint_btn_stop:"✅ Turn off maintenance",wa_comm_title:"💬 WhatsApp community",wa_comm_text:"To chat and arrange your games with the other players.",wa_comm_btn:"Join the community",wa_comm_admin_help:"Community invite link, shown in the Info tab. Leave empty to show no block at all.",wa_comm_save:"💾 Save the link",wa_comm_saved:"✓ Link saved",wa_comm_cleared:"✓ Link removed",wa_comm_invalid:"The link must start with https://chat.whatsapp.com/",confirm_del_sub:"Remove this subscription? This person will receive nothing until they subscribe again.",
     maint_text:"The site is temporarily unavailable.<br>Please check back shortly.",
     maint_admin_access:"Administrator access",
     maint_login_btn:"Admin login",
@@ -2019,7 +2056,7 @@ const T = {
     send_notif_btn:"📤 Inviare a tutti gli iscritti",
     reset_subs_btn:"↺ Azzerare tutti gli abbonamenti",
     copy_whatsapp_btn:"📋 Copiare il messaggio",
-    maint_title:"Manutenzione in corso",maint_btn:"🔧 Modalità manutenzione",maint_btn_stop:"✅ Disattivare manutenzione",confirm_del_sub:"Rimuovere questo abbonamento? Questa persona non riceverà più nulla finché non si riabbona.",
+    maint_title:"Manutenzione in corso",maint_btn:"🔧 Modalità manutenzione",maint_btn_stop:"✅ Disattivare manutenzione",wa_comm_title:"💬 Comunità WhatsApp",wa_comm_text:"Per parlare e accordarti sulle tue partite con gli altri giocatori.",wa_comm_btn:"Unirsi alla comunità",wa_comm_admin_help:"Link d'invito della comunità, mostrato nella scheda Info. Lascia vuoto per non mostrare alcun blocco.",wa_comm_save:"💾 Salvare il link",wa_comm_saved:"✓ Link salvato",wa_comm_cleared:"✓ Link rimosso",wa_comm_invalid:"Il link deve iniziare con https://chat.whatsapp.com/",confirm_del_sub:"Rimuovere questo abbonamento? Questa persona non riceverà più nulla finché non si riabbona.",
     maint_text:"Il sito è temporaneamente non disponibile.<br>Riprova tra qualche istante.",
     maint_admin_access:"Accesso amministratore",
     maint_login_btn:"Accesso admin",
@@ -2285,6 +2322,9 @@ function applyTranslations() {
   // état, et invitant à allumer ce qui l'était déjà. Un seul endroit écrit ce bouton, et il
   // connaît l'état.
   updateMaintenanceBtn();
+  setT('wa-comm-title', 'wa_comm_title');
+  setT('wa-comm-help', 'wa_comm_admin_help');
+  setT('wa-comm-save', 'wa_comm_save');
   setT('open-reg-btn', 'open_reg_btn');
   setT('start-pools-btn', 'start_pools_btn');
   setT('finish-btn', 'finish_btn');
@@ -2525,8 +2565,17 @@ function renderInfo() {
     if (semisSpan) semisSpan.textContent = s.semisFormat || '20min + 10s/coup';
     if (finalSpan) finalSpan.textContent = s.finalFormat || '30min + 10s/coup';
   }
+  // L'astuce ne s'affiche QUE si elle a encore un sens. Elle était permanente : le joueur
+  // qui avait activé ses notifications lisait quand même « pense à activer tes
+  // notifications » à chaque passage sur Infos, ce qui est faux pour lui et use le
+  // message pour les autres.
   const inviteEl = document.getElementById('notif-invite-text');
-  if (inviteEl) inviteEl.textContent = t('notif_invite_info');
+  if (inviteEl) {
+    const utile = notificationsManquantes();
+    inviteEl.style.display = utile ? 'block' : 'none';
+    inviteEl.textContent = utile ? t('notif_invite_info') : '';
+  }
+  renderCommunauteWhatsApp();
   renderPalmares();
   // Le classement en direct doit suivre les scores en temps réel, pas seulement
   // au moment où on ouvre sa section.
@@ -4710,6 +4759,85 @@ window.submitFinalScore = async function(id) {
 };
 window.cancelFinal = function() { editingFinalId=null; renderFinals(); };
 
+// ══════════════════════════════════════════════════════════════════
+//  COMMUNAUTÉ WHATSAPP
+//  Le site coordonne le CALENDRIER : il dit à deux joueurs qu'ils doivent jouer entre
+//  telle et telle date. Il ne leur donne aucun moyen de se JOINDRE pour fixer le
+//  rendez-vous. Sur des rondes étalées sur trois semaines, c'est là qu'est le frottement.
+//  Ce lien ferme l'autre moitié de la boucle.
+// ══════════════════════════════════════════════════════════════════
+
+// ⚠️ LE SEUL CONTRÔLE QUI PROTÈGE LES JOUEURS EST CELUI-CI, AU RENDU.
+// Les règles Firebase ouvrent l'écriture de `settings` à `auth != null` — et TOUT
+// visiteur est authentifié anonymement. N'importe qui peut donc y écrire. Aujourd'hui le
+// pire est un sabotage de dates ; mettre une valeur de la base dans un `href` en ferait
+// bien plus : une URL « javascript:… » exécuterait du code dans la session du joueur qui
+// clique, avec son jeton. Le contrôle à la saisie ne protège de rien — il suffit d'écrire
+// dans la base sans passer par le formulaire. Celui-ci, lui, s'applique à chaque affichage.
+// Le préfixe est exigé EN ENTIER, schéma et domaine compris : « https://chat.whatsapp.com/ ».
+const PREFIXE_COMMUNAUTE = 'https://chat.whatsapp.com/';
+function lienCommunauteValide(url) {
+  return typeof url === 'string' && url.indexOf(PREFIXE_COMMUNAUTE) === 0 && url.length > PREFIXE_COMMUNAUTE.length;
+}
+
+function renderCommunauteWhatsApp() {
+  const box = document.getElementById('wa-community');
+  if (!box) return;
+  const lien = state?.settings?.whatsappCommunity;
+  // Rien de réglé, ou réglé n'importe comment : AUCUN bloc. Pas de carte vide, pas de
+  // bouton mort. L'absence du lien doit se voir par l'absence de la carte.
+  if (!lienCommunauteValide(lien)) { box.style.display = 'none'; box.innerHTML = ''; return; }
+  box.style.display = 'block';
+  // ── LA TAILLE DE CE BLOC EST MESURÉE, PAS ESTIMÉE (21 septembre) ──
+  // Ce bloc est SECONDAIRE. Les trois tuiles dorées juste au-dessus sont la navigation de
+  // la page ; rien ici ne doit les dominer, ni en largeur ni en typographie.
+  //  • Le bouton est une PASTILLE (inline-block), pas une bande pleine largeur. La bande
+  //    faisait 326 px, soit 2,86× la largeur d'une tuile, et se lisait comme l'action
+  //    principale de la page. La pastille fait 199 px — 1,5 à 1,9× selon la langue, donc
+  //    PLUS PETITE qu'une tuile en surface. C'est la LARGEUR qui donnait ce poids : baisser
+  //    la police de 14 à 13 px en gardant la pleine largeur ne changeait rien à l'œil, et
+  //    grossir les tuiles dorées non plus. Les deux ont été rendus et comparés.
+  //  • 12 px PARTOUT : les libellés dorés sont à 12 px. Le titre était à 14 et le bouton à
+  //    13, le bloc secondaire dépassait donc la navigation. Le titre reste un titre par sa
+  //    graisse et son encre foncée, pas par sa taille. 12 px est aussi le plancher que
+  //    verif-langues fait respecter — ne rien descendre en dessous.
+  //  • Rembourrage 13/26 px : il tient le bouton à 40 px de haut. Plus bas, la cible
+  //    tactile s'éloignerait encore des 48 dp recommandés sur Android.
+  //  • Le texte ne parle PAS des annonces du tournoi : elles passent par les notifications
+  //    push. Les répéter ici laisserait croire qu'il faut venir les chercher dans WhatsApp.
+  //    Il ne répète pas non plus « Rejoins la communauté », que le bouton écrit déjà ; il ne
+  //    garde que ce que ni le titre ni le bouton ne disent — à quoi la communauté sert.
+  // `rel="noopener"` : sans lui, la page ouverte garde une référence sur celle-ci et peut
+  // la rediriger. `esc()` couvre le guillemet double, donc l'URL est sûre dans l'attribut.
+  box.innerHTML = `<div class="card" style="margin-top:0;text-align:center;padding:14px">
+    <div style="font-size:12px;font-weight:700;color:var(--dark);margin-bottom:5px">${t('wa_comm_title')}</div>
+    <div style="font-size:12px;color:var(--gray);line-height:1.5;margin-bottom:10px">${t('wa_comm_text')}</div>
+    <a href="${esc(lien)}" target="_blank" rel="noopener noreferrer"
+       style="display:inline-block;background:var(--green);color:#fff;padding:13px 26px;border-radius:10px;font-size:12px;font-weight:700;text-decoration:none">${t('wa_comm_btn')}</a>
+  </div>`;
+}
+
+window.saveCommunauteWhatsApp = async function() {
+  if (!isAdmin) return;
+  const champ = document.getElementById('wa-comm-input');
+  const sortie = document.getElementById('wa-comm-result');
+  if (!champ) return;
+  const val = champ.value.trim();
+  const dire = (msg, ok) => { if (sortie) { sortie.textContent = msg; sortie.style.color = ok ? 'var(--green)' : 'var(--red)'; } };
+  // Champ vidé : on RETIRE le lien. `null` supprime la clé dans Firebase ; la chaîne vide
+  // la laisserait dans la base, invisible mais présente à l'export.
+  if (!val) {
+    await set(ref(db, 'settings/whatsappCommunity'), null);
+    dire(t('wa_comm_cleared'), true);
+    return;
+  }
+  // Ce contrôle-ci est pour l'organisateur : il dit tout de suite pourquoi ça ne marchera
+  // pas, au lieu de le laisser enregistrer un lien que l'affichage refusera en silence.
+  if (!lienCommunauteValide(val)) { dire(t('wa_comm_invalid'), false); return; }
+  await set(ref(db, 'settings/whatsappCommunity'), val);
+  dire(t('wa_comm_saved'), true);
+};
+
 // ── RETIRER LA COULEUR ──
 // La case vide du menu est `hidden` : elle sert encore d'étiquette au menu refermé, mais
 // n'apparaît plus dans la feuille de sélection du navigateur, qui ne montre que le titre
@@ -6637,6 +6765,12 @@ function renderAdmin(){
   document.getElementById('set-finals-start').value=s.finalsStartDate||'';
   document.getElementById('set-finals-interval').value=s.finalsInterval||4;
   document.getElementById('set-semis').value=s.semisFormat||'20min + 10s/coup';
+  // Le champ de la communauté se remplit ici comme les autres réglages. Il vit dans
+  // l'onglet Notifs mais se range dans `settings` : c'est un réglage du tournoi, pas un
+  // abonnement. On n'écrit QUE si le champ n'a pas le focus, sinon une mise à jour Firebase
+  // arrivant pendant la frappe effacerait ce que l'organisateur est en train de taper.
+  const champComm = document.getElementById('wa-comm-input');
+  if (champComm && document.activeElement !== champComm) champComm.value = s.whatsappCommunity || '';
   document.getElementById('set-final-format').value=s.finalFormat||'30min + 10s/coup';
   { const cb=document.getElementById('set-third-place'); if (cb) cb.checked = state?.settings?.thirdPlaceMatch !== false; }
   updatePoolEndEstimate();

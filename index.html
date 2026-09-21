@@ -341,8 +341,11 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
     <button class="btn btn-gold" style="flex:1;padding:18px 4px;font-size:12px;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,0.08);line-height:1.4" onclick="toggleInfoSection('palmares')" id="info-palmares-btn">🏅<br>Palmarès</button>
     <button class="btn btn-gold" style="flex:1;padding:18px 4px;font-size:12px;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,0.08);line-height:1.4" onclick="toggleInfoSection('rules')" id="info-rules-btn">📜<br>Règlement</button>
   </div>
-  <div id="notif-invite-text" style="font-size:11px;color:var(--gray);text-align:center;margin-bottom:12px;line-height:1.5"></div>
   <div id="wa-community" style="display:none;margin-bottom:14px"></div>
+  <!-- L'astuce vient APRÈS la carte communauté : la carte est une action qu'on fait ici,
+       l'astuce renvoie ailleurs (page Tournoi). Ce qui s'agit sur place passe devant.
+       Elle est aussi masquée pour qui est déjà abonné — voir renderInfo. -->
+  <div id="notif-invite-text" style="font-size:12px;color:var(--gray);text-align:center;margin-bottom:12px;line-height:1.5"></div>
   <div class="card" id="info-ranking-section" style="display:none">
     <h2 id="info-ranking-title">Classement en direct</h2>
     <div id="live-ranking-content"></div>
@@ -1084,6 +1087,30 @@ function litLocal(cle) {
 }
 function oublieLocal(cle) {
   try { localStorage.removeItem(cle); } catch (e) {}
+}
+
+// ── LES NOTIFICATIONS MANQUENT-ELLES À CE VISITEUR ? ──
+// Deux endroits du site répondent à cette question : le bouton de la page Tournoi, qui
+// change de couleur, et l'astuce de la page Infos, qui n'apparaît que si le rappel a
+// encore un sens. Un seul calcul, donc — deux copies finiraient par diverger le jour où
+// l'une des deux serait corrigée seule.
+//
+// ⚠️ LECTURE SEULE, DÉLIBÉRÉMENT. updateNotifBtn fait davantage : quand le navigateur a
+// révoqué la permission, il NETTOIE — drapeaux locaux effacés, entrée supprimée dans
+// Firebase. Cette fonction-ci ne doit rien supprimer. Ouvrir l'onglet Infos n'est pas un
+// geste qui autorise à toucher à l'abonnement de quelqu'un, et renderInfo peut s'exécuter
+// à tout moment. Les deux doivent CONCLURE pareil, pas AGIR pareil.
+//
+// « En sourdine » — abonné mais les deux catégories décochées — compte comme manquant :
+// cette personne ne reçoit rien, le rappel reste donc exact pour elle. C'est la même
+// règle que le bouton orange de la page Tournoi.
+function notificationsManquantes() {
+  const on = litLocal('abct-notif') === 'on'
+    && (!('Notification' in window) || Notification.permission === 'granted');
+  if (!on) return true;
+  const subId = litLocal('abct-notif-subid');
+  const prefs = subId ? state?.[SUB_PATH]?.[subId]?.prefs : null;
+  return !!(prefs && prefs.officiel === false && prefs.match === false);
 }
 
 function updateNotifBtn() {
@@ -2538,8 +2565,16 @@ function renderInfo() {
     if (semisSpan) semisSpan.textContent = s.semisFormat || '20min + 10s/coup';
     if (finalSpan) finalSpan.textContent = s.finalFormat || '30min + 10s/coup';
   }
+  // L'astuce ne s'affiche QUE si elle a encore un sens. Elle était permanente : le joueur
+  // qui avait activé ses notifications lisait quand même « pense à activer tes
+  // notifications » à chaque passage sur Infos, ce qui est faux pour lui et use le
+  // message pour les autres.
   const inviteEl = document.getElementById('notif-invite-text');
-  if (inviteEl) inviteEl.textContent = t('notif_invite_info');
+  if (inviteEl) {
+    const utile = notificationsManquantes();
+    inviteEl.style.display = utile ? 'block' : 'none';
+    inviteEl.textContent = utile ? t('notif_invite_info') : '';
+  }
   renderCommunauteWhatsApp();
   renderPalmares();
   // Le classement en direct doit suivre les scores en temps réel, pas seulement

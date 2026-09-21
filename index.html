@@ -341,11 +341,6 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
     <button class="btn btn-gold" style="flex:1;padding:18px 4px;font-size:12px;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,0.08);line-height:1.4" onclick="toggleInfoSection('palmares')" id="info-palmares-btn">🏅<br>Palmarès</button>
     <button class="btn btn-gold" style="flex:1;padding:18px 4px;font-size:12px;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,0.08);line-height:1.4" onclick="toggleInfoSection('rules')" id="info-rules-btn">📜<br>Règlement</button>
   </div>
-  <div id="wa-community" style="display:none;margin-bottom:14px"></div>
-  <!-- L'astuce vient APRÈS la carte communauté : la carte est une action qu'on fait ici,
-       l'astuce renvoie ailleurs (page Tournoi). Ce qui s'agit sur place passe devant.
-       Elle est aussi masquée pour qui est déjà abonné — voir renderInfo. -->
-  <div id="notif-invite-text" style="font-size:12px;color:var(--gray);text-align:center;margin-bottom:12px;line-height:1.5"></div>
   <div class="card" id="info-ranking-section" style="display:none">
     <h2 id="info-ranking-title">Classement en direct</h2>
     <div id="live-ranking-content"></div>
@@ -361,6 +356,32 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
     <h2 id="info-rules-title">Règlement</h2>
     <div id="rules-content" style="font-size:12px;color:#555;line-height:1.7"></div>
   </div>
+  <!-- ── PIED DE PAGE DE L'ONGLET : APRÈS LES TROIS SECTIONS, JAMAIS AVANT ──
+       Les trois tuiles dorées sont la navigation. Ce qu'on ouvre en tapant l'une d'elles
+       doit commencer JUSTE DESSOUS. Placés plus haut, ces deux blocs s'intercalaient entre
+       le bouton touché et la section ouverte : on tapait « Palmarès » et le palmarès
+       n'était pas là où le doigt venait de se poser.
+       Sections fermées, l'ordre à l'écran ne change pas : tuiles, carte, astuce.
+
+       margin-top:30px, et non l'écart de 12 px entre deux cartes. À 12 px, la carte
+       communauté devenait le jumeau de la section ouverte — même blanc, même rayon, même
+       ombre, donc deux résultats de même rang alors que l'un est ce qu'on vient d'ouvrir et
+       l'autre un meuble permanent. Sections fermées, elle se collait aux tuiles et se
+       lisait comme une quatrième tuile de navigation. Les 30 px règlent les deux états.
+       Un filet gris a été essayé et rejeté : accroché à rien, aligné sur rien, il ajoutait
+       un trait sans ajouter de sens.
+
+       Masquer ce pied de page à l'ouverture d'une section a aussi été construit puis
+       rejeté : le gain n'existe que sur une section courte, souvent hors écran, et il
+       fallait donner à toggleInfoSection une TROISIÈME autorité sur la visibilité de la
+       carte — devinée depuis innerHTML, après renderCommunauteWhatsApp (le lien est-il
+       valide ?) et renderInfo (faut-il l'afficher ?).
+
+       Entre les deux blocs : la carte d'abord, l'astuce ensuite. La carte est une action
+       qu'on fait ici, l'astuce renvoie ailleurs (page Tournoi) ; ce qui s'agit sur place
+       passe devant. L'astuce est masquée pour qui est déjà abonné — voir renderInfo. -->
+  <div id="wa-community" style="display:none;margin-top:30px;margin-bottom:14px"></div>
+  <div id="notif-invite-text" style="font-size:12px;color:var(--gray);text-align:center;margin-bottom:12px;line-height:1.5"></div>
   <div style="text-align:center;margin-top:60px;margin-bottom:16px">
     <button onclick="showPage('admin')" id="info-admin-btn" style="border:1px solid #e0e0e0;background:#fafafa;color:#999;font-size:13px;cursor:pointer;padding:10px 22px;border-radius:10px">⚙️ Admin</button>
   </div>

@@ -304,6 +304,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
       <div id="reg-msg"></div>
     </div>
   </div>
+  <div class="card" id="reg-closed-card" style="display:none;text-align:center;font-weight:700;color:var(--gray)"></div>
   <div class="card">
     <h2 id="players-title">Joueurs inscrits (<span id="player-list-count">0</span>)</h2>
     <div id="player-list"></div>
@@ -528,6 +529,9 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
         <div class="gap">
           <button class="btn btn-gray" onclick="toggleMaintenance()" id="maint-btn" style="background:#444;color:#fff">🔧 Mode maintenance</button>
           <button class="btn btn-gray" onclick="setStatus('registration')" id="open-reg-btn">📋 Ouvrir les inscriptions</button>
+          <!-- Ferme les inscriptions SANS quitter la phase d'inscription : la liste est close
+               mais le tirage n'est pas fait. Visible uniquement pendant cette phase. -->
+          <button class="btn btn-gray" onclick="toggleRegistrationClosed()" id="close-reg-btn" style="display:none">🔒 Fermer les inscriptions</button>
           <button class="btn btn-gray" onclick="confirmAction('assignGroups')" id="assign-btn-action">♟ Assigner groupes & générer matchs</button>
           <button class="btn btn-gray" onclick="setStatus('playing')" id="start-pools-btn">⚔️ Lancer la phase de poules</button>
           <button class="btn btn-gray" onclick="confirmAction('launchFinals')" id="launch-finals-btn">🏆 Lancer les phases finales</button>
@@ -1664,7 +1668,7 @@ const T = {
     
     change_pin_btn:"Modifier le PIN",
     check_late_btn:"🔍 Vérifier les retards maintenant",
-    open_reg_btn:"📋 Ouvrir les inscriptions",phase_reg_done:"📋 Inscriptions ouvertes",phase_pools_done:"⚔️ Phase de poules lancée",phase_finals_done:"🏆 Phases finales lancées",phase_finished_done:"🏁 Tournoi terminé",
+    open_reg_btn:"📋 Ouvrir les inscriptions",close_reg_btn:"🔒 Fermer les inscriptions",reopen_reg_btn:"🔓 Rouvrir les inscriptions",status_reg_closed:"Inscriptions fermées",phase_reg_closed:"🔒 Inscriptions fermées",phase_reg_done:"📋 Inscriptions ouvertes",phase_pools_done:"⚔️ Phase de poules lancée",phase_finals_done:"🏆 Phases finales lancées",phase_finished_done:"🏁 Tournoi terminé",
     start_pools_btn:"⚔️ Lancer la phase de poules",
     finish_btn:"🏁 Terminer le tournoi",
     assign_btn_action:"♟ Assigner groupes & générer matchs",
@@ -1799,7 +1803,7 @@ const T = {
     
     change_pin_btn:"PIN ändern",
     check_late_btn:"🔍 Verspätungen jetzt prüfen",
-    open_reg_btn:"📋 Anmeldung öffnen",phase_reg_done:"📋 Anmeldung geöffnet",phase_pools_done:"⚔️ Gruppenphase gestartet",phase_finals_done:"🏆 Finalrunden gestartet",phase_finished_done:"🏁 Turnier beendet",
+    open_reg_btn:"📋 Anmeldung öffnen",close_reg_btn:"🔒 Anmeldung schließen",reopen_reg_btn:"🔓 Anmeldung wieder öffnen",status_reg_closed:"Anmeldung geschlossen",phase_reg_closed:"🔒 Anmeldung geschlossen",phase_reg_done:"📋 Anmeldung geöffnet",phase_pools_done:"⚔️ Gruppenphase gestartet",phase_finals_done:"🏆 Finalrunden gestartet",phase_finished_done:"🏁 Turnier beendet",
     start_pools_btn:"⚔️ Gruppenphase starten",
     finish_btn:"🏁 Turnier beenden",
     assign_btn_action:"♟ Gruppen zuweisen & Partien erstellen",
@@ -1933,7 +1937,7 @@ const T = {
     
     change_pin_btn:"Change PIN",
     check_late_btn:"🔍 Check for overdue matches now",
-    open_reg_btn:"📋 Open registration",phase_reg_done:"📋 Registration open",phase_pools_done:"⚔️ Group stage launched",phase_finals_done:"🏆 Final stages launched",phase_finished_done:"🏁 Tournament finished",
+    open_reg_btn:"📋 Open registration",close_reg_btn:"🔒 Close registration",reopen_reg_btn:"🔓 Reopen registration",status_reg_closed:"Registration closed",phase_reg_closed:"🔒 Registration closed",phase_reg_done:"📋 Registration open",phase_pools_done:"⚔️ Group stage launched",phase_finals_done:"🏆 Final stages launched",phase_finished_done:"🏁 Tournament finished",
     start_pools_btn:"⚔️ Launch group stage",
     finish_btn:"🏁 Finish tournament",
     assign_btn_action:"♟ Assign groups & generate matches",
@@ -2067,7 +2071,7 @@ const T = {
     
     change_pin_btn:"Modificare il PIN",
     check_late_btn:"🔍 Verificare i ritardi adesso",
-    open_reg_btn:"📋 Aprire le iscrizioni",phase_reg_done:"📋 Iscrizioni aperte",phase_pools_done:"⚔️ Fase a gironi avviata",phase_finals_done:"🏆 Fasi finali avviate",phase_finished_done:"🏁 Torneo terminato",
+    open_reg_btn:"📋 Aprire le iscrizioni",close_reg_btn:"🔒 Chiudere le iscrizioni",reopen_reg_btn:"🔓 Riaprire le iscrizioni",status_reg_closed:"Iscrizioni chiuse",phase_reg_closed:"🔒 Iscrizioni chiuse",phase_reg_done:"📋 Iscrizioni aperte",phase_pools_done:"⚔️ Fase a gironi avviata",phase_finals_done:"🏆 Fasi finali avviate",phase_finished_done:"🏁 Torneo terminato",
     start_pools_btn:"⚔️ Avviare la fase a gironi",
     finish_btn:"🏁 Terminare il torneo",
     assign_btn_action:"♟ Assegnare i gruppi & generare le partite",
@@ -4040,7 +4044,7 @@ async function harmoniserNomPalmares(pseudo, nouveauNom) {
 window.registerPlayer = async function() {
   // Le formulaire n'est affiché que pendant la phase d'inscription, mais la fonction
   // elle-même ne le vérifiait pas : garde de sécurité en profondeur.
-  if (state?.settings?.status !== 'registration') { showMsg('reg-msg', t('reg_closed'), false); return; }
+  if (state?.settings?.status !== 'registration' || inscriptionsFermees()) { showMsg('reg-msg', t('reg_closed'), false); return; }
   const nick=document.getElementById('reg-nick').value.trim();
   const name=document.getElementById('reg-name').value.trim();
   const sector=document.getElementById('reg-sector').value.trim();
@@ -5757,8 +5761,23 @@ function applyMaintenanceOverlay() {
   updateMaintenanceBtn();
 };
 
+// Inscriptions fermées par l'admin avant le tirage. Le drapeau n'a de sens que pendant la
+// phase d'inscription : hors de celle-ci, le formulaire est masqué de toute façon.
+function inscriptionsFermees() {
+  const s = state?.settings || {};
+  return s.status === 'registration' && s.registrationClosed === true;
+}
+
+window.toggleRegistrationClosed = async function() {
+  if (!isAdmin) return;
+  await set(ref(db,'settings/registrationClosed'), !(state?.settings?.registrationClosed === true));
+  showMsg('actions-msg', '✓');
+};
+
 window.setStatus = async function(status) {
   if (!isAdmin) return;
+  // « Ouvrir les inscriptions » rouvre aussi un formulaire fermé à la main.
+  if (status === 'registration') await set(ref(db,'settings/registrationClosed'), null);
   await set(ref(db,'settings/status'), status);
   showMsg('actions-msg', '✓');
 };
@@ -6239,6 +6258,7 @@ function renderHome(){
   }
   const statusIcon={registration:'📋',playing:'⚔️',finals:'🏆',finished:'✅'};
   const statusMap={registration:t('status_registration'),playing:t('status_playing'),finals:t('status_finals'),finished:t('status_finished')};
+  if (inscriptionsFermees()) { statusIcon.registration='🔒'; statusMap.registration=t('status_reg_closed'); }
   document.getElementById('header-sub').textContent=statusMap[s.status]||'';
   const cnt=players.length;
   document.getElementById('home-player-count').textContent=cnt+' '+(cnt===1?t('players_count_1'):t('players_count_n'));
@@ -6246,7 +6266,7 @@ function renderHome(){
   document.getElementById('home-badge').innerHTML=`<span class="badge ${badgeClass[s.status]||''}">${statusIcon[s.status]||''} ${statusMap[s.status]||''}</span>`;
   const regDeadlineEl = document.getElementById('home-reg-deadline');
   if (regDeadlineEl) {
-    if (s.status === 'registration' && s.registrationDeadline) {
+    if (s.status === 'registration' && !inscriptionsFermees() && s.registrationDeadline) {
       // Analyse en heure LOCALE : new Date('2026-09-30') vaut minuit UTC, ce qui
       // affiche la veille sur un appareil réglé sur un fuseau en retard sur UTC.
       const d = ABCT_DATES.parseDateLocale(s.registrationDeadline);
@@ -6256,7 +6276,10 @@ function renderHome(){
       regDeadlineEl.style.display = 'none';
     }
   }
-  document.getElementById('register-card').style.display=s.status==='registration'?'block':'none';
+  document.getElementById('register-card').style.display=(s.status==='registration' && !inscriptionsFermees())?'block':'none';
+  const regClosedCard = document.getElementById('reg-closed-card');
+  regClosedCard.textContent = '🔒 ' + t('reg_closed');
+  regClosedCard.style.display = inscriptionsFermees() ? 'block' : 'none';
   // Show pool reminder banner only during pool phase
   const reminder = document.getElementById('pool-reminder');
   if (reminder) reminder.style.display = s.status==='playing' ? 'block' : 'none';
@@ -6909,8 +6932,13 @@ function renderAdmin(){
         ab.style.borderLeft = '4px solid var(--gold)';
         ab.style.fontWeight = '700';
         ab.style.background = 'var(--gold-light)';
-        ab.textContent = t(libellesActifs[activeBtn]);
+        ab.textContent = t(inscriptionsFermees() && activeBtn === 'open-reg-btn' ? 'phase_reg_closed' : libellesActifs[activeBtn]);
       }
+    }
+    const closeRegBtn = document.getElementById('close-reg-btn');
+    if (closeRegBtn) {
+      closeRegBtn.style.display = s.status === 'registration' ? 'block' : 'none';
+      closeRegBtn.textContent = t(inscriptionsFermees() ? 'reopen_reg_btn' : 'close_reg_btn');
     }
 
   // Classement des finalistes : hors condition d'onglet — il vit dans l'onglet Tournoi,

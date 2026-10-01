@@ -88,6 +88,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
 .lang-btn.active{background:var(--gold);color:var(--dark)}
 .badge{display:inline-block;padding:8px 18px;border-radius:20px;font-size:15px;font-weight:800;border:1.5px solid transparent;letter-spacing:.2px}
 .badge-open{background:#E8F5E9;color:var(--green);border-color:#A8D5B5}
+.badge-closed{background:#FDECEA;color:var(--red);border-color:#E8B4B2}
 .badge-playing{background:#FFF8E1;color:#B8860B;border-color:#F0D98C}
 .badge-finals{background:#E3F2FD;color:#1565C0;border-color:#A8CFF0}
 .badge-done{background:#F3E5F5;color:#6A1B9A;border-color:#D3A8E0}
@@ -6268,7 +6269,7 @@ function renderHome(){
   document.getElementById('header-sub').textContent=statusMap[s.status]||'';
   const cnt=players.length;
   document.getElementById('home-player-count').textContent=cnt+' '+(cnt===1?t('players_count_1'):t('players_count_n'));
-  const badgeClass={registration:'badge-open',playing:'badge-playing',finals:'badge-finals',finished:'badge-done'};
+  const badgeClass={registration:inscriptionsFermees()?'badge-closed':'badge-open',playing:'badge-playing',finals:'badge-finals',finished:'badge-done'};
   document.getElementById('home-badge').innerHTML=`<span class="badge ${badgeClass[s.status]||''}">${statusIcon[s.status]||''} ${statusMap[s.status]||''}</span>`;
   const regDeadlineEl = document.getElementById('home-reg-deadline');
   if (regDeadlineEl) {

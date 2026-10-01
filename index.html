@@ -3879,6 +3879,12 @@ function listeJoueursFigee(silencieux) {
   // fermées, ce qui serait faux et déroutant pour quelqu'un qui vient d'ouvrir la page
   // pendant les inscriptions.
   if (!etape) { if (!silencieux) alert(t('sync_wait')); return true; }
+  // Inscriptions fermées par l'admin avant le tirage : la liste est figée elle aussi,
+  // mais aucun match n'existe encore — d'où le message court, sans parler de classement.
+  if (etape === 'registration' && state?.settings?.registrationClosed === true) {
+    if (!silencieux) alert(t('reg_closed'));
+    return true;
+  }
   if (etape === 'registration') return false;
   if (!silencieux) alert(t('modif_closed'));
   return true;
@@ -6286,7 +6292,11 @@ function renderHome(){
   document.getElementById('player-list-count').textContent=cnt;
   const pl=document.getElementById('player-list');
   if(!cnt){pl.innerHTML=`<div style="color:var(--gray);font-size:13px">${t('reg_err_fields').split('.')[0]}...</div>`;return;}
-  const isReg = s.status==='registration';
+  // Rend la liste cliquable (et affiche l'invitation à modifier) seulement si la
+  // modification est réellement permise. Un formulaire déjà ouvert chez un visiteur
+  // au moment où l'admin ferme les inscriptions est refermé.
+  const isReg = s.status==='registration' && !inscriptionsFermees();
+  if (!isReg && !isAdmin) editingPlayerId = null;
   pl.innerHTML=players.sort((a,b)=>a.nickname.localeCompare(b.nickname)).map(p=>{
     const isEditing = editingPlayerId===p.id;
     return `<div style="padding:8px 0;border-bottom:1px solid #F5F5F5">

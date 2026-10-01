@@ -88,7 +88,7 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
 .lang-btn.active{background:var(--gold);color:var(--dark)}
 .badge{display:inline-block;padding:8px 18px;border-radius:20px;font-size:15px;font-weight:800;border:1.5px solid transparent;letter-spacing:.2px}
 .badge-open{background:#E8F5E9;color:var(--green);border-color:#A8D5B5}
-.badge-closed{background:#FDECEA;color:var(--red);border-color:#E8B4B2}
+.badge-closed{background:#F1EFEA;color:#6B6B6B;border-color:#D8D4CC}
 .badge-playing{background:#FFF8E1;color:#B8860B;border-color:#F0D98C}
 .badge-finals{background:#E3F2FD;color:#1565C0;border-color:#A8CFF0}
 .badge-done{background:#F3E5F5;color:#6A1B9A;border-color:#D3A8E0}
@@ -305,7 +305,6 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
       <div id="reg-msg"></div>
     </div>
   </div>
-  <div class="card" id="reg-closed-card" style="display:none;text-align:center;font-weight:700;color:var(--gray)"></div>
   <div class="card">
     <h2 id="players-title">Joueurs inscrits (<span id="player-list-count">0</span>)</h2>
     <div id="player-list"></div>
@@ -6284,9 +6283,6 @@ function renderHome(){
     }
   }
   document.getElementById('register-card').style.display=(s.status==='registration' && !inscriptionsFermees())?'block':'none';
-  const regClosedCard = document.getElementById('reg-closed-card');
-  regClosedCard.textContent = '🔒 ' + t('reg_closed');
-  regClosedCard.style.display = inscriptionsFermees() ? 'block' : 'none';
   // Show pool reminder banner only during pool phase
   const reminder = document.getElementById('pool-reminder');
   if (reminder) reminder.style.display = s.status==='playing' ? 'block' : 'none';

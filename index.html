@@ -552,9 +552,9 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
         <div class="gap">
         <div class="form-group"><label id="set-label-name">Nom du tournoi</label><input id="set-name" type="text"></div>
         <div class="form-group"><label id="set-label-reg-deadline">Date de clôture des inscriptions</label><input id="set-reg-deadline" type="date"></div>
+        <div class="form-group"><label id="set-label-pool-start">Date de début des poules</label><input id="set-pool-start" type="date" oninput="updatePoolEndEstimate()"></div>
         <div class="form-group"><label id="set-label-ppg">Joueurs par groupe</label><input id="set-ppg" type="number" min="3" max="10" oninput="updatePoolEndEstimate();majIndiceGroupes()"><div id="set-ppg-hint" style="font-size:11px;color:var(--gray);margin-top:3px"></div></div>
         <div class="form-group"><label id="set-label-fin">Nombre de finalistes</label><input id="set-fin" type="number" min="2" max="32" oninput="updateFinalsEndEstimate()"></div>
-        <div class="form-group"><label id="set-label-pool-start">Date de début des poules</label><input id="set-pool-start" type="date" oninput="updatePoolEndEstimate()"></div>
         <div class="form-group"><label id="set-label-pool-interval">Intervalle entre rondes de poules (jours)</label><input id="set-pool-interval" type="number" min="1" max="30" value="4" oninput="updatePoolEndEstimate()"><div id="pool-end-estimate" style="font-size:11px;color:var(--gold);margin-top:3px;font-weight:600"></div></div>
         <div class="form-group"><label id="set-label-finals-start">Date de début des finales</label><input id="set-finals-start" type="date" oninput="updateFinalsEndEstimate()"></div>
         <div class="form-group"><label id="set-label-finals-interval">Intervalle entre tours de finales (jours)</label><input id="set-finals-interval" type="number" min="1" max="30" value="4" oninput="updateFinalsEndEstimate()"><div id="finals-end-estimate" style="font-size:11px;color:var(--gold);margin-top:3px;font-weight:600"></div></div>
@@ -1757,7 +1757,7 @@ const T = {
     subtab_settings:"Réglages",subtab_players:"Joueurs",subtab_notifs:"Notifs",subtab_actions:"Tournoi",
     subtab_ranking:"Classement",
     ranking_title:"Classement global",
-    settings_title:"Paramètres du tournoi",set_third_place:"🥉 <b>Petite finale</b> — match pour la 3e place.<br><span style=\"color:var(--gray)\">Optionnelle. Décoché, le classement départage les 3e et 4e selon leurs statistiques. Lu au lancement des finales.</span>",set_name:"Nom du tournoi",set_reg_deadline:"Date de clôture des inscriptions",reg_deadline_until:"Jusqu'au",set_ppg:"Joueurs par groupe",ppg_hint_egal:"{n} joueurs → {g} groupes de {t}",ppg_hint_inegal:"{n} joueurs → {g} groupes : {tailles}",set_fin:"Nombre de finalistes",
+    settings_title:"Paramètres du tournoi",set_third_place:"🥉 <b>Petite finale</b> — match pour la 3e place.<br><span style=\"color:var(--gray)\">Optionnelle. Décoché, le classement départage les 3e et 4e selon leurs statistiques. Lu au lancement des finales.</span>",set_name:"Nom du tournoi",set_reg_deadline:"Date de clôture des inscriptions",reg_deadline_until:"Jusqu'au",tournament_start:"Début du tournoi :",score_locked:"La saisie des scores ouvrira au lancement de la phase de poules.",set_ppg:"Joueurs par groupe",ppg_hint_egal:"{n} joueurs → {g} groupes de {t}",ppg_hint_inegal:"{n} joueurs → {g} groupes : {tailles}",set_fin:"Nombre de finalistes",
     set_pool_start:"Date de début des poules",set_pool_interval:"Intervalle entre rondes de poules (jours)",
     set_finals_start:"Date de début des finales",set_finals_interval:"Intervalle entre tours de finales (jours)",
     save_settings:"Enregistrer",
@@ -1849,7 +1849,7 @@ const T = {
     subtab_settings:"Einstellungen",subtab_players:"Spieler",subtab_notifs:"Mitteil.",subtab_actions:"Turnier",
     subtab_ranking:"Rangliste",
     ranking_title:"Globale Rangliste",
-    settings_title:"Turniereinstellungen",set_third_place:"🥉 <b>Spiel um Platz 3</b> — optionale Partie.<br><span style=\"color:var(--gray)\">Ohne sie entscheidet die Gesamtwertung über Platz 3 und 4. Wird beim Start der Finalrunden gelesen.</span>",set_name:"Turniername",set_reg_deadline:"Anmeldeschluss",reg_deadline_until:"Bis zum",set_ppg:"Spieler pro Gruppe",ppg_hint_egal:"{n} Spieler → {g} Gruppen zu je {t}",ppg_hint_inegal:"{n} Spieler → {g} Gruppen: {tailles}",set_fin:"Anzahl Finalisten",
+    settings_title:"Turniereinstellungen",set_third_place:"🥉 <b>Spiel um Platz 3</b> — optionale Partie.<br><span style=\"color:var(--gray)\">Ohne sie entscheidet die Gesamtwertung über Platz 3 und 4. Wird beim Start der Finalrunden gelesen.</span>",set_name:"Turniername",set_reg_deadline:"Anmeldeschluss",reg_deadline_until:"Bis zum",tournament_start:"Turnierbeginn:",score_locked:"Die Ergebniseingabe öffnet mit dem Start der Gruppenphase.",set_ppg:"Spieler pro Gruppe",ppg_hint_egal:"{n} Spieler → {g} Gruppen zu je {t}",ppg_hint_inegal:"{n} Spieler → {g} Gruppen: {tailles}",set_fin:"Anzahl Finalisten",
     set_pool_start:"Startdatum Gruppenphase",set_pool_interval:"Intervall zwischen Gruppenrunden (Tage)",
     set_finals_start:"Startdatum Finalrunden",set_finals_interval:"Intervall zwischen Finalrunden (Tage)",
     save_settings:"Speichern",
@@ -2025,7 +2025,7 @@ const T = {
     admin_pin_hint:"First time? Create your PIN now.",admin_pin_err:"Incorrect PIN.",
     admin_logout:"Logout",
     subtab_settings:"Settings",subtab_players:"Players",subtab_notifs:"Notifs",subtab_actions:"Tournament",
-    settings_title:"Tournament settings",set_third_place:"🥉 <b>Third-place match</b> — optional.<br><span style=\"color:var(--gray)\">Unchecked, the overall ranking decides 3rd and 4th. Read when the finals are launched.</span>",set_name:"Tournament name",set_reg_deadline:"Registration closing date",reg_deadline_until:"Until",set_ppg:"Players per group",ppg_hint_egal:"{n} players → {g} groups of {t}",ppg_hint_inegal:"{n} players → {g} groups: {tailles}",set_fin:"Number of finalists",
+    settings_title:"Tournament settings",set_third_place:"🥉 <b>Third-place match</b> — optional.<br><span style=\"color:var(--gray)\">Unchecked, the overall ranking decides 3rd and 4th. Read when the finals are launched.</span>",set_name:"Tournament name",set_reg_deadline:"Registration closing date",reg_deadline_until:"Until",tournament_start:"Tournament starts:",score_locked:"Score entry opens when the group stage starts.",set_ppg:"Players per group",ppg_hint_egal:"{n} players → {g} groups of {t}",ppg_hint_inegal:"{n} players → {g} groups: {tailles}",set_fin:"Number of finalists",
     set_pool_start:"Pool stage start date",set_pool_interval:"Interval between pool rounds (days)",
     set_finals_start:"Finals start date",set_finals_interval:"Interval between final rounds (days)",
     save_settings:"Save",
@@ -2159,7 +2159,7 @@ const T = {
     subtab_settings:"Impostazioni",subtab_players:"Giocatori",subtab_notifs:"Notifiche",subtab_actions:"Torneo",
     subtab_ranking:"Classifica",
     ranking_title:"Classifica globale",
-    settings_title:"Impostazioni torneo",set_third_place:"🥉 <b>Finale 3° posto</b> — opzionale.<br><span style=\"color:var(--gray)\">Senza di essa, la classifica generale decide 3° e 4°. Letta all'avvio delle finali.</span>",set_name:"Nome del torneo",set_reg_deadline:"Data di chiusura delle iscrizioni",reg_deadline_until:"Fino al",set_ppg:"Giocatori per gruppo",ppg_hint_egal:"{n} giocatori → {g} gironi da {t}",ppg_hint_inegal:"{n} giocatori → {g} gironi: {tailles}",set_fin:"Numero di finalisti",
+    settings_title:"Impostazioni torneo",set_third_place:"🥉 <b>Finale 3° posto</b> — opzionale.<br><span style=\"color:var(--gray)\">Senza di essa, la classifica generale decide 3° e 4°. Letta all'avvio delle finali.</span>",set_name:"Nome del torneo",set_reg_deadline:"Data di chiusura delle iscrizioni",reg_deadline_until:"Fino al",tournament_start:"Inizio del torneo:",score_locked:"L'inserimento dei risultati aprirà con l'avvio della fase a gironi.",set_ppg:"Giocatori per gruppo",ppg_hint_egal:"{n} giocatori → {g} gironi da {t}",ppg_hint_inegal:"{n} giocatori → {g} gironi: {tailles}",set_fin:"Numero di finalisti",
     set_pool_start:"Data di inizio dei gironi",set_pool_interval:"Intervallo tra i turni dei gironi (giorni)",
     set_finals_start:"Data di inizio delle finali",set_finals_interval:"Intervallo tra i turni finali (giorni)",
     save_settings:"Salvare",
@@ -4609,7 +4609,18 @@ window.assignGroups = async function() {
 };
 
 // ── SCORES ──
-window.openScoreEdit = function(id) { editingMatchId=editingMatchId===id?null:id; renderMatches(); };
+// ══ PAS DE SCORE AVANT LE LANCEMENT DES POULES ══
+// Le tirage peut se faire pendant la phase d'inscription (inscriptions fermées) : les
+// groupes et les matchs sont alors visibles, mais aucun résultat ne doit être saisi avant
+// « Lancer la phase de poules ». L'admin reste libre, comme pour la liste des joueurs.
+function saisieScoresBloquee(avecMessage) {
+  if (isAdmin || state?.settings?.status !== 'registration') return false;
+  if (avecMessage) showToast(t('score_locked'), false);
+  return true;
+}
+
+window.openScoreEdit = function(id) {
+  if (editingMatchId !== id && saisieScoresBloquee(true)) return; editingMatchId=editingMatchId===id?null:id; renderMatches(); };
 // ══ RÉINITIALISER UN SCORE REND AUSSI LE DROIT DE L'ANNONCER ══
 // `notified` empêche d'inonder les joueurs : un résultat n'est annoncé qu'une fois. Mais
 // il n'était jamais effacé, donc après une faute de frappe le FAUX résultat restait le
@@ -4619,6 +4630,7 @@ window.openScoreEdit = function(id) { editingMatchId=editingMatchId===id?null:id
 // passer par la réinitialisation ne renotifie toujours pas, et une réinitialisation suivie
 // d'une nouvelle saisie ne produit qu'une seule annonce, la bonne.
 window.resetScore = async function(id) {
+  if (saisieScoresBloquee(true)) return;
   editingMatchId = null;
   renderMatches();
   // `annule: null` : la croix rouge remet le match à zéro, dans tous les sens — ni score,
@@ -4660,6 +4672,7 @@ window.autoScore = function(id, side) {
 window.submitScore = async function(id) {
   const elB = document.getElementById('sw-'+id), elN = document.getElementById('sb-'+id);
   if (!elB || !elN) return;              // carte fermée : rien à valider
+  if (saisieScoresBloquee(true)) return;
   const sw = elB.value, sb = elN.value;
   const prev = state.games?.[id];
   const dejaJoue = !!prev && prev.scoreWhite !== null && prev.scoreWhite !== undefined;
@@ -6272,7 +6285,13 @@ function renderHome(){
   document.getElementById('home-badge').innerHTML=`<span class="badge ${badgeClass[s.status]||''}">${statusIcon[s.status]||''} ${statusMap[s.status]||''}</span>`;
   const regDeadlineEl = document.getElementById('home-reg-deadline');
   if (regDeadlineEl) {
-    if (s.status === 'registration' && !inscriptionsFermees() && s.registrationDeadline) {
+    if (inscriptionsFermees()) {
+      // Inscriptions closes : la date utile n'est plus la clôture, c'est le début du
+      // tournoi, c'est-à-dire celui de la phase de poules (même réglage, poolStartDate).
+      const d = s.poolStartDate ? ABCT_DATES.parseDateLocale(s.poolStartDate) : null;
+      regDeadlineEl.textContent = d ? '🗓️ ' + t('tournament_start') + ' ' + formatEstimate(d) : '';
+      regDeadlineEl.style.display = d && !isNaN(d.getTime()) ? 'block' : 'none';
+    } else if (s.status === 'registration' && s.registrationDeadline) {
       // Analyse en heure LOCALE : new Date('2026-09-30') vaut minuit UTC, ce qui
       // affiche la veille sur un appareil réglé sur un fuseau en retard sur UTC.
       const d = ABCT_DATES.parseDateLocale(s.registrationDeadline);
@@ -6404,6 +6423,7 @@ window.allerSectionMatchs = function(cible) {
 
 function matchCardHTML(g){
   const isEditing=editingMatchId===g.id;
+  const bloque=saisieScoresBloquee(false);
   // Même raison que pour les finales : les deux scores sont écrits l'un après l'autre,
   // exiger les deux évite d'afficher "1 — undefined" entre les deux écritures.
   const played=g.scoreWhite!==null&&g.scoreWhite!==undefined&&g.scoreBlack!==null&&g.scoreBlack!==undefined;
@@ -6427,7 +6447,7 @@ function matchCardHTML(g){
       </div>`:`<div class="match-vs">vs</div>`}
       <div class="match-player"><div class="match-player-name">${esc(g.playerBlack)}</div><div class="match-player-color" style="display:inline-block;font-size:12px;font-weight:700;padding:3px 9px;border-radius:8px;margin-top:5px;background:#2c2c2c;color:#fff">${t('blacks')}</div></div>
     </div>
-    ${!played&&!isEditing&&!annule?`<button class="btn btn-gold" style="margin-top:11px;font-size:14px;padding:11px" onclick="openScoreEdit('${g.id}')">${t('enter_score')}</button>`:''}
+    ${!played&&!isEditing&&!annule&&!bloque?`<button class="btn btn-gold" style="margin-top:11px;font-size:14px;padding:11px" onclick="openScoreEdit('${g.id}')">${t('enter_score')}</button>`:''}
     ${isEditing?`<div class="score-row">
       <select class="score-select" id="sw-${g.id}" onchange="autoScore('${g.id}','white')"><option value="">—</option>${opts(g.scoreWhite)}</select>
       <span style="font-weight:700;color:#ccc">—</span>

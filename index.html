@@ -6013,21 +6013,46 @@ function generateWhatsAppMsg() {
   }
 
   if (lateGames.length === 0 && lateFinals.length === 0) {
-    const pendingGames = games.filter(g => g.scoreWhite === null || g.scoreWhite === undefined);
+    // ── SEULEMENT LA RONDE EN COURS ──
+    // Un match « en cours » est un match non joué dont la fenêtre de jeu est OUVERTE
+    // aujourd'hui : sa date d'ouverture est passée (et son échéance pas encore, sinon il
+    // serait dans la liste des retards ci-dessus). Les rondes à venir n'ont rien à faire
+    // dans un rappel : les lister noyait la ronde actuelle sous tout le reste du tournoi.
+    // Le jour de l'échéance d'une ronde est aussi le jour d'ouverture de la suivante :
+    // ce jour-là, c'est encore la ronde qui se termine qui compte. Une ronde n'est donc
+    // « en cours » qu'à partir du LENDEMAIN de son ouverture — sauf la toute première
+    // (poules ou finales), qui commence le jour même du départ réglé par l'admin.
+    // Comparaison en dates civiles (AAAA-MM-JJ), pas en instants, comme match-dates.js.
+    // Sans date calculable (réglages incomplets), on garde le match plutôt que de le
+    // faire disparaître du rappel.
+    const civil = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    const aujourdhui = civil(new Date());
+    const fenetreOuverte = (m, isFinal) => {
+      const debut = roundWindowStart(m, isFinal);
+      if (!debut) return true;
+      const depart = ABCT_DATES.parseDateLocale(isFinal ? s.finalsStartDate : s.poolStartDate);
+      const premiereRonde = depart && civil(depart) === civil(debut);
+      return premiereRonde ? civil(debut) <= aujourdhui : civil(debut) < aujourdhui;
+    };
+    const pendingGames = games.filter(g => (g.scoreWhite === null || g.scoreWhite === undefined) && !g.annule && fenetreOuverte(g, false));
     // `== null` et non `=== null` : Firebase NE STOCKE PAS les valeurs nulles, donc un
     // match non joué n'a pas de champ `score1` du tout — il vaut `undefined`. Avec le
     // test strict, la liste des matchs en attente était VIDE pendant toute la phase
     // finale : le message affichait son titre et rien en dessous.
-    const pendingFinals = finals.filter(f => f.score1 == null && f.player1 && f.player2 && f.round !== 'Demis' && f.round !== 'Finale');
+    const pendingFinals = finals.filter(f => f.score1 == null && f.player1 && f.player2 && f.round !== 'Demis' && f.round !== 'Finale' && f.round !== '3ème place' && fenetreOuverte(f, true));
+    // Aucune ronde ouverte (avant le départ, ou tout est joué) : pas de section vide.
+    const enCours = [...pendingGames, ...pendingFinals];
+    if (enCours.length) {
     msg += t('pending_msg') + "\n\n";
     msg += "⚔️ *Matchs en attente :*\n";
-    [...pendingGames, ...pendingFinals].forEach(m => {
+    enCours.forEach(m => {
       const p1 = m.playerWhite || m.player1;
       const p2 = m.playerBlack || m.player2;
       const grp = m.group || m.round;
       msg += "  • " + p1 + " vs " + p2 + " (" + grp + ")\n";
     });
     msg += "\n";
+    }
   }
 
   msg += `👉 ${url}\n\n_Fair-play et bonne chance à tous !_ ♟`;

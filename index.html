@@ -520,6 +520,10 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
         </div>
     </div>
     <div id="admin-actions" style="display:none">
+      <div class="card" id="visits-card">
+        <h2 id="visits-title">👀 Visiteurs</h2>
+        <div id="visits-content" style="font-size:13px;color:var(--gray)">…</div>
+      </div>
 
       <div class="card">
         <h2 id="finalists-title">Finalistes qualifiés</h2>
@@ -1759,7 +1763,7 @@ const T = {
     subtab_settings:"Réglages",subtab_players:"Joueurs",subtab_notifs:"Notifs",subtab_actions:"Tournoi",
     subtab_ranking:"Classement",
     ranking_title:"Classement global",
-    settings_title:"Paramètres du tournoi",set_third_place:"🥉 <b>Petite finale</b> — match pour la 3e place.<br><span style=\"color:var(--gray)\">Optionnelle. Décoché, le classement départage les 3e et 4e selon leurs statistiques. Lu au lancement des finales.</span>",set_name:"Nom du tournoi",set_reg_deadline:"Date de clôture des inscriptions",reg_deadline_until:"Jusqu'au",tournament_start:"Début du tournoi :",score_locked_btn:"Score dès le lancement des poules",score_locked:"La saisie des scores ouvrira au lancement de la phase de poules.",set_ppg:"Joueurs par groupe",ppg_hint_egal:"{n} joueurs → {g} groupes de {t}",ppg_hint_inegal:"{n} joueurs → {g} groupes : {tailles}",set_fin:"Nombre de finalistes",
+    settings_title:"Paramètres du tournoi",set_third_place:"🥉 <b>Petite finale</b> — match pour la 3e place.<br><span style=\"color:var(--gray)\">Optionnelle. Décoché, le classement départage les 3e et 4e selon leurs statistiques. Lu au lancement des finales.</span>",set_name:"Nom du tournoi",set_reg_deadline:"Date de clôture des inscriptions",reg_deadline_until:"Jusqu'au",tournament_start:"Début du tournoi :",visits_title:"👀 Visiteurs",visits_today:"Aujourd'hui",visits_week:"7 jours",visits_month:"30 jours",visits_total:"Depuis le début",visits_note:"Appareils différents. Un même joueur sur deux appareils compte deux fois.",visits_err:"Compteur indisponible pour le moment.",score_locked_btn:"Score dès le lancement des poules",score_locked:"La saisie des scores ouvrira au lancement de la phase de poules.",set_ppg:"Joueurs par groupe",ppg_hint_egal:"{n} joueurs → {g} groupes de {t}",ppg_hint_inegal:"{n} joueurs → {g} groupes : {tailles}",set_fin:"Nombre de finalistes",
     set_pool_start:"Date de début des poules",set_pool_interval:"Intervalle entre rondes de poules (jours)",
     set_finals_start:"Date de début des finales",set_finals_interval:"Intervalle entre tours de finales (jours)",
     save_settings:"Enregistrer",
@@ -1851,7 +1855,7 @@ const T = {
     subtab_settings:"Einstellungen",subtab_players:"Spieler",subtab_notifs:"Mitteil.",subtab_actions:"Turnier",
     subtab_ranking:"Rangliste",
     ranking_title:"Globale Rangliste",
-    settings_title:"Turniereinstellungen",set_third_place:"🥉 <b>Spiel um Platz 3</b> — optionale Partie.<br><span style=\"color:var(--gray)\">Ohne sie entscheidet die Gesamtwertung über Platz 3 und 4. Wird beim Start der Finalrunden gelesen.</span>",set_name:"Turniername",set_reg_deadline:"Anmeldeschluss",reg_deadline_until:"Bis zum",tournament_start:"Turnierbeginn:",score_locked_btn:"Ergebnis ab Start der Gruppenphase",score_locked:"Die Ergebniseingabe öffnet mit dem Start der Gruppenphase.",set_ppg:"Spieler pro Gruppe",ppg_hint_egal:"{n} Spieler → {g} Gruppen zu je {t}",ppg_hint_inegal:"{n} Spieler → {g} Gruppen: {tailles}",set_fin:"Anzahl Finalisten",
+    settings_title:"Turniereinstellungen",set_third_place:"🥉 <b>Spiel um Platz 3</b> — optionale Partie.<br><span style=\"color:var(--gray)\">Ohne sie entscheidet die Gesamtwertung über Platz 3 und 4. Wird beim Start der Finalrunden gelesen.</span>",set_name:"Turniername",set_reg_deadline:"Anmeldeschluss",reg_deadline_until:"Bis zum",tournament_start:"Turnierbeginn:",visits_title:"👀 Besucher",visits_today:"Heute",visits_week:"7 Tage",visits_month:"30 Tage",visits_total:"Seit Beginn",visits_note:"Verschiedene Geräte. Ein Spieler mit zwei Geräten zählt doppelt.",visits_err:"Zähler derzeit nicht verfügbar.",score_locked_btn:"Ergebnis ab Start der Gruppenphase",score_locked:"Die Ergebniseingabe öffnet mit dem Start der Gruppenphase.",set_ppg:"Spieler pro Gruppe",ppg_hint_egal:"{n} Spieler → {g} Gruppen zu je {t}",ppg_hint_inegal:"{n} Spieler → {g} Gruppen: {tailles}",set_fin:"Anzahl Finalisten",
     set_pool_start:"Startdatum Gruppenphase",set_pool_interval:"Intervall zwischen Gruppenrunden (Tage)",
     set_finals_start:"Startdatum Finalrunden",set_finals_interval:"Intervall zwischen Finalrunden (Tage)",
     save_settings:"Speichern",
@@ -2027,7 +2031,7 @@ const T = {
     admin_pin_hint:"First time? Create your PIN now.",admin_pin_err:"Incorrect PIN.",
     admin_logout:"Logout",
     subtab_settings:"Settings",subtab_players:"Players",subtab_notifs:"Notifs",subtab_actions:"Tournament",
-    settings_title:"Tournament settings",set_third_place:"🥉 <b>Third-place match</b> — optional.<br><span style=\"color:var(--gray)\">Unchecked, the overall ranking decides 3rd and 4th. Read when the finals are launched.</span>",set_name:"Tournament name",set_reg_deadline:"Registration closing date",reg_deadline_until:"Until",tournament_start:"Tournament starts:",score_locked_btn:"Score once the group stage starts",score_locked:"Score entry opens when the group stage starts.",set_ppg:"Players per group",ppg_hint_egal:"{n} players → {g} groups of {t}",ppg_hint_inegal:"{n} players → {g} groups: {tailles}",set_fin:"Number of finalists",
+    settings_title:"Tournament settings",set_third_place:"🥉 <b>Third-place match</b> — optional.<br><span style=\"color:var(--gray)\">Unchecked, the overall ranking decides 3rd and 4th. Read when the finals are launched.</span>",set_name:"Tournament name",set_reg_deadline:"Registration closing date",reg_deadline_until:"Until",tournament_start:"Tournament starts:",visits_title:"👀 Visitors",visits_today:"Today",visits_week:"7 days",visits_month:"30 days",visits_total:"Since the start",visits_note:"Distinct devices. One player on two devices counts twice.",visits_err:"Counter unavailable right now.",score_locked_btn:"Score once the group stage starts",score_locked:"Score entry opens when the group stage starts.",set_ppg:"Players per group",ppg_hint_egal:"{n} players → {g} groups of {t}",ppg_hint_inegal:"{n} players → {g} groups: {tailles}",set_fin:"Number of finalists",
     set_pool_start:"Pool stage start date",set_pool_interval:"Interval between pool rounds (days)",
     set_finals_start:"Finals start date",set_finals_interval:"Interval between final rounds (days)",
     save_settings:"Save",
@@ -2161,7 +2165,7 @@ const T = {
     subtab_settings:"Impostazioni",subtab_players:"Giocatori",subtab_notifs:"Notifiche",subtab_actions:"Torneo",
     subtab_ranking:"Classifica",
     ranking_title:"Classifica globale",
-    settings_title:"Impostazioni torneo",set_third_place:"🥉 <b>Finale 3° posto</b> — opzionale.<br><span style=\"color:var(--gray)\">Senza di essa, la classifica generale decide 3° e 4°. Letta all'avvio delle finali.</span>",set_name:"Nome del torneo",set_reg_deadline:"Data di chiusura delle iscrizioni",reg_deadline_until:"Fino al",tournament_start:"Inizio del torneo:",score_locked_btn:"Risultato dall'avvio dei gironi",score_locked:"L'inserimento dei risultati aprirà con l'avvio della fase a gironi.",set_ppg:"Giocatori per gruppo",ppg_hint_egal:"{n} giocatori → {g} gironi da {t}",ppg_hint_inegal:"{n} giocatori → {g} gironi: {tailles}",set_fin:"Numero di finalisti",
+    settings_title:"Impostazioni torneo",set_third_place:"🥉 <b>Finale 3° posto</b> — opzionale.<br><span style=\"color:var(--gray)\">Senza di essa, la classifica generale decide 3° e 4°. Letta all'avvio delle finali.</span>",set_name:"Nome del torneo",set_reg_deadline:"Data di chiusura delle iscrizioni",reg_deadline_until:"Fino al",tournament_start:"Inizio del torneo:",visits_title:"👀 Visitatori",visits_today:"Oggi",visits_week:"7 giorni",visits_month:"30 giorni",visits_total:"Dall'inizio",visits_note:"Dispositivi diversi. Un giocatore su due dispositivi conta due volte.",visits_err:"Contatore non disponibile al momento.",score_locked_btn:"Risultato dall'avvio dei gironi",score_locked:"L'inserimento dei risultati aprirà con l'avvio della fase a gironi.",set_ppg:"Giocatori per gruppo",ppg_hint_egal:"{n} giocatori → {g} gironi da {t}",ppg_hint_inegal:"{n} giocatori → {g} gironi: {tailles}",set_fin:"Numero di finalisti",
     set_pool_start:"Data di inizio dei gironi",set_pool_interval:"Intervallo tra i turni dei gironi (giorni)",
     set_finals_start:"Data di inizio delle finali",set_finals_interval:"Intervallo tra i turni finali (giorni)",
     save_settings:"Salvare",
@@ -3814,6 +3818,44 @@ function renderRanking() {
   <div style="font-size:11px;color:var(--gray);margin-top:8px">TB = Buchholz · ${t('rank_legend')}</div>`;
 }
 
+// ── COMPTEUR DE VISITES ──
+// Une visite = un appareil, une fois par jour. L'identifiant est tiré au hasard et gardé
+// dans le stockage local : il ne dit rien de la personne. L'envoi passe par la fonction
+// count-visit (voir son en-tête), jamais par une écriture Firebase directe.
+function signalerVisite() {
+  try {
+    const jour = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Zurich' });
+    if (localStorage.getItem('abct-visit-day') === jour) return;
+    let id = localStorage.getItem('abct-visit-id');
+    if (!id) {
+      id = Array.from(crypto.getRandomValues(new Uint8Array(12)), b => b.toString(16).padStart(2, '0')).join('');
+      localStorage.setItem('abct-visit-id', id);
+    }
+    fetch('/.netlify/functions/count-visit' + (IS_DEV ? '?env=dev' : ''), {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id })
+    }).then(r => { if (r.ok) localStorage.setItem('abct-visit-day', jour); }).catch(() => {});
+  } catch (e) { /* stockage bloqué : on ne compte pas, sans gêner le site */ }
+}
+
+// Relu à chaque ouverture de l'onglet Tournoi de l'admin, au plus une fois par minute.
+let visitesChargeesA = 0;
+async function chargerVisites() {
+  const zone = document.getElementById('visits-content');
+  if (!zone || Date.now() - visitesChargeesA < 60000) return;
+  visitesChargeesA = Date.now();
+  document.getElementById('visits-title').textContent = t('visits_title');
+  try {
+    const r = await fetch('/.netlify/functions/count-visit' + (IS_DEV ? '?env=dev' : ''));
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const v = await r.json();
+    const case_ = (n, cle) => `<div style="flex:1;text-align:center;padding:8px 2px;background:#FAFAF7;border-radius:8px"><div style="font-size:18px;font-weight:800;color:var(--dark)">${Number(n) || 0}</div><div style="font-size:11px;color:var(--gray);margin-top:2px">${t(cle)}</div></div>`;
+    zone.innerHTML = `<div style="display:flex;gap:6px">${case_(v.aujourdhui,'visits_today')}${case_(v.semaine,'visits_week')}${case_(v.mois,'visits_month')}${case_(v.total,'visits_total')}</div><div style="font-size:11px;color:#aaa;margin-top:8px">${t('visits_note')}</div>`;
+  } catch (e) {
+    visitesChargeesA = 0;
+    zone.textContent = t('visits_err');
+  }
+}
+
 window.showAdminTab = function(tab) {
   currentAdminTab=tab;
   ['actions','settings','players','notifs'].forEach(t2=>{
@@ -4858,7 +4900,7 @@ function renderCommunauteWhatsApp() {
     <div style="font-size:12px;font-weight:700;color:var(--dark);margin-bottom:5px">${t('wa_comm_title')}</div>
     <div style="font-size:12px;color:var(--gray);line-height:1.5;margin-bottom:10px">${t('wa_comm_text')}</div>
     <a href="${esc(lien)}" target="_blank" rel="noopener noreferrer"
-       style="display:inline-block;background:var(--green);color:#fff;padding:13px 26px;border-radius:10px;font-size:12px;font-weight:700;text-decoration:none">${t('wa_comm_btn')}</a>
+       style="display:inline-block;background:#fff;color:var(--green);border:1.5px solid var(--green);padding:12px 24px;border-radius:10px;font-size:12px;font-weight:700;text-decoration:none">${t('wa_comm_btn')}</a>
   </div>`;
 }
 
@@ -5971,21 +6013,46 @@ function generateWhatsAppMsg() {
   }
 
   if (lateGames.length === 0 && lateFinals.length === 0) {
-    const pendingGames = games.filter(g => g.scoreWhite === null || g.scoreWhite === undefined);
+    // ── SEULEMENT LA RONDE EN COURS ──
+    // Un match « en cours » est un match non joué dont la fenêtre de jeu est OUVERTE
+    // aujourd'hui : sa date d'ouverture est passée (et son échéance pas encore, sinon il
+    // serait dans la liste des retards ci-dessus). Les rondes à venir n'ont rien à faire
+    // dans un rappel : les lister noyait la ronde actuelle sous tout le reste du tournoi.
+    // Le jour de l'échéance d'une ronde est aussi le jour d'ouverture de la suivante :
+    // ce jour-là, c'est encore la ronde qui se termine qui compte. Une ronde n'est donc
+    // « en cours » qu'à partir du LENDEMAIN de son ouverture — sauf la toute première
+    // (poules ou finales), qui commence le jour même du départ réglé par l'admin.
+    // Comparaison en dates civiles (AAAA-MM-JJ), pas en instants, comme match-dates.js.
+    // Sans date calculable (réglages incomplets), on garde le match plutôt que de le
+    // faire disparaître du rappel.
+    const civil = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    const aujourdhui = civil(new Date());
+    const fenetreOuverte = (m, isFinal) => {
+      const debut = roundWindowStart(m, isFinal);
+      if (!debut) return true;
+      const depart = ABCT_DATES.parseDateLocale(isFinal ? s.finalsStartDate : s.poolStartDate);
+      const premiereRonde = depart && civil(depart) === civil(debut);
+      return premiereRonde ? civil(debut) <= aujourdhui : civil(debut) < aujourdhui;
+    };
+    const pendingGames = games.filter(g => (g.scoreWhite === null || g.scoreWhite === undefined) && !g.annule && fenetreOuverte(g, false));
     // `== null` et non `=== null` : Firebase NE STOCKE PAS les valeurs nulles, donc un
     // match non joué n'a pas de champ `score1` du tout — il vaut `undefined`. Avec le
     // test strict, la liste des matchs en attente était VIDE pendant toute la phase
     // finale : le message affichait son titre et rien en dessous.
-    const pendingFinals = finals.filter(f => f.score1 == null && f.player1 && f.player2 && f.round !== 'Demis' && f.round !== 'Finale');
+    const pendingFinals = finals.filter(f => f.score1 == null && f.player1 && f.player2 && f.round !== 'Demis' && f.round !== 'Finale' && f.round !== '3ème place' && fenetreOuverte(f, true));
+    // Aucune ronde ouverte (avant le départ, ou tout est joué) : pas de section vide.
+    const enCours = [...pendingGames, ...pendingFinals];
+    if (enCours.length) {
     msg += t('pending_msg') + "\n\n";
     msg += "⚔️ *Matchs en attente :*\n";
-    [...pendingGames, ...pendingFinals].forEach(m => {
+    enCours.forEach(m => {
       const p1 = m.playerWhite || m.player1;
       const p2 = m.playerBlack || m.player2;
       const grp = m.group || m.round;
       msg += "  • " + p1 + " vs " + p2 + " (" + grp + ")\n";
     });
     msg += "\n";
+    }
   }
 
   msg += `👉 ${url}\n\n_Fair-play et bonne chance à tous !_ ♟`;
@@ -6827,6 +6894,7 @@ function finalCardHTML(f){
 }
 
 function renderAdmin(){
+  if (isAdmin && currentAdminTab === 'actions') chargerVisites();
   if(!isAdmin) return;
   const s=state?.settings||{};
   document.getElementById('set-name').value=s.name||'';
@@ -7090,6 +7158,7 @@ function surDonneesChangees() {
   // Le site a réellement démarré : le filet posé dans le HTML (hors module) ne doit plus
   // afficher son message d'échec. Posé AVANT de masquer l'écran, pour qu'il n'y ait aucune
   // fenêtre où les deux pourraient se croiser.
+  if (!window.ABCT_DEMARRE) signalerVisite();
   window.ABCT_DEMARRE = true;
   document.getElementById('loading').style.opacity='0';
   setTimeout(()=>{

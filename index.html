@@ -5969,8 +5969,29 @@ function bandeauDates(debut, fin, enRetard) {
 }
 
 
-function generateWhatsAppMsg() {
+// `pourNotif` : même contenu, seule la MISE EN FORME change.
+//  • WhatsApp interprète *gras* : on le garde. L'adresse du site y est indispensable,
+//    c'est le seul moyen d'y aller depuis le message.
+//  • Une notification affiche le texte brut : les * y apparaîtraient tels quels. Le nom
+//    du tournoi reste en première ligne (choix de l'organisateur, même s'il est aussi le
+//    titre de la notification) ; la toucher ouvre le site, donc pas d'adresse.
+// Aucun _italique_ nulle part : rendu inégal selon les téléphones, et tiré tel quel
+// dans les notifications.
+function generateWhatsAppMsg(pourNotif) {
   const s = state?.settings || {};
+  const gras = txt => pourNotif ? txt : '*' + txt + '*';
+  // Un bloc par groupe (ou par tour de finale), une ligne par match : la mention
+  // « (Groupe 1) » en bout de ligne débordait et passait à la ligne suivante.
+  const listeParGroupe = (matchs) => {
+    const blocs = [];
+    matchs.forEach(m => {
+      const grp = m.group || m.round || '';
+      let bloc = blocs.find(b => b.grp === grp);
+      if (!bloc) { bloc = { grp, lignes: [] }; blocs.push(bloc); }
+      bloc.lignes.push('♟ ' + (m.playerWhite || m.player1) + ' – ' + (m.playerBlack || m.player2));
+    });
+    return blocs.map(b => '🔹 ' + gras(b.grp) + '\n' + b.lignes.join('\n')).join('\n\n') + '\n\n';
+  };
   const games = getGames();
   const finals = getFinals();
   // ── TOUJOURS LA PRODUCTION, MEME GENERE DEPUIS DEV ──
@@ -5995,21 +6016,17 @@ function generateWhatsAppMsg() {
     return !played && !isPresential && f.player1 && f.player2 && isMatchLate(f, true);
   });
 
-  let msg = `🏆 *${tournamentName} — Rappel*
-
-`;
+  let msg = '🏆 ' + gras(tournamentName + ' — Rappel') + '\n\n';
 
   if (lateGames.length > 0) {
     msg += t('late_msg') + "\n\n";
-    msg += "⚔️ *Matchs de poule en retard :*\n";
-    lateGames.forEach(g => { msg += "  • " + g.playerWhite + " vs " + g.playerBlack + " (" + g.group + ")\n"; });
-    msg += "\n";
+    msg += "⚠️ " + gras("Matchs de poule en retard") + "\n\n";
+    msg += listeParGroupe(lateGames);
   }
 
   if (lateFinals.length > 0) {
-    msg += "🏆 *Matchs de finale en retard :*\n";
-    lateFinals.forEach(f => { msg += "  • " + f.player1 + " vs " + f.player2 + " (" + f.round + ")\n"; });
-    msg += "\n";
+    msg += "⚠️ " + gras("Matchs de finale en retard") + "\n\n";
+    msg += listeParGroupe(lateFinals);
   }
 
   if (lateGames.length === 0 && lateFinals.length === 0) {
@@ -6043,19 +6060,13 @@ function generateWhatsAppMsg() {
     // Aucune ronde ouverte (avant le départ, ou tout est joué) : pas de section vide.
     const enCours = [...pendingGames, ...pendingFinals];
     if (enCours.length) {
-    msg += t('pending_msg') + "\n\n";
-    msg += "⚔️ *Matchs en attente :*\n";
-    enCours.forEach(m => {
-      const p1 = m.playerWhite || m.player1;
-      const p2 = m.playerBlack || m.player2;
-      const grp = m.group || m.round;
-      msg += "  • " + p1 + " vs " + p2 + " (" + grp + ")\n";
-    });
-    msg += "\n";
+    msg += "⏳ " + t('pending_msg') + "\n\n";
+    msg += listeParGroupe(enCours);
     }
   }
 
-  msg += `👉 ${url}\n\n_Fair-play et bonne chance à tous !_ ♟`;
+  if (!pourNotif) msg += `👉 ${url}\n\n`;
+  msg += 'Fair-play et bonne chance à tous ! ♟';
   return msg;
 }
 
@@ -6968,7 +6979,7 @@ function renderAdmin(){
     // Generate default notification message — reste synchronisé (retards inclus) tant que l'admin n'a pas personnalisé le texte
     const notifMsgEl = document.getElementById('notif-admin-msg');
     if (notifMsgEl) {
-      const freshNotifMsg = generateWhatsAppMsg();
+      const freshNotifMsg = generateWhatsAppMsg(true);
       if (!notifMsgEl.value || notifMsgEl.value === lastAutoNotifMsg) {
         notifMsgEl.value = freshNotifMsg;
         lastAutoNotifMsg = freshNotifMsg;

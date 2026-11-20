@@ -404,16 +404,20 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
   <div id="admin-dashboard" style="display:none">
     <div class="subtabs" id="admin-subtabs">
       <button class="subtab active" onclick="showAdminTab('actions')" id="subtab-actions">Tournoi</button>
-      <button class="subtab inactive" onclick="showAdminTab('players')" id="subtab-players">Joueurs</button>
       <button class="subtab inactive" onclick="showAdminTab('notifs')" id="subtab-notifs">Notifs</button>
+      <button class="subtab inactive" onclick="showAdminTab('players')" id="subtab-players">Joueurs</button>
       <button class="subtab inactive" onclick="showAdminTab('settings')" id="subtab-settings">Réglages</button>
     </div>
     <div id="admin-settings" class="card" style="display:none">
       
       <div class="gap">
-        
-        
-        
+      <!-- Appareil admin : vit dans Réglages (c'est un réglage de l'appareil, pas une
+           notification). L'alerte retard elle-même et sa vérification restent dans Notifs. -->
+      <div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:10px">📍 Appareil admin (alerte retard)</div>
+          <div id="admin-device-status" style="font-size:13px;margin-bottom:10px;padding:0 2px"></div>
+          <div id="admin-device-actions" style="margin-bottom:12px;display:flex;flex-direction:column;gap:8px"></div>
+        </div>
       <div style="border-top:1px solid #eee;margin-top:8px;padding-top:12px">
           <div style="font-size:13px;font-weight:700;margin-bottom:10px" id="pin-change-title">Modifier le PIN</div>
           <div class="form-group"><label id="pin-current-label">PIN actuel</label><input id="pin-current" type="text" inputmode="numeric" autocomplete="off" style="-webkit-text-security:disc;text-security:disc"></div>
@@ -489,9 +493,6 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
           </div>
         </div>
         <div style="border-top:1px solid #eee;margin-top:8px;padding-top:12px">
-          <div style="font-size:13px;font-weight:700;margin-bottom:10px">📍 Appareil admin (alerte retard)</div>
-          <div id="admin-device-status" style="font-size:13px;margin-bottom:10px;padding:0 2px"></div>
-          <div id="admin-device-actions" style="margin-bottom:12px;display:flex;flex-direction:column;gap:8px"></div>
           <button style="margin-top:10px" class="btn btn-gray" onclick="checkLateNow()" id="check-late-btn">🔍 Vérifier les retards maintenant</button>
           <div id="check-late-result" style="font-size:12px;margin-top:6px"></div>
         </div>
@@ -1490,12 +1491,19 @@ function renderAdminDeviceStatus() {
   const devActions = document.getElementById('admin-device-actions');
   if (devStatus && devActions) {
     const btnRegister = `<button class="btn btn-gold" onclick="registerThisDeviceAsAdmin()">${t('dev_register_btn')}</button>`;
+    // Enregistrer un appareil exige qu'il soit abonné aux notifications : l'alerte
+    // retard lui arrive par là. Ce n'est pas un verrou de sécurité. Plutôt que de
+    // renvoyer l'admin chercher le bouton sur l'accueil, on le propose ici ; une fois
+    // l'abonnement fait, le bouton d'enregistrement apparaît à sa place.
+    const pasAbonne = (cle) => localStorage.getItem('abct-notif') === 'on'
+      ? `<span style="font-size:12px;color:var(--gray)">${t(cle)}</span>`
+      : `<span style="font-size:12px;color:var(--gray)">${t('dev_enable_here')}</span><button class="btn btn-gold" onclick="toggleNotifications()">${t('dev_enable_btn')}</button>`;
     if (d.kind === 'none') {
       devStatus.innerHTML = t('dev_none');
-      devActions.innerHTML = d.thisIsSubscribed ? btnRegister : `<span style="font-size:12px;color:var(--gray)">${t('dev_enable_first')}</span>`;
+      devActions.innerHTML = d.thisIsSubscribed ? btnRegister : pasAbonne('dev_enable_first');
     } else if (d.kind === 'orphan') {
       devStatus.innerHTML = t('dev_orphan');
-      devActions.innerHTML = d.thisIsSubscribed ? btnRegister : `<span style="font-size:12px;color:var(--gray)">${t('dev_enable_then_register')}</span>`;
+      devActions.innerHTML = d.thisIsSubscribed ? btnRegister : pasAbonne('dev_enable_then_register');
     } else if (d.kind === 'this') {
       devStatus.innerHTML = alertsOn ? t('dev_this_on') : t('dev_this_off');
       devActions.innerHTML = `<button class="btn btn-gray btn-sm" style="width:auto;font-size:12px;background:#fee;color:var(--red)" onclick="resetAdminDevice()">${t('dev_remove_this')}</button>`;
@@ -1508,7 +1516,7 @@ function renderAdminDeviceStatus() {
         : null;
       devStatus.innerHTML = t('dev_other')
         + (quand ? `<div style="font-size:11px;color:var(--gray);margin-top:4px">${t('dev_other_since')} ${esc(quand)}</div>` : '');
-      devActions.innerHTML = (d.thisIsSubscribed ? `<button class="btn btn-gold" onclick="registerThisDeviceAsAdmin()">${t('dev_register_instead')}</button>` : '') +
+      devActions.innerHTML = (d.thisIsSubscribed ? `<button class="btn btn-gold" onclick="registerThisDeviceAsAdmin()">${t('dev_register_instead')}</button>` : pasAbonne('dev_enable_then_register')) +
         `<button class="btn btn-gray btn-sm" style="width:auto;font-size:12px" onclick="resetAdminDevice()">${t('dev_remove_current')}</button>`;
     }
   }
@@ -1742,7 +1750,7 @@ const T = {
     pin_wrong:"PIN actuel incorrect.",
     pin_mismatch:"Les nouveaux PIN ne correspondent pas.",
     pin_short:"PIN trop court (min. 4 caractères).",
-    pin_changed:"PIN modifié avec succès !",admin_logout_all_btn:"🔒 Déconnecter les autres appareils",admin_logout_all_help:"Cet appareil reste connecté jusqu'à « Déconnexion ». Ce bouton déconnecte tous les autres appareils admin.",admin_logout_all_confirm:"Déconnecter tous les autres appareils admin ? Ils devront retaper le PIN.",admin_logout_all_done:"✓ Les autres appareils sont déconnectés.",admin_logout_all_fail:"Échec : rien n'a été changé. Réessaie.",
+    pin_changed:"PIN modifié avec succès !",dev_enable_here:"Pour recevoir l'alerte retard, cet appareil doit d'abord être abonné aux notifications.",dev_enable_btn:"🔔 Activer les notifications sur cet appareil",admin_logout_all_btn:"🔒 Déconnecter les autres appareils",admin_logout_all_help:"Cet appareil reste connecté jusqu'à « Déconnexion ». Ce bouton déconnecte tous les autres appareils admin.",admin_logout_all_confirm:"Déconnecter tous les autres appareils admin ? Ils devront retaper le PIN.",admin_logout_all_done:"✓ Les autres appareils sont déconnectés.",admin_logout_all_fail:"Échec : rien n'a été changé. Réessaie.",
     nick_taken:"Ce pseudo est déjà pris.",edit_sync_pseudo:"⚠️ Ce joueur figure dans {n} édition(s) du palmarès sous le pseudo précédent.\n\nChanger son pseudo sans mettre le palmarès à jour coupera DÉFINITIVEMENT le lien avec son historique.\n\nMettre le palmarès à jour aussi ?",edit_sync_nom:"Ce joueur figure dans {n} édition(s) du palmarès sous le nom « {ancien} ».\n\nMettre le palmarès à jour avec le nouveau nom ?",edit_sync_done:"✅ Palmarès mis à jour ({n} entrées).",edit_sync_title:"✏️ Et le palmarès ?",edit_sync_yes:"✅ Oui, mettre le palmarès à jour",edit_sync_no:"➡️ Non, laisser le palmarès tel quel",edit_sync_back:"✕ Annuler — ne rien modifier",match_voided:"Match annulé",score_incomplet:"Choisis un score pour les deux joueurs.",score_hint_effacer:"🗑️ efface le score",confirm_void_match:"Marquer ce match comme NON JOUÉ (-:-) ?\n\nIl n'aura plus d'échéance, ne sera plus signalé en retard et ne comptera pas au classement.\n\nÀ utiliser quand un joueur a abandonné le tournoi.",reset_match:"Réinitialiser",save_edit:"✓ Enregistrer",confirm_unregister:"Se désinscrire du tournoi ? ({n})",edit_sync_tournoi:"✅ Pseudo corrigé dans {m} match(s) de poule et {f} match(s) du tableau final.",edit_sync_fail:"⚠️ Rien n'a été modifié : l'enregistrement a échoué. La fiche et les matchs sont intacts — réessaie.",edit_sync_partiel:"⚠️ Correction incomplète : {n} écriture(s) ont échoué. La fiche a gardé l'ancien pseudo — réenregistre pour terminer.",
     groups_reset:"Groupes réinitialisés. Les joueurs sont conservés.",
     finals_reset:"Phases finales réinitialisées.",
@@ -1914,7 +1922,7 @@ const T = {
     pin_wrong:"Falscher aktueller PIN.",
     pin_mismatch:"Die neuen PINs stimmen nicht überein.",
     pin_short:"PIN zu kurz (min. 4 Zeichen).",
-    pin_changed:"PIN erfolgreich geändert!",admin_logout_all_btn:"🔒 Andere Geräte abmelden",admin_logout_all_help:"Dieses Gerät bleibt angemeldet bis « Abmelden ». Diese Schaltfläche meldet alle anderen Admin-Geräte ab.",admin_logout_all_confirm:"Alle anderen Admin-Geräte abmelden? Sie müssen den PIN erneut eingeben.",admin_logout_all_done:"✓ Die anderen Geräte sind abgemeldet.",admin_logout_all_fail:"Fehlgeschlagen: nichts wurde geändert. Versuche es erneut.",
+    pin_changed:"PIN erfolgreich geändert!",dev_enable_here:"Um die Verspätungswarnung zu erhalten, muss dieses Gerät zuerst Benachrichtigungen abonniert haben.",dev_enable_btn:"🔔 Benachrichtigungen auf diesem Gerät aktivieren",admin_logout_all_btn:"🔒 Andere Geräte abmelden",admin_logout_all_help:"Dieses Gerät bleibt angemeldet bis « Abmelden ». Diese Schaltfläche meldet alle anderen Admin-Geräte ab.",admin_logout_all_confirm:"Alle anderen Admin-Geräte abmelden? Sie müssen den PIN erneut eingeben.",admin_logout_all_done:"✓ Die anderen Geräte sind abgemeldet.",admin_logout_all_fail:"Fehlgeschlagen: nichts wurde geändert. Versuche es erneut.",
     nick_taken:"Dieser Spitzname ist bereits vergeben.",edit_sync_pseudo:"⚠️ Dieser Spieler erscheint in {n} Ausgabe(n) der Bestenliste unter dem bisherigen Pseudonym.\n\nDas Pseudonym zu ändern, ohne die Bestenliste anzupassen, trennt die Verbindung zu seiner Historie ENDGÜLTIG.\n\nBestenliste ebenfalls aktualisieren?",edit_sync_nom:"Dieser Spieler erscheint in {n} Ausgabe(n) der Bestenliste unter dem Namen « {ancien} ».\n\nBestenliste mit dem neuen Namen aktualisieren?",edit_sync_done:"✅ Bestenliste aktualisiert ({n} Einträge).",edit_sync_title:"✏️ Und die Bestenliste?",edit_sync_yes:"✅ Ja, Bestenliste aktualisieren",edit_sync_no:"➡️ Nein, Bestenliste unverändert lassen",edit_sync_back:"✕ Abbrechen — nichts ändern",match_voided:"Partie annulliert",score_incomplet:"Wähle ein Ergebnis für beide Spieler.",score_hint_effacer:"🗑️ löscht das Ergebnis",confirm_void_match:"Diese Partie als NICHT GESPIELT (-:-) markieren?\n\nSie hat dann keine Frist mehr, wird nicht mehr als verspätet gemeldet und zählt nicht für die Tabelle.\n\nZu verwenden, wenn ein Spieler das Turnier aufgegeben hat.",reset_match:"Zurücksetzen",save_edit:"✓ Speichern",confirm_unregister:"Vom Turnier abmelden? ({n})",edit_sync_tournoi:"✅ Pseudonym in {m} Gruppenspiel(en) und {f} Spiel(en) des Finaltableaus korrigiert.",edit_sync_fail:"⚠️ Nichts wurde geändert: das Speichern ist fehlgeschlagen. Spielerkarte und Spiele sind unverändert — bitte erneut versuchen.",edit_sync_partiel:"⚠️ Korrektur unvollständig: {n} Schreibvorgang/-vorgänge fehlgeschlagen. Die Spielerkarte behält das alte Pseudonym — erneut speichern, um abzuschliessen.",
     groups_reset:"Gruppen zurückgesetzt. Spieler bleiben erhalten.",
     finals_reset:"Finalrunden zurückgesetzt.",
@@ -2012,7 +2020,7 @@ const T = {
     pin_wrong:"Incorrect current PIN.",
     pin_mismatch:"The new PINs don't match.",
     pin_short:"PIN too short (min. 4 characters).",
-    pin_changed:"PIN changed successfully!",admin_logout_all_btn:"🔒 Log out other devices",admin_logout_all_help:"This device stays logged in until « Log out ». This button logs out every other admin device.",admin_logout_all_confirm:"Log out every other admin device? They will need to enter the PIN again.",admin_logout_all_done:"✓ The other devices are logged out.",admin_logout_all_fail:"Failed: nothing was changed. Try again.",
+    pin_changed:"PIN changed successfully!",dev_enable_here:"To receive the late alert, this device must first be subscribed to notifications.",dev_enable_btn:"🔔 Turn on notifications on this device",admin_logout_all_btn:"🔒 Log out other devices",admin_logout_all_help:"This device stays logged in until « Log out ». This button logs out every other admin device.",admin_logout_all_confirm:"Log out every other admin device? They will need to enter the PIN again.",admin_logout_all_done:"✓ The other devices are logged out.",admin_logout_all_fail:"Failed: nothing was changed. Try again.",
     nick_taken:"This nickname is already taken.",edit_sync_pseudo:"⚠️ This player appears in {n} edition(s) of the hall of fame under the previous nickname.\n\nChanging the nickname without updating the hall of fame will PERMANENTLY break the link to their history.\n\nUpdate the hall of fame too?",edit_sync_nom:"This player appears in {n} edition(s) of the hall of fame under the name « {ancien} ».\n\nUpdate the hall of fame with the new name?",edit_sync_done:"✅ Hall of fame updated ({n} entries).",edit_sync_title:"✏️ What about the hall of fame?",edit_sync_yes:"✅ Yes, update the hall of fame",edit_sync_no:"➡️ No, leave the hall of fame as it is",edit_sync_back:"✕ Cancel — change nothing",match_voided:"Match cancelled",score_incomplet:"Pick a score for both players.",score_hint_effacer:"🗑️ clears the score",confirm_void_match:"Mark this match as NOT PLAYED (-:-)?\n\nIt will have no deadline, will no longer be flagged as overdue, and will not count towards the standings.\n\nUse this when a player has withdrawn from the tournament.",reset_match:"Reset",save_edit:"✓ Save",confirm_unregister:"Withdraw from the tournament? ({n})",edit_sync_tournoi:"✅ Nickname corrected in {m} pool match(es) and {f} match(es) of the final bracket.",edit_sync_fail:"⚠️ Nothing was changed: saving failed. The player card and the matches are untouched — please try again.",edit_sync_partiel:"⚠️ Incomplete correction: {n} write(s) failed. The player card kept the old nickname — save again to finish.",
     groups_reset:"Groups reset. Players are kept.",
     finals_reset:"Final stage reset.",
@@ -2144,7 +2152,7 @@ const T = {
     pin_wrong:"PIN attuale errato.",
     pin_mismatch:"I nuovi PIN non corrispondono.",
     pin_short:"PIN troppo corto (min. 4 caratteri).",
-    pin_changed:"PIN modificato con successo!",admin_logout_all_btn:"🔒 Disconnetti gli altri dispositivi",admin_logout_all_help:"Questo dispositivo resta connesso fino a « Disconnetti ». Questo pulsante disconnette tutti gli altri dispositivi admin.",admin_logout_all_confirm:"Disconnettere tutti gli altri dispositivi admin? Dovranno reinserire il PIN.",admin_logout_all_done:"✓ Gli altri dispositivi sono disconnessi.",admin_logout_all_fail:"Non riuscito: nulla è stato modificato. Riprova.",
+    pin_changed:"PIN modificato con successo!",dev_enable_here:"Per ricevere l'avviso ritardi, questo dispositivo deve prima essere abbonato alle notifiche.",dev_enable_btn:"🔔 Attiva le notifiche su questo dispositivo",admin_logout_all_btn:"🔒 Disconnetti gli altri dispositivi",admin_logout_all_help:"Questo dispositivo resta connesso fino a « Disconnetti ». Questo pulsante disconnette tutti gli altri dispositivi admin.",admin_logout_all_confirm:"Disconnettere tutti gli altri dispositivi admin? Dovranno reinserire il PIN.",admin_logout_all_done:"✓ Gli altri dispositivi sono disconnessi.",admin_logout_all_fail:"Non riuscito: nulla è stato modificato. Riprova.",
     nick_taken:"Questo soprannome è già utilizzato.",edit_sync_pseudo:"⚠️ Questo giocatore compare in {n} edizione/i dell'albo d'oro con il nickname precedente.\n\nCambiare il nickname senza aggiornare l'albo d'oro interromperà DEFINITIVAMENTE il legame con il suo storico.\n\nAggiornare anche l'albo d'oro?",edit_sync_nom:"Questo giocatore compare in {n} edizione/i dell'albo d'oro con il nome « {ancien} ».\n\nAggiornare l'albo d'oro con il nuovo nome?",edit_sync_done:"✅ Albo d'oro aggiornato ({n} voci).",edit_sync_title:"✏️ E l'albo d'oro?",edit_sync_yes:"✅ Sì, aggiornare l'albo d'oro",edit_sync_no:"➡️ No, lasciare l'albo d'oro com'è",edit_sync_back:"✕ Annullare — non modificare nulla",match_voided:"Partita annullata",score_incomplet:"Scegli un risultato per entrambi i giocatori.",score_hint_effacer:"🗑️ cancella il risultato",confirm_void_match:"Segnare questa partita come NON GIOCATA (-:-)?\n\nNon avrà più una scadenza, non sarà più segnalata in ritardo e non conterà per la classifica.\n\nDa usare quando un giocatore si è ritirato dal torneo.",reset_match:"Reimposta",save_edit:"✓ Salva",confirm_unregister:"Ritirarsi dal torneo? ({n})",edit_sync_tournoi:"✅ Nickname corretto in {m} partita/e di girone e {f} partita/e del tabellone finale.",edit_sync_fail:"⚠️ Niente è stato modificato: il salvataggio non è riuscito. La scheda e le partite sono intatte — riprova.",edit_sync_partiel:"⚠️ Correzione incompleta: {n} scrittura/e non riuscita/e. La scheda ha mantenuto il vecchio nickname — salva di nuovo per completare.",
     groups_reset:"Gruppi azzerati. I giocatori sono conservati.",
     finals_reset:"Fasi finali azzerate.",

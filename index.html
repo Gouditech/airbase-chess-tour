@@ -422,6 +422,11 @@ h3{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px}
           <button class="btn btn-gray" onclick="changePin()" id="change-pin-btn">Modifier le PIN</button>
           <div id="pin-msg"></div>
         </div>
+      <div style="border-top:1px solid #eee;margin-top:14px;padding-top:12px">
+          <div style="font-size:12px;color:var(--gray);line-height:1.5;margin-bottom:8px" id="logout-all-help">Cet appareil reste connecté jusqu'à « Déconnexion ». Ce bouton déconnecte tous les autres appareils admin.</div>
+          <button class="btn btn-gray" onclick="deconnecterTousAdmins()" id="logout-all-btn">🔒 Déconnecter les autres appareils</button>
+          <div id="logout-all-msg"></div>
+        </div>
       </div>
     </div>
     <div id="admin-notifs" style="display:none">
@@ -1704,7 +1709,7 @@ const T = {
 <p>⏰ <strong>Commence tes parties dès le début du tournoi</strong> et termine-les avant l'échéance affichée sur chaque match. Tu peux jouer plusieurs parties en parallèle, mais <strong>respecte l'ordre des rondes</strong> : traite d'abord celles dont l'échéance est la plus proche. Même à cadence lente, enchaîne tes coups pour finir dans les délais.</p><br>
 <p>Format : Poules round-robin, puis phases finales à élimination directe. Le nombre de groupes et de qualifiés est fixé par l'organisateur selon le nombre d'inscrits, et annoncé au lancement du tournoi.</p><br>
 <p>Scores : 1 (victoire) · 0.5 (nul) · 0 (défaite)</p><br>
-<p>Départage dans les groupes : ① Points ② Victoires ③ Victoires avec les Noirs ④ Confrontation directe ⑤ Tête de série</p><p>Départage global (finalistes) : ① Points/match ② Victoires/match ③ Victoires Noirs/match ④ Buchholz/match ⑤ Tête de série</p><br>
+<p>{departage_groupes}</p><p>Départage global (finalistes) : ① Points/match ② Victoires/match ③ Victoires Noirs/match ④ Buchholz/match ⑤ Tête de série</p><br>
 <p>Finales : Le mieux classé choisit sa couleur. Nul = match rejoué couleurs inversées.</p><br>
 <p>⛔ Interdit : Analyse, coups conditionnels sur Chess.com. Max 24h/coup, min 10min/coup, pas de mode vacances.</p><br>
 <p>🏆 Demi-finales &amp; Finale en présentiel sur échiquier physique. Absent à la date convenue = disqualifié.</p><br>
@@ -1737,7 +1742,7 @@ const T = {
     pin_wrong:"PIN actuel incorrect.",
     pin_mismatch:"Les nouveaux PIN ne correspondent pas.",
     pin_short:"PIN trop court (min. 4 caractères).",
-    pin_changed:"PIN modifié avec succès !",
+    pin_changed:"PIN modifié avec succès !",admin_logout_all_btn:"🔒 Déconnecter les autres appareils",admin_logout_all_help:"Cet appareil reste connecté jusqu'à « Déconnexion ». Ce bouton déconnecte tous les autres appareils admin.",admin_logout_all_confirm:"Déconnecter tous les autres appareils admin ? Ils devront retaper le PIN.",admin_logout_all_done:"✓ Les autres appareils sont déconnectés.",admin_logout_all_fail:"Échec : rien n'a été changé. Réessaie.",
     nick_taken:"Ce pseudo est déjà pris.",edit_sync_pseudo:"⚠️ Ce joueur figure dans {n} édition(s) du palmarès sous le pseudo précédent.\n\nChanger son pseudo sans mettre le palmarès à jour coupera DÉFINITIVEMENT le lien avec son historique.\n\nMettre le palmarès à jour aussi ?",edit_sync_nom:"Ce joueur figure dans {n} édition(s) du palmarès sous le nom « {ancien} ».\n\nMettre le palmarès à jour avec le nouveau nom ?",edit_sync_done:"✅ Palmarès mis à jour ({n} entrées).",edit_sync_title:"✏️ Et le palmarès ?",edit_sync_yes:"✅ Oui, mettre le palmarès à jour",edit_sync_no:"➡️ Non, laisser le palmarès tel quel",edit_sync_back:"✕ Annuler — ne rien modifier",match_voided:"Match annulé",score_incomplet:"Choisis un score pour les deux joueurs.",score_hint_effacer:"🗑️ efface le score",confirm_void_match:"Marquer ce match comme NON JOUÉ (-:-) ?\n\nIl n'aura plus d'échéance, ne sera plus signalé en retard et ne comptera pas au classement.\n\nÀ utiliser quand un joueur a abandonné le tournoi.",reset_match:"Réinitialiser",save_edit:"✓ Enregistrer",confirm_unregister:"Se désinscrire du tournoi ? ({n})",edit_sync_tournoi:"✅ Pseudo corrigé dans {m} match(s) de poule et {f} match(s) du tableau final.",edit_sync_fail:"⚠️ Rien n'a été modifié : l'enregistrement a échoué. La fiche et les matchs sont intacts — réessaie.",edit_sync_partiel:"⚠️ Correction incomplète : {n} écriture(s) ont échoué. La fiche a gardé l'ancien pseudo — réenregistre pour terminer.",
     groups_reset:"Groupes réinitialisés. Les joueurs sont conservés.",
     finals_reset:"Phases finales réinitialisées.",
@@ -1763,7 +1768,7 @@ const T = {
     subtab_settings:"Réglages",subtab_players:"Joueurs",subtab_notifs:"Notifs",subtab_actions:"Tournoi",
     subtab_ranking:"Classement",
     ranking_title:"Classement global",
-    settings_title:"Paramètres du tournoi",set_third_place:"🥉 <b>Petite finale</b> — match pour la 3e place.<br><span style=\"color:var(--gray)\">Optionnelle. Décoché, le classement départage les 3e et 4e selon leurs statistiques. Lu au lancement des finales.</span>",set_name:"Nom du tournoi",set_reg_deadline:"Date de clôture des inscriptions",reg_deadline_until:"Jusqu'au",tournament_start:"Début du tournoi :",visits_title:"👀 Visiteurs",visits_today:"Aujourd'hui",visits_week:"7 jours",visits_month:"30 jours",visits_total:"Depuis le début",visits_note:"Appareils différents. Un même joueur sur deux appareils compte deux fois.",visits_err:"Compteur indisponible pour le moment.",score_locked_btn:"Score dès le lancement des poules",score_locked:"La saisie des scores ouvrira au lancement de la phase de poules.",set_ppg:"Joueurs par groupe",ppg_hint_egal:"{n} joueurs → {g} groupes de {t}",ppg_hint_inegal:"{n} joueurs → {g} groupes : {tailles}",set_fin:"Nombre de finalistes",
+    settings_title:"Paramètres du tournoi",set_third_place:"🥉 <b>Petite finale</b> — match pour la 3e place.<br><span style=\"color:var(--gray)\">Optionnelle. Décoché, le classement départage les 3e et 4e selon leurs statistiques. Lu au lancement des finales.</span>",set_name:"Nom du tournoi",set_reg_deadline:"Date de clôture des inscriptions",reg_deadline_until:"Jusqu'au",departage_groupes_v1:"Départage dans les groupes : ① Points ② Victoires ③ Victoires avec les Noirs ④ Confrontation directe ⑤ Tête de série",departage_groupes_v2:"Départage dans les groupes : ① Points ② Confrontation directe (mini-classement entre ex-aequo) ③ Victoires ④ Victoires avec les Noirs ⑤ Sonneborn-Berger (points des adversaires battus + moitié de ceux des nulles) ⑥ Tête de série",tournament_start:"Début du tournoi :",visits_title:"👀 Visiteurs",visits_today:"Aujourd'hui",visits_week:"7 jours",visits_month:"30 jours",visits_total:"Depuis le début",visits_note:"Appareils différents. Un même joueur sur deux appareils compte deux fois.",visits_err:"Compteur indisponible pour le moment.",score_locked_btn:"Score dès le lancement des poules",score_locked:"La saisie des scores ouvrira au lancement de la phase de poules.",set_ppg:"Joueurs par groupe",ppg_hint_egal:"{n} joueurs → {g} groupes de {t}",ppg_hint_inegal:"{n} joueurs → {g} groupes : {tailles}",set_fin:"Nombre de finalistes",
     set_pool_start:"Date de début des poules",set_pool_interval:"Intervalle entre rondes de poules (jours)",
     set_finals_start:"Date de début des finales",set_finals_interval:"Intervalle entre tours de finales (jours)",
     save_settings:"Enregistrer",
@@ -1839,7 +1844,7 @@ const T = {
 <p>⏰ <strong>Beginne deine Partien gleich zu Turnierbeginn</strong> und beende sie vor der bei jeder Partie angezeigten Frist. Ihr dürft mehrere Partien parallel spielen, aber <strong>haltet die Reihenfolge der Runden ein</strong>: spielt zuerst die Partien mit der nächstliegenden Frist. Auch bei langsamem Tempo: zieht zügig weiter, um fristgerecht fertig zu werden.</p><br>
 <p>Format: Round-Robin-Gruppen, dann K.o.-Finalrunden. Die Anzahl Gruppen und Qualifizierter wird vom Organisator je nach Teilnehmerzahl festgelegt und beim Turnierstart bekannt gegeben.</p><br>
 <p>Punkte: 1 (Sieg) · 0.5 (Remis) · 0 (Niederlage)</p><br>
-<p>Tiebreak Gruppen: ① Punkte ② Siege ③ Siege mit Schwarz ④ Direkter Vergleich ⑤ Setzrang</p><p>Globaler Tiebreak (Finalisten): ① Punkte/Partie ② Siege/Partie ③ Siege Schwarz/Partie ④ Buchholz/Partie ⑤ Setzrang</p><br>
+<p>{departage_groupes}</p><p>Globaler Tiebreak (Finalisten): ① Punkte/Partie ② Siege/Partie ③ Siege Schwarz/Partie ④ Buchholz/Partie ⑤ Setzrang</p><br>
 <p>Finals: Der Besser­platzierte wählt die Farbe. Remis = Wiederholung mit getauschten Farben.</p><br>
 <p>⛔ Verboten: Analyse, bedingte Züge auf Chess.com. Max. 24h/Zug, kein Urlaubsmodus.</p><br>
 <p>Schiedsrichter: Bei Streitigkeiten entscheidet der Organisator. Fair Play wird erwartet.</p>`,
@@ -1855,7 +1860,7 @@ const T = {
     subtab_settings:"Einstellungen",subtab_players:"Spieler",subtab_notifs:"Mitteil.",subtab_actions:"Turnier",
     subtab_ranking:"Rangliste",
     ranking_title:"Globale Rangliste",
-    settings_title:"Turniereinstellungen",set_third_place:"🥉 <b>Spiel um Platz 3</b> — optionale Partie.<br><span style=\"color:var(--gray)\">Ohne sie entscheidet die Gesamtwertung über Platz 3 und 4. Wird beim Start der Finalrunden gelesen.</span>",set_name:"Turniername",set_reg_deadline:"Anmeldeschluss",reg_deadline_until:"Bis zum",tournament_start:"Turnierbeginn:",visits_title:"👀 Besucher",visits_today:"Heute",visits_week:"7 Tage",visits_month:"30 Tage",visits_total:"Seit Beginn",visits_note:"Verschiedene Geräte. Ein Spieler mit zwei Geräten zählt doppelt.",visits_err:"Zähler derzeit nicht verfügbar.",score_locked_btn:"Ergebnis ab Start der Gruppenphase",score_locked:"Die Ergebniseingabe öffnet mit dem Start der Gruppenphase.",set_ppg:"Spieler pro Gruppe",ppg_hint_egal:"{n} Spieler → {g} Gruppen zu je {t}",ppg_hint_inegal:"{n} Spieler → {g} Gruppen: {tailles}",set_fin:"Anzahl Finalisten",
+    settings_title:"Turniereinstellungen",set_third_place:"🥉 <b>Spiel um Platz 3</b> — optionale Partie.<br><span style=\"color:var(--gray)\">Ohne sie entscheidet die Gesamtwertung über Platz 3 und 4. Wird beim Start der Finalrunden gelesen.</span>",set_name:"Turniername",set_reg_deadline:"Anmeldeschluss",reg_deadline_until:"Bis zum",departage_groupes_v1:"Tiebreak Gruppen: ① Punkte ② Siege ③ Siege mit Schwarz ④ Direkter Vergleich ⑤ Setzrang",departage_groupes_v2:"Tiebreak Gruppen: ① Punkte ② Direkter Vergleich (Mini-Tabelle unter Punktgleichen) ③ Siege ④ Siege mit Schwarz ⑤ Sonneborn-Berger (Punkte der besiegten Gegner + Hälfte derer bei Remis) ⑥ Setzrang",tournament_start:"Turnierbeginn:",visits_title:"👀 Besucher",visits_today:"Heute",visits_week:"7 Tage",visits_month:"30 Tage",visits_total:"Seit Beginn",visits_note:"Verschiedene Geräte. Ein Spieler mit zwei Geräten zählt doppelt.",visits_err:"Zähler derzeit nicht verfügbar.",score_locked_btn:"Ergebnis ab Start der Gruppenphase",score_locked:"Die Ergebniseingabe öffnet mit dem Start der Gruppenphase.",set_ppg:"Spieler pro Gruppe",ppg_hint_egal:"{n} Spieler → {g} Gruppen zu je {t}",ppg_hint_inegal:"{n} Spieler → {g} Gruppen: {tailles}",set_fin:"Anzahl Finalisten",
     set_pool_start:"Startdatum Gruppenphase",set_pool_interval:"Intervall zwischen Gruppenrunden (Tage)",
     set_finals_start:"Startdatum Finalrunden",set_finals_interval:"Intervall zwischen Finalrunden (Tage)",
     save_settings:"Speichern",
@@ -1909,7 +1914,7 @@ const T = {
     pin_wrong:"Falscher aktueller PIN.",
     pin_mismatch:"Die neuen PINs stimmen nicht überein.",
     pin_short:"PIN zu kurz (min. 4 Zeichen).",
-    pin_changed:"PIN erfolgreich geändert!",
+    pin_changed:"PIN erfolgreich geändert!",admin_logout_all_btn:"🔒 Andere Geräte abmelden",admin_logout_all_help:"Dieses Gerät bleibt angemeldet bis « Abmelden ». Diese Schaltfläche meldet alle anderen Admin-Geräte ab.",admin_logout_all_confirm:"Alle anderen Admin-Geräte abmelden? Sie müssen den PIN erneut eingeben.",admin_logout_all_done:"✓ Die anderen Geräte sind abgemeldet.",admin_logout_all_fail:"Fehlgeschlagen: nichts wurde geändert. Versuche es erneut.",
     nick_taken:"Dieser Spitzname ist bereits vergeben.",edit_sync_pseudo:"⚠️ Dieser Spieler erscheint in {n} Ausgabe(n) der Bestenliste unter dem bisherigen Pseudonym.\n\nDas Pseudonym zu ändern, ohne die Bestenliste anzupassen, trennt die Verbindung zu seiner Historie ENDGÜLTIG.\n\nBestenliste ebenfalls aktualisieren?",edit_sync_nom:"Dieser Spieler erscheint in {n} Ausgabe(n) der Bestenliste unter dem Namen « {ancien} ».\n\nBestenliste mit dem neuen Namen aktualisieren?",edit_sync_done:"✅ Bestenliste aktualisiert ({n} Einträge).",edit_sync_title:"✏️ Und die Bestenliste?",edit_sync_yes:"✅ Ja, Bestenliste aktualisieren",edit_sync_no:"➡️ Nein, Bestenliste unverändert lassen",edit_sync_back:"✕ Abbrechen — nichts ändern",match_voided:"Partie annulliert",score_incomplet:"Wähle ein Ergebnis für beide Spieler.",score_hint_effacer:"🗑️ löscht das Ergebnis",confirm_void_match:"Diese Partie als NICHT GESPIELT (-:-) markieren?\n\nSie hat dann keine Frist mehr, wird nicht mehr als verspätet gemeldet und zählt nicht für die Tabelle.\n\nZu verwenden, wenn ein Spieler das Turnier aufgegeben hat.",reset_match:"Zurücksetzen",save_edit:"✓ Speichern",confirm_unregister:"Vom Turnier abmelden? ({n})",edit_sync_tournoi:"✅ Pseudonym in {m} Gruppenspiel(en) und {f} Spiel(en) des Finaltableaus korrigiert.",edit_sync_fail:"⚠️ Nichts wurde geändert: das Speichern ist fehlgeschlagen. Spielerkarte und Spiele sind unverändert — bitte erneut versuchen.",edit_sync_partiel:"⚠️ Korrektur unvollständig: {n} Schreibvorgang/-vorgänge fehlgeschlagen. Die Spielerkarte behält das alte Pseudonym — erneut speichern, um abzuschliessen.",
     groups_reset:"Gruppen zurückgesetzt. Spieler bleiben erhalten.",
     finals_reset:"Finalrunden zurückgesetzt.",
@@ -1975,7 +1980,7 @@ const T = {
 <p>⏰ <strong>Start your games as soon as the tournament begins</strong> and finish them before the deadline shown on each match. You may play several games in parallel, but <strong>respect the order of the rounds</strong>: deal first with those whose deadline is closest. Even at a slow pace, keep making your moves so you finish on time.</p><br>
 <p>Format: Round-robin groups, then knockout finals. The number of groups and qualifiers is set by the organiser based on the number of entrants, and announced when the tournament starts.</p><br>
 <p>Scores: 1 (win) · 0.5 (draw) · 0 (loss)</p><br>
-<p>Group tiebreak: ① Points ② Wins ③ Wins with Black ④ Head-to-head ⑤ Seed</p><p>Global tiebreak (finalists): ① Points/game ② Wins/game ③ Black wins/game ④ Buchholz/game ⑤ Seed</p><br>
+<p>{departage_groupes}</p><p>Global tiebreak (finalists): ① Points/game ② Wins/game ③ Black wins/game ④ Buchholz/game ⑤ Seed</p><br>
 <p>Finals: Higher-ranked player chooses color. Draw = replay with swapped colors.</p><br>
 <p>⛔ Forbidden: Analysis board, conditional moves on Chess.com. Max 24h/move, no vacation mode.</p><br>
 <p>Arbiter: In case of dispute, the organizer decides. Fair play expected from all.</p>`,
@@ -2007,7 +2012,7 @@ const T = {
     pin_wrong:"Incorrect current PIN.",
     pin_mismatch:"The new PINs don't match.",
     pin_short:"PIN too short (min. 4 characters).",
-    pin_changed:"PIN changed successfully!",
+    pin_changed:"PIN changed successfully!",admin_logout_all_btn:"🔒 Log out other devices",admin_logout_all_help:"This device stays logged in until « Log out ». This button logs out every other admin device.",admin_logout_all_confirm:"Log out every other admin device? They will need to enter the PIN again.",admin_logout_all_done:"✓ The other devices are logged out.",admin_logout_all_fail:"Failed: nothing was changed. Try again.",
     nick_taken:"This nickname is already taken.",edit_sync_pseudo:"⚠️ This player appears in {n} edition(s) of the hall of fame under the previous nickname.\n\nChanging the nickname without updating the hall of fame will PERMANENTLY break the link to their history.\n\nUpdate the hall of fame too?",edit_sync_nom:"This player appears in {n} edition(s) of the hall of fame under the name « {ancien} ».\n\nUpdate the hall of fame with the new name?",edit_sync_done:"✅ Hall of fame updated ({n} entries).",edit_sync_title:"✏️ What about the hall of fame?",edit_sync_yes:"✅ Yes, update the hall of fame",edit_sync_no:"➡️ No, leave the hall of fame as it is",edit_sync_back:"✕ Cancel — change nothing",match_voided:"Match cancelled",score_incomplet:"Pick a score for both players.",score_hint_effacer:"🗑️ clears the score",confirm_void_match:"Mark this match as NOT PLAYED (-:-)?\n\nIt will have no deadline, will no longer be flagged as overdue, and will not count towards the standings.\n\nUse this when a player has withdrawn from the tournament.",reset_match:"Reset",save_edit:"✓ Save",confirm_unregister:"Withdraw from the tournament? ({n})",edit_sync_tournoi:"✅ Nickname corrected in {m} pool match(es) and {f} match(es) of the final bracket.",edit_sync_fail:"⚠️ Nothing was changed: saving failed. The player card and the matches are untouched — please try again.",edit_sync_partiel:"⚠️ Incomplete correction: {n} write(s) failed. The player card kept the old nickname — save again to finish.",
     groups_reset:"Groups reset. Players are kept.",
     finals_reset:"Final stage reset.",
@@ -2031,7 +2036,7 @@ const T = {
     admin_pin_hint:"First time? Create your PIN now.",admin_pin_err:"Incorrect PIN.",
     admin_logout:"Logout",
     subtab_settings:"Settings",subtab_players:"Players",subtab_notifs:"Notifs",subtab_actions:"Tournament",
-    settings_title:"Tournament settings",set_third_place:"🥉 <b>Third-place match</b> — optional.<br><span style=\"color:var(--gray)\">Unchecked, the overall ranking decides 3rd and 4th. Read when the finals are launched.</span>",set_name:"Tournament name",set_reg_deadline:"Registration closing date",reg_deadline_until:"Until",tournament_start:"Tournament starts:",visits_title:"👀 Visitors",visits_today:"Today",visits_week:"7 days",visits_month:"30 days",visits_total:"Since the start",visits_note:"Distinct devices. One player on two devices counts twice.",visits_err:"Counter unavailable right now.",score_locked_btn:"Score once the group stage starts",score_locked:"Score entry opens when the group stage starts.",set_ppg:"Players per group",ppg_hint_egal:"{n} players → {g} groups of {t}",ppg_hint_inegal:"{n} players → {g} groups: {tailles}",set_fin:"Number of finalists",
+    settings_title:"Tournament settings",set_third_place:"🥉 <b>Third-place match</b> — optional.<br><span style=\"color:var(--gray)\">Unchecked, the overall ranking decides 3rd and 4th. Read when the finals are launched.</span>",set_name:"Tournament name",set_reg_deadline:"Registration closing date",reg_deadline_until:"Until",departage_groupes_v1:"Group tiebreak: ① Points ② Wins ③ Wins with Black ④ Head-to-head ⑤ Seed",departage_groupes_v2:"Group tiebreak: ① Points ② Head-to-head (mini-table among tied players) ③ Wins ④ Wins with Black ⑤ Sonneborn-Berger (points of beaten opponents + half of those drawn) ⑥ Seed",tournament_start:"Tournament starts:",visits_title:"👀 Visitors",visits_today:"Today",visits_week:"7 days",visits_month:"30 days",visits_total:"Since the start",visits_note:"Distinct devices. One player on two devices counts twice.",visits_err:"Counter unavailable right now.",score_locked_btn:"Score once the group stage starts",score_locked:"Score entry opens when the group stage starts.",set_ppg:"Players per group",ppg_hint_egal:"{n} players → {g} groups of {t}",ppg_hint_inegal:"{n} players → {g} groups: {tailles}",set_fin:"Number of finalists",
     set_pool_start:"Pool stage start date",set_pool_interval:"Interval between pool rounds (days)",
     set_finals_start:"Finals start date",set_finals_interval:"Interval between final rounds (days)",
     save_settings:"Save",
@@ -2107,7 +2112,7 @@ const T = {
 <p>⏰ <strong>Inizia le tue partite fin dall'inizio del torneo</strong> e concludile entro la scadenza indicata su ogni partita. Potete giocare più partite in parallelo, ma <strong>rispettate l'ordine dei turni</strong>: affrontate per prime quelle con la scadenza più vicina. Anche con un ritmo lento, continuate a muovere per finire nei tempi.</p><br>
 <p>Formato: Gironi round-robin, poi fasi finali ad eliminazione diretta. Il numero di gironi e di qualificati è stabilito dall'organizzatore in base agli iscritti, e annunciato all'avvio del torneo.</p><br>
 <p>Punteggi: 1 (vittoria) · 0.5 (patta) · 0 (sconfitta)</p><br>
-<p>Spareggio gironi: ① Punti ② Vittorie ③ Vittorie con il Nero ④ Scontro diretto ⑤ Testa di serie</p><p>Spareggio globale (finalisti): ① Punti/partita ② Vittorie/partita ③ Vittorie Nero/partita ④ Buchholz/partita ⑤ Testa di serie</p><br>
+<p>{departage_groupes}</p><p>Spareggio globale (finalisti): ① Punti/partita ② Vittorie/partita ③ Vittorie Nero/partita ④ Buchholz/partita ⑤ Testa di serie</p><br>
 <p>Finali: Il meglio classificato sceglie il colore. Patta = rivincita con colori invertiti.</p><br>
 <p>⛔ Vietato: Analisi, mosse condizionali su Chess.com. Max 24h/mossa, nessuna modalità vacanze.</p><br>
 <p>Arbitraggio: In caso di controversia, decide l'organizzatore. Fair play atteso da tutti.</p>`,
@@ -2139,7 +2144,7 @@ const T = {
     pin_wrong:"PIN attuale errato.",
     pin_mismatch:"I nuovi PIN non corrispondono.",
     pin_short:"PIN troppo corto (min. 4 caratteri).",
-    pin_changed:"PIN modificato con successo!",
+    pin_changed:"PIN modificato con successo!",admin_logout_all_btn:"🔒 Disconnetti gli altri dispositivi",admin_logout_all_help:"Questo dispositivo resta connesso fino a « Disconnetti ». Questo pulsante disconnette tutti gli altri dispositivi admin.",admin_logout_all_confirm:"Disconnettere tutti gli altri dispositivi admin? Dovranno reinserire il PIN.",admin_logout_all_done:"✓ Gli altri dispositivi sono disconnessi.",admin_logout_all_fail:"Non riuscito: nulla è stato modificato. Riprova.",
     nick_taken:"Questo soprannome è già utilizzato.",edit_sync_pseudo:"⚠️ Questo giocatore compare in {n} edizione/i dell'albo d'oro con il nickname precedente.\n\nCambiare il nickname senza aggiornare l'albo d'oro interromperà DEFINITIVAMENTE il legame con il suo storico.\n\nAggiornare anche l'albo d'oro?",edit_sync_nom:"Questo giocatore compare in {n} edizione/i dell'albo d'oro con il nome « {ancien} ».\n\nAggiornare l'albo d'oro con il nuovo nome?",edit_sync_done:"✅ Albo d'oro aggiornato ({n} voci).",edit_sync_title:"✏️ E l'albo d'oro?",edit_sync_yes:"✅ Sì, aggiornare l'albo d'oro",edit_sync_no:"➡️ No, lasciare l'albo d'oro com'è",edit_sync_back:"✕ Annullare — non modificare nulla",match_voided:"Partita annullata",score_incomplet:"Scegli un risultato per entrambi i giocatori.",score_hint_effacer:"🗑️ cancella il risultato",confirm_void_match:"Segnare questa partita come NON GIOCATA (-:-)?\n\nNon avrà più una scadenza, non sarà più segnalata in ritardo e non conterà per la classifica.\n\nDa usare quando un giocatore si è ritirato dal torneo.",reset_match:"Reimposta",save_edit:"✓ Salva",confirm_unregister:"Ritirarsi dal torneo? ({n})",edit_sync_tournoi:"✅ Nickname corretto in {m} partita/e di girone e {f} partita/e del tabellone finale.",edit_sync_fail:"⚠️ Niente è stato modificato: il salvataggio non è riuscito. La scheda e le partite sono intatte — riprova.",edit_sync_partiel:"⚠️ Correzione incompleta: {n} scrittura/e non riuscita/e. La scheda ha mantenuto il vecchio nickname — salva di nuovo per completare.",
     groups_reset:"Gruppi azzerati. I giocatori sono conservati.",
     finals_reset:"Fasi finali azzerate.",
@@ -2165,7 +2170,7 @@ const T = {
     subtab_settings:"Impostazioni",subtab_players:"Giocatori",subtab_notifs:"Notifiche",subtab_actions:"Torneo",
     subtab_ranking:"Classifica",
     ranking_title:"Classifica globale",
-    settings_title:"Impostazioni torneo",set_third_place:"🥉 <b>Finale 3° posto</b> — opzionale.<br><span style=\"color:var(--gray)\">Senza di essa, la classifica generale decide 3° e 4°. Letta all'avvio delle finali.</span>",set_name:"Nome del torneo",set_reg_deadline:"Data di chiusura delle iscrizioni",reg_deadline_until:"Fino al",tournament_start:"Inizio del torneo:",visits_title:"👀 Visitatori",visits_today:"Oggi",visits_week:"7 giorni",visits_month:"30 giorni",visits_total:"Dall'inizio",visits_note:"Dispositivi diversi. Un giocatore su due dispositivi conta due volte.",visits_err:"Contatore non disponibile al momento.",score_locked_btn:"Risultato dall'avvio dei gironi",score_locked:"L'inserimento dei risultati aprirà con l'avvio della fase a gironi.",set_ppg:"Giocatori per gruppo",ppg_hint_egal:"{n} giocatori → {g} gironi da {t}",ppg_hint_inegal:"{n} giocatori → {g} gironi: {tailles}",set_fin:"Numero di finalisti",
+    settings_title:"Impostazioni torneo",set_third_place:"🥉 <b>Finale 3° posto</b> — opzionale.<br><span style=\"color:var(--gray)\">Senza di essa, la classifica generale decide 3° e 4°. Letta all'avvio delle finali.</span>",set_name:"Nome del torneo",set_reg_deadline:"Data di chiusura delle iscrizioni",reg_deadline_until:"Fino al",departage_groupes_v1:"Spareggio gironi: ① Punti ② Vittorie ③ Vittorie con il Nero ④ Scontro diretto ⑤ Testa di serie",departage_groupes_v2:"Spareggio gironi: ① Punti ② Scontro diretto (mini-classifica tra i pari merito) ③ Vittorie ④ Vittorie con il Nero ⑤ Sonneborn-Berger (punti degli avversari battuti + metà di quelli pareggiati) ⑥ Testa di serie",tournament_start:"Inizio del torneo:",visits_title:"👀 Visitatori",visits_today:"Oggi",visits_week:"7 giorni",visits_month:"30 giorni",visits_total:"Dall'inizio",visits_note:"Dispositivi diversi. Un giocatore su due dispositivi conta due volte.",visits_err:"Contatore non disponibile al momento.",score_locked_btn:"Risultato dall'avvio dei gironi",score_locked:"L'inserimento dei risultati aprirà con l'avvio della fase a gironi.",set_ppg:"Giocatori per gruppo",ppg_hint_egal:"{n} giocatori → {g} gironi da {t}",ppg_hint_inegal:"{n} giocatori → {g} gironi: {tailles}",set_fin:"Numero di finalisti",
     set_pool_start:"Data di inizio dei gironi",set_pool_interval:"Intervallo tra i turni dei gironi (giorni)",
     set_finals_start:"Data di inizio delle finali",set_finals_interval:"Intervallo tra i turni finali (giorni)",
     save_settings:"Salvare",
@@ -2345,6 +2350,8 @@ function applyTranslations() {
   if (edYearEl) edYearEl.placeholder = t('palmares_year_placeholder');
   setT('notif-disable-btn', 'notif_disable_btn');
   setT('change-pin-btn', 'change_pin_btn');
+  setT('logout-all-btn', 'admin_logout_all_btn');
+  setT('logout-all-help', 'admin_logout_all_help');
   setT('check-late-btn', 'check_late_btn');
   // ⚠️ PAS de setT ici : ce bouton a DEUX textes selon l'état de la maintenance, et setT
   // écrirait toujours celui de l'état éteint. Au changement de langue, maintenance ALLUMÉE,
@@ -2445,7 +2452,10 @@ let seedOrder = [];
 let recentlySubscribed = false; // évite un faux positif du contrôle d'orphelin juste après un nouvel abonnement
 
 function defaultData() {
-  return { settings:{ name:"Air Base Chess Tour", playersPerGroup:5, finalistsCount:8, status:"registration" }, players:{}, games:{}, finals:{}, palmares:{} };
+  // `departage: 2` : règles de départage dans les groupes en vigueur à partir de
+  // l'édition qui suit leur adoption (voir departageV2). Un tournoi créé avant n'a pas
+  // ce champ et garde les règles annoncées à ses joueurs jusqu'au bout.
+  return { settings:{ name:"Air Base Chess Tour", playersPerGroup:5, finalistsCount:8, status:"registration", departage:2 }, players:{}, games:{}, finals:{}, palmares:{} };
 }
 
 function genId() { return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
@@ -2588,7 +2598,9 @@ function renderInfo() {
   const s = state?.settings || {};
   const rulesEl = document.getElementById('rules-content');
   if (rulesEl) {
-    rulesEl.innerHTML = t('rules');
+    // Le paragraphe de départage dépend de la version en vigueur pour CE tournoi.
+    rulesEl.innerHTML = t('rules').replace('{departage_groupes}',
+      () => t(departageV2() ? 'departage_groupes_v2' : 'departage_groupes_v1'));
     // Les formats de cadence sont injectés dans le texte du règlement s'il les prévoit.
     const semisSpan = document.getElementById('home-semis-format');
     const finalSpan = document.getElementById('home-final-format');
@@ -2983,10 +2995,11 @@ function renderLiveRanking() {
       <td${qualifie?' style="font-weight:600"':''}>${aff}</td>
       <td style="color:var(--gray)">${f.groupRank}</td>
       <td style="color:var(--gray);font-size:11px">${esc(nomGroupe(f.group, true))}</td>
-      <td>${nrm(s.points).toFixed(2)}</td><td>${s.matches}</td>
+      <td>${nrm(s.points).toFixed(2)}</td>
       <td>${nrm(s.totalWins).toFixed(2)}</td><td>${nrm(s.blackWins).toFixed(2)}</td>
       <td>${nrm(s.tieBreak).toFixed(2)}</td>
       <td style="color:var(--gray)">${seedMap[f.player] ?? '—'}</td>
+      <td style="color:var(--gray)">${s.matches}</td>
     </tr>`;
   };
 
@@ -3030,7 +3043,7 @@ function renderLiveRanking() {
     ? entete + `<div class="scroll-x"><table class="rank-table">
       <thead><tr>
         <th>#</th><th>${t('rank_player')}</th><th>${t('qual_rg')}</th><th>${t('qual_grp')}</th>
-        <th>${t('qual_ptsm')}</th><th>${t('rank_mj')}</th><th>${t('qual_vm')}</th><th>${t('qual_vnm')}</th><th>${t('qual_tbm')}</th><th>${t('qual_seed')}</th>
+        <th>${t('qual_ptsm')}</th><th>${t('qual_vm')}</th><th>${t('qual_vnm')}</th><th>${t('qual_tbm')}</th><th>${t('qual_seed')}</th><th>${t('rank_mj')}</th>
       </tr></thead>
       <tbody>${corps}</tbody></table></div>
       <div style="font-size:11.5px;color:var(--gray);margin-top:10px;line-height:1.6">${t('qual_legend')}</div>`
@@ -3687,6 +3700,85 @@ function renderPage(page) {
   if (page==='info') renderInfo();
 }
 
+// ── CONNEXION ADMIN PERSISTANTE ──
+// Une fois connecté, un appareil RESTE admin, rechargement et redémarrage compris,
+// jusqu'à ce qu'on appuie sur « Déconnexion ». Le PIN est gardé dans le stockage
+// local de l'appareil : il est revérifié par le serveur à chaque ouverture, donc un
+// changement de PIN déconnecte d'office tous les appareils qui gardaient l'ancien.
+// ⚠️ Conséquence assumée : quiconque tient ce téléphone déverrouillé est admin.
+// « Déconnecter tous les appareils » (onglet Réglages) incrémente settings/adminEpoque :
+// chaque appareil a mémorisé l'époque de sa connexion, et se déconnecte dès qu'elle ne
+// correspond plus. L'appareil qui appuie sur le bouton adopte la nouvelle époque et
+// reste connecté.
+const CLE_PIN_ADMIN = 'abct-admin-pin', CLE_EPOQUE_ADMIN = 'abct-admin-epoque';
+const epoqueAdmin = () => String(state?.settings?.adminEpoque || 0);
+function pinSession() {
+  try { return localStorage.getItem(CLE_PIN_ADMIN) || pinSession(); }
+  catch (e) { return ''; }
+}
+function memoriserAdmin(pin) {
+  try {
+    localStorage.setItem(CLE_PIN_ADMIN, pin);
+    localStorage.setItem(CLE_EPOQUE_ADMIN, epoqueAdmin());
+    sessionStorage.setItem('abct-session-pin', pin);
+  } catch (e) {}
+}
+function oublierAdmin() {
+  try {
+    localStorage.removeItem(CLE_PIN_ADMIN);
+    localStorage.removeItem(CLE_EPOQUE_ADMIN);
+    sessionStorage.removeItem('abct-session-pin');
+  } catch (e) {}
+}
+// Bascule l'interface en mode admin, sans changer de page.
+function activerAdmin() {
+  isAdmin = true;
+  majBoutonAdmin();
+  document.getElementById('admin-login').style.display='none';
+  document.getElementById('admin-dashboard').style.display='block';
+  applyMaintenanceOverlay();
+  showAdminTab(currentAdminTab || 'actions');
+  renderPage(currentPage);
+}
+// Appelée à chaque arrivée des réglages depuis Firebase.
+let reconnexionEnCours = false;
+async function verifierSessionAdmin() {
+  let pin, epoque;
+  try { pin = localStorage.getItem(CLE_PIN_ADMIN); epoque = localStorage.getItem(CLE_EPOQUE_ADMIN); }
+  catch (e) { return; }
+  if (!pin) return;
+  // Tous les appareils ont été déconnectés depuis cette connexion.
+  if (epoque !== epoqueAdmin()) {
+    oublierAdmin();
+    if (isAdmin) window.adminLogout();
+    return;
+  }
+  if (isAdmin || reconnexionEnCours) return;
+  reconnexionEnCours = true;
+  let r;
+  try { r = await verifierPin(pin); }
+  catch (e) { reconnexionEnCours = false; return; }   // réseau : nouvel essai au prochain arrivage
+  reconnexionEnCours = false;
+  if (!r?.ok) { oublierAdmin(); return; }              // PIN changé entre-temps
+  activerAdmin();
+}
+
+window.deconnecterTousAdmins = async function() {
+  if (!isAdmin) return;
+  if (!confirm(t('admin_logout_all_confirm'))) return;
+  const ancienne = epoqueAdmin();
+  const nouvelle = (state?.settings?.adminEpoque || 0) + 1;
+  // L'époque locale d'abord : sinon l'écho de l'écriture déconnecterait CET appareil.
+  try { localStorage.setItem(CLE_EPOQUE_ADMIN, String(nouvelle)); } catch (e) {}
+  try {
+    await set(ref(db, 'settings/adminEpoque'), nouvelle);
+    showMsg('logout-all-msg', t('admin_logout_all_done'));
+  } catch (e) {
+    try { localStorage.setItem(CLE_EPOQUE_ADMIN, ancienne); } catch (e2) {}
+    showMsg('logout-all-msg', t('admin_logout_all_fail'), false);
+  }
+};
+
 // ── ADMIN ──
 // Vérifie le PIN auprès du serveur. Le PIN n'est plus lisible depuis le
 // navigateur : on envoie la saisie, on reçoit oui ou non.
@@ -3706,17 +3798,13 @@ window.adminLogin = async function() {
   try { r = await verifierPin(pin); }
   catch { showMsg('login-msg', t('admin_pin_err'), false); return; }
   if (!r?.ok) { showMsg('login-msg', t('admin_pin_err'), false); return; }
-  isAdmin = true;
-  majBoutonAdmin();
-  document.getElementById('admin-login').style.display='none';
-  document.getElementById('admin-dashboard').style.display='block';
-  sessionStorage.setItem('abct-session-pin', document.getElementById('admin-pin-input').value);
-  applyMaintenanceOverlay();
-  showAdminTab('actions');
-  renderAdmin();
+  memoriserAdmin(pin);
+  currentAdminTab = 'actions';
+  activerAdmin();
 };
 
 window.adminLogout = function() {
+  oublierAdmin();
   isAdmin=false;
   majBoutonAdmin();
   document.getElementById('admin-login').style.display='block';
@@ -3745,7 +3833,12 @@ window.changePin = async function() {
   // Sans cette ligne, changer son PIN laissait l'ancien en session : l'organisateur ne
   // pouvait plus rien envoyer, avec un message l'accusant de se tromper de PIN, et rien
   // n'indiquait qu'il fallait se reconnecter.
-  try { sessionStorage.setItem('abct-session-pin', newPin); } catch (e) {}
+  // Le PIN mémorisé pour rester connecté suit aussi, sinon cet appareil serait
+  // déconnecté à sa prochaine ouverture.
+  try {
+    sessionStorage.setItem('abct-session-pin', newPin);
+    if (localStorage.getItem(CLE_PIN_ADMIN)) localStorage.setItem(CLE_PIN_ADMIN, newPin);
+  } catch (e) {}
   showMsg('pin-msg',t('pin_changed'));
 };
 
@@ -5691,7 +5784,7 @@ window.maintAdminLogin = async function() {
   if (r?.ok) {
     isAdmin = true;
     majBoutonAdmin();
-    sessionStorage.setItem('abct-session-pin', pin);
+    memoriserAdmin(pin);
     // ⚠️ NE PAS lever la maintenance ici. Ce bouton dit « connexion admin » et ne doit
     // faire que ça. Il désactivait la maintenance POUR TOUT LE MONDE : l'organisateur
     // ferme le site pour travailler au calme, se reconnecte par l'unique porte visible,
@@ -5755,7 +5848,7 @@ window.checkLateNow = async function() {
     const res = await fetch('/.netlify/functions/check-late-now', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pin: sessionStorage.getItem('abct-session-pin') || '' })
+      body: JSON.stringify({ pin: pinSession() })
     });
     const data = await res.json();
     if (resultEl) {
@@ -6089,7 +6182,7 @@ window.sendPushToAll = async function() {
     const res = await fetch('/.netlify/functions/send-notification', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pin: sessionStorage.getItem('abct-session-pin') || '', title, body: msg })
+      body: JSON.stringify({ pin: pinSession(), title, body: msg })
     });
     const data = await res.json();
     if (res.ok) {
@@ -6199,6 +6292,8 @@ window.resetAll = async function() {
   fresh.settings.adminSubIdDev=prevSettings?.adminSubIdDev||null;
   fresh.settings.autoNotifyResults=prevSettings?.autoNotifyResults||false;
   fresh.settings.autoNotifyLateAlerts=prevSettings?.autoNotifyLateAlerts||false;
+  // Sans elle, l'époque retomberait à 0 et tous les appareils admin seraient déconnectés.
+  fresh.settings.adminEpoque=prevSettings?.adminEpoque||null;
   // On écrit SECTION PAR SECTION, jamais à la racine.
   // Écrire à la racine remplaçait toute la base : cela effaçait `adminPin` (qu'il
   // fallait relire pour le remettre — impossible une fois les règles fermées) mais
@@ -6225,16 +6320,20 @@ function computeStandings(){
   players.forEach(p=>{
     if(!p.group) return;
     if(!groups[p.group]) groups[p.group]={};
-    groups[p.group][p.nickname]={points:0,matches:0,totalWins:0,blackWins:0,tieBreak:0,headToHead:{}};
+    groups[p.group][p.nickname]={points:0,matches:0,totalWins:0,blackWins:0,tieBreak:0,sonneborn:0,headToHead:{},contre:{}};
   });
   games.forEach(({group,playerWhite,scoreWhite,scoreBlack,playerBlack})=>{
     if(!groups[group]) return;
     const g=groups[group];
-    [playerWhite,playerBlack].forEach(p=>{if(!g[p]) g[p]={points:0,matches:0,totalWins:0,blackWins:0,tieBreak:0,headToHead:{}};});
+    [playerWhite,playerBlack].forEach(p=>{if(!g[p]) g[p]={points:0,matches:0,totalWins:0,blackWins:0,tieBreak:0,sonneborn:0,headToHead:{},contre:{}};});
     const sw=parseFloat(scoreWhite),sb=parseFloat(scoreBlack);
     if(isNaN(sw)||isNaN(sb)) return;
     g[playerWhite].points+=sw;g[playerBlack].points+=sb;
     g[playerWhite].matches++;g[playerBlack].matches++;
+    // Points marqués contre chaque adversaire : base de la confrontation directe (v2),
+    // qui doit compter les nulles, ce que headToHead (victoires seules) ne fait pas.
+    g[playerWhite].contre[playerBlack]=(g[playerWhite].contre[playerBlack]||0)+sw;
+    g[playerBlack].contre[playerWhite]=(g[playerBlack].contre[playerWhite]||0)+sb;
     if(sw===1){g[playerWhite].totalWins++;g[playerWhite].headToHead[playerBlack]=(g[playerWhite].headToHead[playerBlack]||0)+1;}
     if(sb===1){g[playerBlack].totalWins++;g[playerBlack].blackWins++;g[playerBlack].headToHead[playerWhite]=(g[playerBlack].headToHead[playerWhite]||0)+1;}
   });
@@ -6252,16 +6351,59 @@ function computeStandings(){
         const opp=m.playerWhite===player?m.playerBlack:m.playerWhite;
         return sum+(g[opp]?.points||0);
       },0);
+      // Sonneborn-Berger : points des adversaires BATTUS, plus la moitié de ceux des
+      // adversaires avec qui on a fait nulle. Récompense les points pris aux forts.
+      // `pts` vaut 1, 0.5 ou 0 : chaque paire ne se rencontre qu'une fois en poule.
+      g[player].sonneborn=Object.entries(g[player].contre).reduce((sum,[opp,pts])=>
+        sum+pts*(g[opp]?.points||0),0);
     }
   }
   return groups;
 }
+
+// ══ DÉPARTAGE DANS LES GROUPES, VERSION 2 ══
+// Active pour les éditions créées après son adoption (settings.departage === 2, posé
+// par defaultData à la réinitialisation). Le tournoi en cours garde la version 1 : on
+// ne change pas les règles en cours de route.
+// v1 : ① Points ② Victoires ③ Victoires Noirs ④ Confrontation directe ⑤ Tête de série
+// v2 : ① Points ② Confrontation directe ③ Victoires ④ Victoires Noirs
+//      ⑤ Sonneborn-Berger ⑥ Tête de série
+// Pourquoi :
+//  • La confrontation directe passe en tête : entre deux ex-aequo, celui qui a battu
+//    l'autre doit passer devant, c'est le critère le plus lisible pour les joueurs.
+//  • Elle se calcule en MINI-CLASSEMENT entre tous les ex-aequo, nulles comprises.
+//    Comparer les joueurs deux à deux (v1) peut tourner en rond à trois — A bat B,
+//    B bat C, C bat A — et l'ordre dépendait alors de l'algorithme de tri.
+//  • Le Sonneborn-Berger avant la tête de série : le classement d'avant tournoi ne
+//    doit trancher qu'en tout dernier recours.
+// Le départage GLOBAL (entre groupes) ne change pas : le Buchholz par match y mesure la
+// force des adversaires rencontrés, ce qui compte quand les groupes diffèrent.
+function departageV2() { return state?.settings?.departage === 2; }
 
 function sortGroup(g){
   // Get seed lookup from players
   const players = getPlayers();
   const seedMap = {};
   players.forEach(p => { seedMap[p.nickname] = typeof p.seed === 'number' ? p.seed : 999; });
+  if (departageV2()) {
+    const seed = n => seedMap[n] !== undefined ? seedMap[n] : 999;
+    // Mini-classement : pour chaque joueur, points marqués contre les AUTRES joueurs à
+    // égalité de points avec lui.
+    const mini = {};
+    Object.keys(g).forEach(n => {
+      mini[n] = Object.keys(g).filter(o => o !== n && g[o].points === g[n].points)
+        .reduce((sum, o) => sum + (g[n].contre[o] || 0), 0);
+    });
+    return Object.keys(g).sort((a,b)=>{
+      const pa=g[a],pb=g[b];
+      return (pb.points-pa.points)
+        ||(mini[b]-mini[a])
+        ||(pb.totalWins-pa.totalWins)
+        ||(pb.blackWins-pa.blackWins)
+        ||(pb.sonneborn-pa.sonneborn)
+        ||(seed(a)-seed(b));
+    });
+  }
   return Object.keys(g).sort((a,b)=>{
     const pa=g[a],pb=g[b];
     // 1. Points 2. Victoires 3. Victoires Noirs 4. H2H 5. Seed
@@ -7216,6 +7358,7 @@ function ecouterSection(chemin) {
     }
     if (!state) state = defaultData();
     surDonneesChangees();
+    if (chemin === 'settings') verifierSessionAdmin();
   }, (err) => {
     console.error('[ABCT] Lecture impossible sur ' + chemin + ' :', err.message);
     // AUTO-RÉPARATION : un refus de lecture (et non une coupure réseau) signifie

@@ -6632,10 +6632,16 @@ function renderMatches(){
       // de la ronde. Une information répétée cesse d'être lue. Le séparateur redevient ce
       // qu'il doit être : un repère qui dit où l'on est dans le calendrier.
       const enRetard = isMatchLate(g, false);
-      // Bandeau plein plutôt qu'un filet : entre deux cartes blanches, un trait fin et un
-      // petit libellé doré se perdaient, et on ne voyait plus où une ronde s'arrête.
-      // Plus d'espace AU-DESSUS qu'en dessous : le bandeau appartient à la ronde qu'il ouvre.
-      htmlPending += `<div style="margin:${htmlPending?'30px':'4px'} 0 12px;padding:9px 14px;border-radius:10px;background:${enRetard?'#FDEBD8':'var(--gold-light)'};border-left:5px solid ${enRetard?'#E67E22':'var(--gold)'};font-size:14px;font-weight:800;color:${enRetard?'#B35A10':'var(--dark)'};letter-spacing:0.6px">${t('round_short').toUpperCase()} ${g.round}</div>`;
+      // Filet + libellé centré, comme à l'origine, mais renforcé : trait plus épais et
+      // plein, libellé plus grand, et davantage d'air au-dessus. Un bandeau coloré a été
+      // essayé et rejeté : un aplat de plus entre les cartes se confondait avec elles.
+      // Plus d'espace AU-DESSUS qu'en dessous : le séparateur appartient à la ronde qu'il ouvre.
+      const encreRonde = enRetard ? '#E67E22' : 'var(--gold)';
+      htmlPending += `<div style="display:flex;align-items:center;gap:12px;margin:${htmlPending?'32px':'6px'} 0 14px">
+        <div style="flex:1;height:2px;background:${encreRonde}"></div>
+        <div style="font-size:16px;font-weight:800;color:${encreRonde};letter-spacing:1px;white-space:nowrap">${t('round_short').toUpperCase()} ${g.round}</div>
+        <div style="flex:1;height:2px;background:${encreRonde}"></div>
+      </div>`;
     }
     htmlPending += matchCardHTML(g);
   });

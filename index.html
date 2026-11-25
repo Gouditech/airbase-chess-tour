@@ -6632,14 +6632,20 @@ function renderMatches(){
       // de la ronde. Une information répétée cesse d'être lue. Le séparateur redevient ce
       // qu'il doit être : un repère qui dit où l'on est dans le calendrier.
       const enRetard = isMatchLate(g, false);
-      // Filet + libellé centré, comme à l'origine, mais renforcé : trait plus épais et
-      // plein, libellé plus grand, et davantage d'air au-dessus. Un bandeau coloré a été
-      // essayé et rejeté : un aplat de plus entre les cartes se confondait avec elles.
-      // Plus d'espace AU-DESSUS qu'en dessous : le séparateur appartient à la ronde qu'il ouvre.
+      // Filet + libellé centré, renforcé : traits pleins de 2 px, libellé plus grand.
+      // Un bandeau coloré a été essayé et rejeté : il se confondait avec les cartes.
+      // ── CENTRÉ VERTICALEMENT ENTRE LES DEUX RONDES ──
+      // La carte du dessus a déjà 11 px de marge basse (.match-card) : 13 px au-dessus
+      // du séparateur + ces 11 px = 24 px, autant qu'en dessous. Le séparateur tombe ainsi
+      // exactement au milieu de l'espace entre la dernière carte d'une ronde et la
+      // première de la suivante. Changer la marge des cartes oblige à revoir ces chiffres.
+      // Libellé en NOIR, traits en couleur : le texte foncé tranche sur le fond clair
+      // là où le doré se fondait dans les dates dorées des cartes. L'orange des traits
+      // signale toujours une ronde en retard.
       const encreRonde = enRetard ? '#E67E22' : 'var(--gold)';
-      htmlPending += `<div style="display:flex;align-items:center;gap:12px;margin:${htmlPending?'32px':'6px'} 0 14px">
+      htmlPending += `<div style="display:flex;align-items:center;gap:12px;margin:${htmlPending?'13px':'6px'} 0 24px">
         <div style="flex:1;height:2px;background:${encreRonde}"></div>
-        <div style="font-size:16px;font-weight:800;color:${encreRonde};letter-spacing:1px;white-space:nowrap">${t('round_short').toUpperCase()} ${g.round}</div>
+        <div style="font-size:16px;font-weight:800;color:var(--dark);letter-spacing:1px;white-space:nowrap">${t('round_short').toUpperCase()} ${g.round}</div>
         <div style="flex:1;height:2px;background:${encreRonde}"></div>
       </div>`;
     }

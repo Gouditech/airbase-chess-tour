@@ -2824,7 +2824,7 @@ function statsCumulees() {
   // il ne doit produire ni titre, ni podium, ni meilleur rang tant que rien n'est joue.
   function ajouter(pseudo, nom, rang, total, st, acte = true) {
     const k = cle(pseudo);
-    if (!acc[k]) acc[k] = { pseudo, name: nom || null, editions: 0, victoires: 0, podiums: 0,
+    if (!acc[k]) acc[k] = { pseudo, name: nom || null, editions: 0, victoires: 0, podiums: 0, argent: 0, bronze: 0,
                             meilleur: 999, pts: 0, m: 0, v: 0, vN: 0,
                             vB: 0, nB: 0, dB: 0, nN: 0, dN: 0,
                             aStats: false, aCouleurs: false };
@@ -2834,6 +2834,10 @@ function statsCumulees() {
     if (acte) {
       if (rang === 1) a.victoires++;
       if (rang <= 3) a.podiums++;
+      // Détail des podiums, pour l'affichage seulement : les tris restent sur
+      // `victoires` puis `podiums`, comme avant.
+      if (rang === 2) a.argent++;
+      if (rang === 3) a.bronze++;
       if (rang < a.meilleur) a.meilleur = rang;
     }
     if (st) {
@@ -3074,6 +3078,16 @@ window.addEventListener('resize', () => {
   if (el) recentrerSeparateurs(el);
 });
 
+// Médailles d'un joueur : 🏆 = 1re place (l'or), 🥈 = 2e, 🥉 = 3e. Seules celles
+// gagnées apparaissent ; rien du tout pour qui n'a jamais fini sur le podium.
+function medailles(a) {
+  const m = [['🏆', a.victoires], ['🥈', a.argent], ['🥉', a.bronze]].filter(([, n]) => n > 0);
+  if (!m.length) return '';
+  return '<div style="margin-top:3px;display:flex;gap:10px;justify-content:flex-end">'
+    + m.map(([e, n]) => `<span style="font-size:17px;line-height:1">${e}<strong style="font-size:14px;color:var(--dark);margin-left:2px">${n}</strong></span>`).join('')
+    + '</div>';
+}
+
 function renderPalmares() {
   const boutons = document.getElementById('palmares-buttons');
   const el = document.getElementById('palmares-content');
@@ -3157,7 +3171,8 @@ function renderPalmares() {
             <span style="flex:1;min-width:0;font-size:14px;font-weight:${surligne?'700':'500'}">${affichage}</span>
             <span style="font-size:12px;color:var(--gray);white-space:nowrap;text-align:right;line-height:1.35">
               <strong style="color:var(--dark);font-size:14px">${a.pts??0}</strong> ${t('palmares_pts')}${a.m?' · <strong style="color:var(--dark);font-size:14px">'+(a.pts/a.m).toFixed(2)+'</strong>/'+t('palmares_m'):''}<br>
-              <span style="font-size:11px">${a.editions} ${t(a.editions>1?'palmares_editions':'palmares_edition')}${a.victoires?' · <span style="font-size:13px">🏆</span>'+a.victoires:''}${a.podiums?' · 🎖'+a.podiums:''}</span>
+              <span style="font-size:11px">${a.editions} ${t(a.editions>1?'palmares_editions':'palmares_edition')}</span>
+              ${medailles(a)}
             </span>
           </div>
           ${couleurs ? '<div style="padding-left:42px">' + couleurs + '</div>' : ''}
@@ -6616,11 +6631,21 @@ function renderMatches(){
       // cinq fois la même phrase sur un seul écran — le séparateur, puis les quatre cartes
       // de la ronde. Une information répétée cesse d'être lue. Le séparateur redevient ce
       // qu'il doit être : un repère qui dit où l'on est dans le calendrier.
-      const enRetard = isMatchLate(g, false);
-      htmlPending += `<div style="display:flex;align-items:center;gap:10px;margin:${htmlPending?'18px':'4px'} 0 10px">
-        <div style="flex:1;height:1px;background:${enRetard?'#E67E22':'var(--gold)'};opacity:0.5"></div>
-        <div style="font-size:12px;font-weight:800;color:${enRetard?'#E67E22':'var(--gold)'};letter-spacing:0.5px;white-space:nowrap">${t('round_short').toUpperCase()} ${g.round}</div>
-        <div style="flex:1;height:1px;background:${enRetard?'#E67E22':'var(--gold)'};opacity:0.5"></div>
+      // Filet + libellé centré, renforcé : traits pleins de 2 px, libellé plus grand.
+      // Un bandeau coloré a été essayé et rejeté : il se confondait avec les cartes.
+      // ── CENTRÉ VERTICALEMENT ENTRE LES DEUX RONDES ──
+      // Même marge (24 px) au-dessus et en dessous. ⚠️ La marge basse de la carte du
+      // dessus (11 px) NE S'AJOUTE PAS à celle du séparateur : deux marges verticales qui
+      // se touchent fusionnent, la plus grande l'emporte. Un calcul « 13 + 11 = 24 » avait
+      // laissé 23 px au-dessus contre 34 en dessous. Mesuré dans Chromium : 34 / 34 px
+      // entre le trait et chaque carte.
+      // Libellé en NOIR : le texte foncé tranche là où le doré se fondait dans les dates
+      // dorées des cartes. Traits toujours DORÉS, même en retard : les cartes signalent
+      // déjà le retard en orange, le séparateur n'a pas à le répéter.
+      htmlPending += `<div style="display:flex;align-items:center;gap:12px;margin:${htmlPending?'24px':'6px'} 0 24px">
+        <div style="flex:1;height:2px;background:var(--gold)"></div>
+        <div style="font-size:16px;font-weight:800;color:var(--dark);letter-spacing:1px;white-space:nowrap">${t('round_short').toUpperCase()} ${g.round}</div>
+        <div style="flex:1;height:2px;background:var(--gold)"></div>
       </div>`;
     }
     htmlPending += matchCardHTML(g);

@@ -2824,7 +2824,7 @@ function statsCumulees() {
   // il ne doit produire ni titre, ni podium, ni meilleur rang tant que rien n'est joue.
   function ajouter(pseudo, nom, rang, total, st, acte = true) {
     const k = cle(pseudo);
-    if (!acc[k]) acc[k] = { pseudo, name: nom || null, editions: 0, victoires: 0, podiums: 0,
+    if (!acc[k]) acc[k] = { pseudo, name: nom || null, editions: 0, victoires: 0, podiums: 0, argent: 0, bronze: 0,
                             meilleur: 999, pts: 0, m: 0, v: 0, vN: 0,
                             vB: 0, nB: 0, dB: 0, nN: 0, dN: 0,
                             aStats: false, aCouleurs: false };
@@ -2834,6 +2834,10 @@ function statsCumulees() {
     if (acte) {
       if (rang === 1) a.victoires++;
       if (rang <= 3) a.podiums++;
+      // Détail des podiums, pour l'affichage seulement : les tris restent sur
+      // `victoires` puis `podiums`, comme avant.
+      if (rang === 2) a.argent++;
+      if (rang === 3) a.bronze++;
       if (rang < a.meilleur) a.meilleur = rang;
     }
     if (st) {
@@ -3074,6 +3078,16 @@ window.addEventListener('resize', () => {
   if (el) recentrerSeparateurs(el);
 });
 
+// Médailles d'un joueur : 🏆 = 1re place (l'or), 🥈 = 2e, 🥉 = 3e. Seules celles
+// gagnées apparaissent ; rien du tout pour qui n'a jamais fini sur le podium.
+function medailles(a) {
+  const m = [['🏆', a.victoires], ['🥈', a.argent], ['🥉', a.bronze]].filter(([, n]) => n > 0);
+  if (!m.length) return '';
+  return '<div style="margin-top:3px;display:flex;gap:10px;justify-content:flex-end">'
+    + m.map(([e, n]) => `<span style="font-size:17px;line-height:1">${e}<strong style="font-size:14px;color:var(--dark);margin-left:2px">${n}</strong></span>`).join('')
+    + '</div>';
+}
+
 function renderPalmares() {
   const boutons = document.getElementById('palmares-buttons');
   const el = document.getElementById('palmares-content');
@@ -3157,7 +3171,8 @@ function renderPalmares() {
             <span style="flex:1;min-width:0;font-size:14px;font-weight:${surligne?'700':'500'}">${affichage}</span>
             <span style="font-size:12px;color:var(--gray);white-space:nowrap;text-align:right;line-height:1.35">
               <strong style="color:var(--dark);font-size:14px">${a.pts??0}</strong> ${t('palmares_pts')}${a.m?' · <strong style="color:var(--dark);font-size:14px">'+(a.pts/a.m).toFixed(2)+'</strong>/'+t('palmares_m'):''}<br>
-              <span style="font-size:11px">${a.editions} ${t(a.editions>1?'palmares_editions':'palmares_edition')}${a.victoires?' · <span style="font-size:13px">🏆</span>'+a.victoires:''}${a.podiums?' · 🎖'+a.podiums:''}</span>
+              <span style="font-size:11px">${a.editions} ${t(a.editions>1?'palmares_editions':'palmares_edition')}</span>
+              ${medailles(a)}
             </span>
           </div>
           ${couleurs ? '<div style="padding-left:42px">' + couleurs + '</div>' : ''}
@@ -6617,11 +6632,10 @@ function renderMatches(){
       // de la ronde. Une information répétée cesse d'être lue. Le séparateur redevient ce
       // qu'il doit être : un repère qui dit où l'on est dans le calendrier.
       const enRetard = isMatchLate(g, false);
-      htmlPending += `<div style="display:flex;align-items:center;gap:10px;margin:${htmlPending?'18px':'4px'} 0 10px">
-        <div style="flex:1;height:1px;background:${enRetard?'#E67E22':'var(--gold)'};opacity:0.5"></div>
-        <div style="font-size:12px;font-weight:800;color:${enRetard?'#E67E22':'var(--gold)'};letter-spacing:0.5px;white-space:nowrap">${t('round_short').toUpperCase()} ${g.round}</div>
-        <div style="flex:1;height:1px;background:${enRetard?'#E67E22':'var(--gold)'};opacity:0.5"></div>
-      </div>`;
+      // Bandeau plein plutôt qu'un filet : entre deux cartes blanches, un trait fin et un
+      // petit libellé doré se perdaient, et on ne voyait plus où une ronde s'arrête.
+      // Plus d'espace AU-DESSUS qu'en dessous : le bandeau appartient à la ronde qu'il ouvre.
+      htmlPending += `<div style="margin:${htmlPending?'30px':'4px'} 0 12px;padding:9px 14px;border-radius:10px;background:${enRetard?'#FDEBD8':'var(--gold-light)'};border-left:5px solid ${enRetard?'#E67E22':'var(--gold)'};font-size:14px;font-weight:800;color:${enRetard?'#B35A10':'var(--dark)'};letter-spacing:0.6px">${t('round_short').toUpperCase()} ${g.round}</div>`;
     }
     htmlPending += matchCardHTML(g);
   });
